@@ -28,7 +28,6 @@ it's completely free & open source!
 
 currently supported JS APIs:
 
-<!--script>
 **************** H5GGv5.2 ** JS script engine ********************
 <h5gg> is the engine object, which can call the following functions (similar to the lua interface of Android gg, but the parameters are somewhat different)
 
@@ -64,5 +63,4 @@ Notice:
 5: The numeric type can be converted into a hexadecimal string format with x.toString(16), but x must be a numeric type to convert successfully
 6: The numerical value of the search supports the range format, such as "50~100", such as "2.3~7.8", both numerical search and adjacent (joint) search are supported
 5: The default size of the floating window is 380 points wide and 400 points high. You can set the position, size and draggable area through the js interface on the H5 page.
-</script>
 
