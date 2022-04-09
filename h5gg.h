@@ -5,6 +5,8 @@
 //  Created by admin on 11/3/2022.
 //
 
+/** 强烈提醒: 请不要修改此JS接口, 以保持js脚本的兼容性 */
+
 #ifndef h5gg_h
 #define h5gg_h
 
@@ -573,6 +575,37 @@ JSExportAs(getResults, -(NSArray*)getResults:(int)maxCount param1:(int)skipCount
     }];
 }
 
+-(size_t)getMachoVMSize:(mach_vm_address_t)addr {
+    
+    struct mach_header_64 header;
+    mach_vm_size_t hdrsize = sizeof(header);
+    kern_return_t kr = mach_vm_read_overwrite(self.targetport, addr, hdrsize, (mach_vm_address_t)&header, &hdrsize);
+    if(kr != KERN_SUCCESS)
+        return 0;
+    
+    size_t sz = sizeof(header); // Size of the header
+    sz += header.sizeofcmds;    // Size of the load commands
+    
+    mach_vm_size_t lcsize=header.sizeofcmds;
+    void* buf = malloc(lcsize);
+    
+    kr = mach_vm_read_overwrite(self.targetport, addr+hdrsize, lcsize, (mach_vm_address_t)buf, &lcsize);
+    if(kr == KERN_SUCCESS)
+    {
+        struct load_command* lc = (struct load_command*)buf;
+        for (uint32_t i = 0; i < header.ncmds; i++) {
+            if (lc->cmd == LC_SEGMENT_64) {
+                struct segment_command_64 * sc = (struct segment_command_64 *) lc;
+                if(!(sc->vmaddr==0 && sc->vmsize==0x100000000 && sc->fileoff==0 && sc->filesize==0 && sc->flags==0 && sc->initprot==0 && sc->maxprot==0)) //skip __PAGEZERO
+                sz += ((struct segment_command_64 *) lc)->vmsize; // Size of segments
+            }
+            lc = (struct load_command *) ((char *)lc + lc->cmdsize);
+        }
+    }
+    free(buf);
+    return sz;
+}
+
 -(NSArray*)getRangesList:(JSValue*)filter
 {
     if(self.targetpid!=getpid())
@@ -595,7 +628,8 @@ JSExportAs(getResults, -(NSArray*)getResults:(int)maxCount param1:(int)skipCount
             [results addObject:@{
                 @"name" : [NSString stringWithUTF8String:name],
                 @"start" : [NSString stringWithFormat:@"0x%llX", baseaddr],
-                //@"end" : [NSString stringWithFormat:@"0x%llX", baseaddr],
+                @"end" : [NSString stringWithFormat:@"0x%llX",
+                          (uint64_t)baseaddr+[self getMachoVMSize:(uint64_t)baseaddr] ],
                 //@"type" : @"rwxp",
             }];
             
@@ -605,7 +639,6 @@ JSExportAs(getResults, -(NSArray*)getResults:(int)maxCount param1:(int)skipCount
     
     return results;
 }
-
 
 -(NSArray*)getRangesList2:(JSValue*)filter
 {
@@ -670,7 +703,8 @@ JSExportAs(getResults, -(NSArray*)getResults:(int)maxCount param1:(int)skipCount
             [results addObject:@{
                 @"name" : [NSString stringWithUTF8String:pathbuffer],
                 @"start" : [NSString stringWithFormat:@"0x%llX", addr],
-                //@"end" : [NSString stringWithFormat:@"0x%llX", baseaddr],
+                @"end" : [NSString stringWithFormat:@"0x%llX",
+                          (uint64_t)addr+[self getMachoVMSize:(uint64_t)addr] ],
                 //@"type" : @"rwxp",
             }];
             

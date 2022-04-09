@@ -2,8 +2,13 @@ ARCHS = arm64
 
 TARGET = iphone:13.7:11.4
 
-export THEOS=/var/mobile/theos
+ifeq ($(THEOS), )
+	export THEOS=/var/mobile/theos
+endif
+
 INSTALL_TARGET_PROCESSES = SpringBoard
+
+THEOS_PLATFORM_DEB_COMPRESSION_TYPE = gzip
 
 include $(THEOS)/makefiles/common.mk
 

@@ -5,29 +5,20 @@
 #include <dlfcn.h>
 #import <SystemConfiguration/SystemConfiguration.h>
 
-extern "C" {
-
-//theos支持@available版本判断功能
-int __isOSVersionAtLeast(int major, int minor, int patch) {
-    NSOperatingSystemVersion version;
-    version.majorVersion = major;
-    version.minorVersion = minor;
-    version.patchVersion = patch;
-    return [[NSProcessInfo processInfo] isOperatingSystemAtLeastVersion:version];
-}
-
-int memorystatus_control(uint32_t command, pid_t pid, uint32_t flags, void *buffer, size_t buffersize);
-
-}
-
 //忽略一些警告
 #pragma GCC diagnostic ignored "-Warc-retain-cycles"
 
+#pragma GCC diagnostic ignored "-Wunused-function"
 #pragma GCC diagnostic ignored "-Wincomplete-implementation"
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #pragma GCC diagnostic ignored "-W#warnings"
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #pragma GCC diagnostic ignored "-Wformat"
+
+extern "C" {
+int memorystatus_control(uint32_t command, pid_t pid, uint32_t flags, void *buffer, size_t buffersize);
+}
+
 
 //引入悬浮按钮头文件
 #include "FloatButton.h"
