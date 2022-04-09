@@ -108,7 +108,8 @@ H5GG v5.5 测试:
 
 H5GG v5.6 测试:
 1: 优化参数错误提示信息
-
+2: 优化网络故障的提示信息
+3: 增加getRangesList返回模块结尾地址
 
 -->
 <html>
@@ -426,7 +427,7 @@ table.datatype {
 </style>
 
 <!--JS脚本代码开始, 先引入jquery库方便使用 $ 操作符-->
-<script src="httpas://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+<script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
 
 <!--script>
 ***************** H5GGv5.2 ** JS脚本引擎 *******************
@@ -441,14 +442,13 @@ h5gg.editAll('数值', '类型'); //修改搜索结果中的全部数值(清除�
 h5gg.getResultsCount(); //获取搜索结果的总数量, 返回总个数
 h5gg.getResults('获取个数', '跳过个数'); //获取结果数组, 每个元素有address,value,type三个属性
 h5gg.clearResults(); //清除搜索结果, 开始新的搜索
-h5gg.getRangesList(‘模块文件名’); //返回模块数组, 数组中的元素有start(基址), name(路径名称) 属性
+h5gg.getRangesList(‘模块文件名’); //返回模块数组,模块有start(基址),end(结尾地址),name(路径)属性
     (若模块文件名=0, 则返回APP主程序模块信息, 若不传入模块文件名, 则返回所有模块列表)
 
 跨进程版专用:
+h5gg.setTargetProc(进程号); //设定当前目标进程, 返回成功或失败
 h5gg.getProcList('进程名'); //获取进程数组, 数组中的元素有pid(进程号), name(进程名) 属性
     (若不传入进程名, 则返回所有运行中的app进程列表, 可以定时循环调用确定目标进程是否已经结束)
-
-h5gg.setTargetProc(进程号); //设定当前目标进程, 返回成功或失败
 
 其他接口:
 closeMenu(); //隐藏悬浮窗口
@@ -468,6 +468,9 @@ setWindowDrag(x, y, 高度, 宽度); //设置H5页面中可拖动悬浮窗的区
 </script>
 <!---->
 <script>
+    
+if(typeof $ == 'undefined')
+    while(1) alert("网络连接失败, 请重新启动!");
     
 //根据选择的有符号/无符号数确定搜索类型
 function h5ggType(type)
@@ -883,7 +886,7 @@ function onClickSearchNearby()
 <body bgcolor="#E8E8E8" style="margin:0;">
 <!--标题栏-->
 <div id="titleBar" style="background-color:#D1D1D1; padding:5px; margin:0px;">
-&nbsp;<font style="color:green">H5</font> <font style="color:red">GG</font>&nbsp;v5.5
+&nbsp;<font style="color:green">H5</font> <font style="color:red">GG</font>&nbsp;v5.6
 <span id="crossproc">
 <font style="color:blue">&nbsp;跨进程&nbsp;</font><font id="procname">procname</font>
 </span>
