@@ -12,11 +12,11 @@ and you can make your own tweak(dylib) by click one button, then just select you
 
 supported 3 modes to run:
 
-1: inject to ipa in non-jailbreak devices
+1. inject to ipa in non-jailbreak devices
 
-2: tweak(deb) in jailbroken devices
+2. tweak(deb) in jailbroken devices
 
-3: standalone APP(deb) in jailbroken devices
+3. standalone APP(deb) in jailbroken devices
 
 it's completely free & open source!
  
@@ -89,7 +89,7 @@ Notice:
     
 5: The numeric type can be converted into a hexadecimal string format with x.toString(16), but x must be a numeric type to convert successfully
 
-6: The numerical value of the search supports the range format, such as "50~100", such as "2.3~7.8", both numerical search and adjacent (joint) search are supported
+6: The numerical value of the search supports the range format, such as "50～100", such as "2.3～7.8", both numerical search and adjacent (joint) search are supported
 
 5: The default size of the floating window is 380 points wide and 400 points high. You can set the position, size and draggable area through the js interface on the H5 page.
 
