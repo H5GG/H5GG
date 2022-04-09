@@ -1,0 +1,9 @@
+Package: com.test.h5gg
+Name: H5GG
+Depends: mobilesubstrate
+Version: 0.0.1
+Architecture: iphoneos-arm
+Description: an iOS cheat engine for JavaScript APIs & Html5 UI.
+Maintainer: @CrazyMind90
+Author: H5GG
+Section: Tweaks
