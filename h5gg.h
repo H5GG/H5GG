@@ -6,6 +6,7 @@
 //
 
 /** 强烈提醒: 请不要修改此JS接口, 以保持js脚本的兼容性 */
+/** Strong reminder: Please do not modify this JS interface to maintain the compatibility of js scripts */
 
 #ifndef h5gg_h
 #define h5gg_h
