@@ -1,3 +1,20 @@
 
 .DS_Store
 .theos
+AppDelegate.h
+AppDelegate.m
+Assets.xcassets/AccentColor.colorset/Contents.json
+Assets.xcassets/AppIcon.appiconset/Contents.json
+Assets.xcassets/Contents.json
+Base.lproj/LaunchScreen.storyboard
+Base.lproj/Main.storyboard
+bg.PNG
+h5gg.entitlements
+Info.plist
+main.m
+SceneDelegate.h
+SceneDelegate.m
+test.js
+ViewController.h
+ViewController.m
+viewdebug.m
