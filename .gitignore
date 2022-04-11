@@ -3,11 +3,8 @@
 .theos
 AppDelegate.h
 AppDelegate.m
-Assets.xcassets/AccentColor.colorset/Contents.json
-Assets.xcassets/AppIcon.appiconset/Contents.json
-Assets.xcassets/Contents.json
-Base.lproj/LaunchScreen.storyboard
-Base.lproj/Main.storyboard
+Assets.xcassets
+Base.lproj
 bg.PNG
 h5gg.entitlements
 Info.plist

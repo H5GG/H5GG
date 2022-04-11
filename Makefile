@@ -16,7 +16,7 @@ include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = H5GG
 
-H5GG_FILES = $(wildcard *.mm *.m *.x *.xm *.c *.cpp *.cc)
+H5GG_FILES = $(wildcard *.mm)
 H5GG_CFLAGS = -fobjc-arc -fvisibility=hidden 
 
 H5GG_CCFLAGS = -fobjc-arc -fvisibility=hidden -std=c++11
