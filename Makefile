@@ -10,6 +10,8 @@ INSTALL_TARGET_PROCESSES = SpringBoard
 
 THEOS_PLATFORM_DEB_COMPRESSION_TYPE = gzip
 
+STRIP=1
+
 include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = H5GG
