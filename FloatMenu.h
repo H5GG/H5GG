@@ -56,8 +56,8 @@ static NSHashTable* g_webViews = nil;
         //self.hidden = YES; //默认不显示
         self.delegate = self;
         //self.layer.zPosition = 5000;
+        self.opaque = NO;
         self.backgroundColor=[UIColor clearColor];
-        
         self.userInteractionEnabled = YES;
         
         UIPanGestureRecognizer *drag=[[UIPanGestureRecognizer alloc]initWithTarget:self action:@selector(dragMe:)];
