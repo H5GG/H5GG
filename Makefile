@@ -6,7 +6,9 @@ ifeq ($(THEOS), )
 	export THEOS=/var/mobile/theos
 endif
 
-INSTALL_TARGET_PROCESSES = SpringBoard
+#INSTALL_TARGET_PROCESSES = SpringBoard
+
+THEOS_DEVICE_IP = 192.168.101.7
 
 THEOS_PLATFORM_DEB_COMPRESSION_TYPE = gzip
 
