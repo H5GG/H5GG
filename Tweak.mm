@@ -36,6 +36,7 @@ INCBIN(Icon, "icon.png");
 //嵌入菜单H5文件
 INCTXT(Menu, "Menu.html");
 
+INCTXT(H5GG_JQUERY_FILE, "jquery.min.js");
 
 INCBIN(H5ICON_STUB_FILE, "H5ICON_STUB_FILE");
 INCBIN(H5MENU_STUB_FILE, "H5MENU_STUB_FILE");
@@ -238,19 +239,6 @@ UIWindow* makeWindow()
 
 void initFloatMenu()
 {
-    SCNetworkReachabilityFlags flags;
-    SCNetworkReachabilityRef reachability = SCNetworkReachabilityCreateWithName(NULL, "www.baidu.com");
-    if(!SCNetworkReachabilityGetFlags(reachability, &flags) || (flags & kSCNetworkReachabilityFlagsReachable)==0)
-    {
-        if([[[NSBundle mainBundle] bundlePath] hasPrefix:@"/Applications/"])
-            [TopShow alert:@"没有网络" message:@"请尝试使用以下越狱插件修复联网权限:\n\n<连个锤子>\n<FixNets>\n<NetworkManage>\n"];
-        else
-            [TopShow alert:@"没有网络" message:@"H5GG可能无法正确加载!"];
-        
-        return;
-    }
-    CFRelease(reachability);
-    
     //获取窗口
     floatWindow = makeWindow();
     floatWindow.windowLevel = UIWindowLevelAlert - 1;
@@ -329,7 +317,10 @@ void initFloatMenu()
         [floatH5 loadRequest:[[NSURLRequest alloc] initWithURL:[NSURL URLWithString:h5file]]];
     } else {
         //第三优先级: 从dylib加载H5
-        [floatH5 loadHTMLString:[NSString stringWithUTF8String:gMenuData] baseURL:[NSURL URLWithString:@"html@dylib"]];
+        NSString* h5gghtml = [NSString stringWithUTF8String:gMenuData];
+        NSString* jquery = [NSString stringWithUTF8String:gH5GG_JQUERY_FILEData];
+        h5gghtml = [h5gghtml stringByReplacingOccurrencesOfString:@"var h5gg_jquery_stub;" withString:jquery];
+        [floatH5 loadHTMLString:h5gghtml baseURL:[NSURL URLWithString:@"html@dylib"]];
     }
 
     //添加H5悬浮菜单到窗口上
@@ -337,7 +328,41 @@ void initFloatMenu()
 }
 
 
+void toggleWindow2();
 void toggleWindow()
+{
+    if(floatWindow) {
+        toggleWindow2();
+        return;
+    }
+    
+    SCNetworkReachabilityFlags flags;
+    SCNetworkReachabilityRef reachability = SCNetworkReachabilityCreateWithName(NULL, "www.baidu.com");
+    if(!SCNetworkReachabilityGetFlags(reachability, &flags) || (flags & kSCNetworkReachabilityFlagsReachable)==0)
+    {
+        NSString* tips = @"H5GG可能无法正确加载!";
+        if([[[NSBundle mainBundle] bundlePath] hasPrefix:@"/Applications/"])
+            tips = @"请尝试使用以下越狱插件修复联网权限:\n\n<连个锤子>\n\n<FixNets>\n\n<NetworkManage>\n";
+        
+        [TopShow present:^{
+            UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"没有网络" message:tips preferredStyle:UIAlertControllerStyleAlert];
+
+            [alert addAction:[UIAlertAction actionWithTitle:@"继续启动" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+                [TopShow dismiss];
+                
+                toggleWindow2();
+            }]];
+            return alert;
+        }];
+        
+        return;
+    }
+    CFRelease(reachability);
+    
+    toggleWindow2();
+}
+
+void toggleWindow2()
 {
     //第一次点击图标时再加载H5菜单,防止部分APP不兼容H5导致闪退卡死
     if(!floatWindow) {
