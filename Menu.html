@@ -109,9 +109,10 @@ H5GG v5.5 测试:
 H5GG v5.6 测试:
 1: 优化参数错误提示信息
 2: 优化网络故障的提示信息, 内置jquery离线也可运行
-3: 增加getRangesList返回模块结尾地址
+3: 增加getRangesList返回模块结尾地址(.end属性)
 4: 悬浮窗口支持边框背景透明，需要设置body{background-color: transparent}
-5: 增强安全性， 运行更加稳定， 更加流畅
+5: 增强核心模块的安全性，使运行更加稳定，更加流畅
+6: 修复部分情况下结果列表上拉没有加载更多数据的问题
 -->
 <html>
 <head>
@@ -828,7 +829,7 @@ function showMoreResults(div)
     var lh = div.scrollHeight - div.scrollTop;
     console.log(div.clientHeight+","+div.offsetHeight +" : " +div.scrollTop+","+div.scrollHeight + " : " + lh);
     
-    if(lh < div.clientHeight) {
+    if(lh <= div.clientHeight) {
         console.log("trigger bottom!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         loadMoreResults();
     }
