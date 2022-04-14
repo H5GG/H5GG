@@ -52,7 +52,7 @@ static NSHashTable* g_webViews = nil;
         [g_webViews addObject:self];
         NSLog(@"add g_webViews=%@", self);
         
-        self.alpha = 0.8;//整体透明度
+        //self.alpha = 0.85; //整体透明度
         //self.hidden = YES; //默认不显示
         self.delegate = self;
         //self.layer.zPosition = 5000;
@@ -80,6 +80,7 @@ static NSHashTable* g_webViews = nil;
         self.scrollView.scrollEnabled=NO;
         [self.scrollView setShowsVerticalScrollIndicator:NO];
         [self.scrollView setShowsHorizontalScrollIndicator:NO];
+        [self.scrollView setContentInsetAdjustmentBehavior: UIScrollViewContentInsetAdjustmentNever];
         
         for (UIView* view in self.scrollView.subviews) {
             if ([view.class.description isEqualToString:@"UIWebBrowserView"]) {
@@ -138,6 +139,7 @@ static NSHashTable* g_webViews = nil;
         CGPoint pt = locationPoint;
         float dx = pt.x - self.startLocation.x;
         float dy = pt.y - self.startLocation.y;
+        
         CGPoint newcenter = CGPointMake(self.center.x + dx, self.center.y + dy);
 
 //        float halfx = CGRectGetMidX(self.bounds);

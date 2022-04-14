@@ -166,6 +166,33 @@ FloatButton* floatBtn=NULL;
 FloatMenu* floatH5=NULL;
 h5ggEngine* h5gg = NULL;
 
+@interface FloatWindow : UIWindow
+@end
+
+@implementation FloatWindow
+// recursively calls -pointInside:withEvent:. point is in the receiver's coordinate system
+//-(nullable UIView *)hitTest:(CGPoint)point withEvent:(nullable UIEvent *)event /
+//{
+//
+//}
+// default returns YES if point is in bounds
+- (BOOL)pointInside:(CGPoint)point withEvent:(nullable UIEvent *)event;
+{
+    int count = (int)self.subviews.count;
+    for (int i = count - 1; i >= 0;i-- ) {
+        UIView *childV = self.subviews[i];
+        // 把当前坐标系上的点转换成子控件坐标系上的点.
+        CGPoint childP = [self convertPoint:point toView:childV];
+        UIView *fitView = [childV hitTest:childP withEvent:event];
+        if(fitView) {
+            //NSLog(@"FloatWindow pointInside=%@", fitView);
+            return YES;
+        }
+    }
+    return NO;
+}
+@end
+
 @interface FloatController : UIViewController
 @end
 
@@ -229,9 +256,9 @@ UIWindow* makeWindow()
                 break;
             }
         }
-        w = [[UIWindow alloc] initWithWindowScene:theScene];
+        w = [[FloatWindow alloc] initWithWindowScene:theScene];
     }else{
-        w = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+        w = [[FloatWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
     }
     
     return w;
@@ -244,7 +271,13 @@ void initFloatMenu()
     floatWindow.windowLevel = UIWindowLevelAlert - 1;
     floatWindow.rootViewController = [[FloatController alloc] init];
     
-    //[floatWindow makeKeyAndVisible];
+    //第一次makeKeyAndVisible的时候会自动添加一个全屏的UITransitionView=rootViewController.view
+//    FloatController_lastKeyWindow = [UIApplication sharedApplication].keyWindow;
+//    [floatWindow makeKeyAndVisible];
+//    for(int i=0;i<floatWindow.subviews.count;i++)
+//        [floatWindow.subviews[i] setHidden:YES];
+//    [FloatController_lastKeyWindow makeKeyWindow];
+//    FloatController_lastKeyWindow = nil;
     
     //创建悬浮菜单, 设置位置=居中  尺寸=380宽x屏幕高(最大400)
     CGRect MenuRect = CGRectMake(0, 0, 380, floatWindow.frame.size.height);
@@ -384,7 +417,9 @@ void toggleWindow2()
              //因为在makeKeyAndVisible之前就addSubView了, 所以需要加view移到前台才有响应
              [floatWindow bringSubviewToFront:floatH5];
              
-//
+             [floatWindow.rootViewController.view setHidden:YES];
+             
+
 //             floatWindow.clipsToBounds = TRUE;
 //             //floatH5.bounds = CGRectMake(-floatH5.frame.origin.x, -floatH5.frame.origin.y, floatH5.bounds.size.width, floatH5.bounds.size.height);;
 //             //floatH5.frame = CGRectMake(0, 0, floatH5.frame.size.width, floatH5.frame.size.height);
