@@ -107,12 +107,12 @@ H5GG v5.5 测试:
 5: 优化小于1.0的F32/F64显示格式问题
 
 H5GG v5.6 测试:
-1: 优化参数错误提示信息
+1: 优化数值搜索和邻近搜索参数错误提示信息
 2: 优化网络故障的提示信息, 内置jquery离线也可运行
 3: 增加getRangesList返回模块结尾地址(.end属性)
 4: 悬浮窗口支持边框背景透明，需要设置body{background-color: transparent}
 5: 增强核心模块的安全性，使运行更加稳定，更加流畅
-6: 修复部分情况下结果列表上拉没有加载更多数据的问题
+6: 修复部分情况下上滑结果列表没有加载更多数据的问题
 -->
 <html>
 <head>
@@ -432,7 +432,7 @@ table.datatype {
 <script>
 var h5gg_jquery_stub;
 if(typeof $ == 'undefined')
-    document.write('<script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js">');
+    document.write('<script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>');
 </script>
 
 <!--script>

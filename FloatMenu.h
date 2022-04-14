@@ -203,6 +203,7 @@ static NSHashTable* g_webViews = nil;
     if(self.usingCustomDialog)
         result = [ModalShow prompt:text defaultText:defaultText];
     else {
+        NSLog(@"prompt=%@", defaultText); //部分系统的defaultText参数无效????坑
         JSValue* r = [self.jscontext[@"h5gg_prompt"] callWithArguments:@[text,defaultText]];
         result = [r isNull] ? nil : [r toString];
     }
