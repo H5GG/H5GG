@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>H5全屏绘图</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style type="text/css">
+* {
+    /*默认文字颜色*/
+    color: #000;
+    font-size: 12px;
+    font-family: Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+}
+*:not(input,checkbox,textarea) {
+    /*禁止文本选择*/
+   -webkit-touch-callout: none;
+   -webkit-user-select: none;
+   user-select: none; /* Non-prefixed version, currently */
+}
+    
+html,body{
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    background-color: transparent;
+}
+
+.popup_container {
+    position:absolute;
+    z-index: 1000;
+    left:50%;
+    top:0;
+}
+
+#H5AlertView {
+    width:220px;
+    height:300px;
+    position:absolute;
+    left:-110px; top:130px;
+    text-align:center;
+    zoom:0.8;
+}
+
+#title-text{
+padding-top:0px;
+font-size:18px;
+color: #494949;
+}
+
+#info-text{
+padding:10px;
+color:#494949;
+}
+
+#content-view{
+z-index:0;
+background: #fff;
+position: relative;
+top: 0px;
+border: 1px solid #E8E8E8;
+border-radius:5px;
+padding: 10px;
+}
+
+button {
+    width: 100%;
+    height: 40px;
+    color: #fff;
+    background-color: #23B574;
+    display: inline-block;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    outline: none;
+    border: none;
+    border-radius: 3px;
+    padding: 0 8px;
+    margin: 5px 0;
+    font-size:15px;
+}
+
+button:active {
+    background-color: #007E40;
+    transform: translateY(2px);
+}
+
+</style>
+<script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+<script>
+if(typeof $ == 'undefined') alert("网络异常无法访问百度CDN!");
+
+//页面显示完毕事件
+$(document).ready(function(){
+    /*禁止文本选择和拖动*/
+    document.body.onselectstart = document.body.ondrag =function(){
+        return false;
+    }
+    //文本框等输入完毕后页面自动滚动到顶部
+    $("input").blur(function(){
+        window.scroll(0,0);
+    });
+    
+    //激活webkit的button:active
+    document.body.addEventListener('touchstart', function () {});
+    
+    
+    if(typeof h5gg != 'undefined') {
+    
+        //全屏显示
+        if(window.screen.availWidth < window.screen.availHeight)
+            setWindowRect(0, 0, window.screen.width, window.screen.height); //竖屏
+        else
+            setWindowRect(0, 0, window.screen.height, window.screen.width); //横屏
+       
+       //设置自定义的悬浮按钮图标点击动作
+       setButtonAction(function(){
+               
+            var menu = document.querySelector("#H5AlertView");
+            if(menu.style.display=='none') {
+                menu.style.display='block';
+                //隐藏菜单之后, 设置触控穿透悬浮窗口
+                setWindowTouch(true);
+            } else {
+                menu.style.display='none';
+                //显示菜单之后, 设置触控不可穿透悬浮窗口
+                setWindowTouch(false);
+            }
+        
+       });
+    }
+    
+    //获取画布
+    var canvas = document.querySelector("#cav");
+    //设置按照屏幕像素尺寸绘图(高清模式)
+    var scale = window.devicePixelRatio;
+    if(window.screen.availWidth < window.screen.availHeight) {
+        //竖屏模式
+        canvas.height = window.screen.height * scale;
+        canvas.width = window.screen.width * scale;
+    } else {
+        //横屏模式
+        canvas.width = window.screen.height * scale;
+        canvas.height = window.screen.width * scale;
+    }
+    
+    //添加圆角矩形功能
+    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+        if (w < 2 * r) r = w / 2;
+        if (h < 2 * r) r = h / 2;
+        this.beginPath();
+        this.moveTo(x+r, y);
+        this.arcTo(x+w, y, x+w, y+h, r);
+        this.arcTo(x+w, y+h, x, y+h, r);
+        this.arcTo(x, y+h, x, y, r);
+        this.arcTo(x, y, x+w, y, r);
+        this.closePath();
+        return this;
+    }
+    
+    //获取绘图
+    var ctx = canvas.getContext("2d", {
+        alpha: false,
+        desynchronized: false,
+    });
+    
+    
+    //演示数据:添加一些随机角色
+    var gRoles = [];
+    for(var i=0; i<10; i++) {
+        gRoles[i] = {
+            x:canvas.width*Math.random(),
+            y:canvas.height*(0.3+Math.random()/2),
+            dist: Math.max(0.5,Math.random()),
+            xt: Math.random()-0.5,
+            yt: Math.random()-0.5,
+            dt: (Math.random()-0.5)/200,
+        };
+    }
+    //演示数据:角色随机移动
+    setInterval(function(){
+        for(var i=0; i<10; i++) {
+            gRoles[i].x += gRoles[i].xt;
+            if(gRoles[i].x<0||gRoles[i].x>canvas.width) gRoles[i].xt*=-1;
+            gRoles[i].y += gRoles[i].yt;
+            if(gRoles[i].y<200||gRoles[i].y>canvas.height) gRoles[i].yt*=-1;
+            gRoles[i].dist += gRoles[i].dt;
+            if(gRoles[i].dist<0.5||gRoles[i].dist>2) gRoles[i].dt*=-1;
+        }
+    }, 1);
+    
+    
+    function startdraw()
+    {
+        //清理画布开始新一轮绘图
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+
+        if(window.draw_state==0) return;
+        
+        ctx.lineWidth=0;
+        ctx.fillStyle="#FFFF0080";
+        ctx.strokeStyle="#FFFF0080";
+        ctx.roundRect((canvas.width-200)/2, 30, 200, 60, 15).fill();
+        
+        ctx.textBaseline="top";
+        ctx.textAlign="center";
+        ctx.fillStyle="white";
+        ctx.font='60px "Arial, sans-serif"';
+        ctx.fillText("88", canvas.width/2,25);
+        
+        for(var i=0; i<gRoles.length; i++)
+        {
+            ctx.lineWidth=5; //线宽
+            ctx.strokeStyle="#2DEC00"; //颜色
+            var w = 100*gRoles[i].dist; var h=200*gRoles[i].dist; //长宽
+            ctx.strokeRect(gRoles[i].x, gRoles[i].y, w, h); //方框
+            
+            ctx.beginPath();
+            ctx.lineWidth=2; //线宽
+            ctx.strokeStyle="#2DEC00"; //颜色
+            ctx.moveTo((canvas.width)/2, 30+60); //起始点
+            ctx.lineTo(gRoles[i].x+w/2, gRoles[i].y); //结束点
+            ctx.stroke(); //射线
+        }
+        
+        //画个圆圈
+        ctx.beginPath();
+        ctx.lineWidth = 5; //线宽
+        ctx.strokeStyle = 'red'; //颜色
+        ctx.arc((canvas.width)/2, (canvas.height)/2, 300, 0, Math.PI * 2, false);
+        ctx.stroke();
+        
+        //计算FPS
+        if(!window.fpscount) window.fpscount=0;
+        if(!window.fpstime) window.fpstime=performance.now();
+        window.fpscount++;
+        if((performance.now()-window.fpstime)>2000)
+        {
+            window.fps = window.fpscount;
+            window.fpstime = performance.now();
+            window.fpscount = 0;
+        }
+        
+        ctx.fillStyle="red";
+        if(window.fps) ctx.fillText(window.fps, 80,30);
+    }
+    
+    //默认关闭绘图
+    window.draw_state = 1;
+    
+    //* 定时器绘图, 在JS线程, 不影响APP帧率, 不要使用requestAnimationFrame会导致APP卡顿
+    setInterval(function(){
+        startdraw();
+        
+    }, 30);//*/
+});
+                  
+</script>
+</head>
+<body>
+<!--全屏画板-->
+<canvas id="cav" width="100%" height="100%" style="width:100%;height:100%;"></canvas>
+
+<!--悬浮菜单-->
+<div class="popup_container">
+<div id="H5AlertView">
+<script>
+function anniu1() {
+    window.draw_state = 1;
+    alert("绘图开启");
+}
+
+function anniu2() {
+    window.draw_state = 0;
+    setTimeout(function(){alert("绘图关闭")},100);
+}
+
+function anniu3() {
+    var menu = document.querySelector("#H5AlertView");
+    menu.style.display='none';
+    
+    //隐藏菜单之后, 设置触控穿透悬浮窗口
+    setWindowTouch(false);
+}
+
+</script>
+<div id="content-view">
+<div id="title-text">H5全屏绘图</div>
+<div id="info-text">演示模式请点击按钮选择操作</div>
+<div>
+<button onclick="anniu1()">开启绘图</button>
+<button onclick="anniu2()">关闭绘图</button>
+<button onclick="anniu3()">隐藏菜单</button>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

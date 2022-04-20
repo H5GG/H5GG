@@ -18,6 +18,8 @@
 #include <map>
 #include <set>
 
+#include "name_for_tag.h"
+
 using namespace std;
 
 extern "C" kern_return_t mach_vm_region
@@ -252,20 +254,26 @@ class JJMemoryEngine
         mach_vm_size_t region_size=0;
         mach_vm_address_t region_base = range.start;
         
-        vm_region_basic_info_data_64_t info = {0};
-        mach_msg_type_number_t info_cnt = VM_REGION_BASIC_INFO_COUNT_64;
+//        vm_region_basic_info_data_64_t info = {0};
+//        mach_msg_type_number_t info_cnt = VM_REGION_BASIC_INFO_COUNT_64;
+//        vm_region_flavor_t flavor = VM_REGION_BASIC_INFO_64;
+        
+        vm_region_extended_info info={0};
+        mach_msg_type_number_t info_cnt = VM_REGION_EXTENDED_INFO_COUNT;
+        vm_region_flavor_t flavor = VM_REGION_EXTENDED_INFO;
         
         while(region_base < range.end) {
             region_base += region_size;
             kern_return_t kr = mach_vm_region(this->task, &region_base, &region_size,
-                                              VM_REGION_BASIC_INFO_64, (vm_region_info_t)&info, &info_cnt, &object_name);
+                                              flavor, (vm_region_info_t)&info, &info_cnt, &object_name);
             
             if(kr != KERN_SUCCESS) {
                 NSLog(@"mach_vm_region failed! %p", region_base);
                 break;
             }
             
-            NSLog(@"found region %p %x, %x %d", region_base, region_size, info.protection, info.reserved);
+            NSLog(@"found region %p %x, %x", region_base, region_size, info.protection);
+//            NSLog(@"tag=%s", name_for_tag(info.user_tag));
             
             uint64_t region_end = region_base+region_size;
             

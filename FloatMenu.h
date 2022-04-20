@@ -20,6 +20,9 @@ static NSHashTable* g_webViews = nil;
 @interface FloatMenu : UIWebView <UIWebViewDelegate>
 @property NSTimer* frontTimer;
 
+@property BOOL touchableAll;
+@property CGRect touchableRect;
+
 @property CGRect dragableRect;
 @property CGPoint startLocation;
 
@@ -46,11 +49,13 @@ static NSHashTable* g_webViews = nil;
                    
     self = [super initWithFrame:frame];
     if (self) {
+        [g_webViews addObject:self];
+        NSLog(@"add g_webViews=%@", self);
+        
         float version = [UIDevice currentDevice].systemVersion.floatValue;
         self.usingCustomDialog = version>13.0 && version<13.4;
         
-        [g_webViews addObject:self];
-        NSLog(@"add g_webViews=%@", self);
+        self.touchableAll = YES;
         
         //self.alpha = 0.85; //整体透明度
         //self.hidden = YES; //默认不显示
@@ -59,6 +64,16 @@ static NSHashTable* g_webViews = nil;
         self.opaque = NO;
         self.backgroundColor=[UIColor clearColor];
         self.userInteractionEnabled = YES;
+        
+        //优化UIWebView显示性能
+        [self performSelector:@selector(_setDrawInWebThread:) withObject:@YES];
+        
+//        [self performSelector:@selector(_setDrawsCheckeredPattern:) withObject:@YES]; //这个为啥会导致ipad上位置尺寸不对???
+//        
+//        id webDocumentView = [self performSelector:@selector(_browserView)]; //UIWebBrowserView
+//        id backingWebView = [webDocumentView performSelector:@selector(webView)]; //WebView: WAK
+//        NSLog(@"webview=%@\n%@", webDocumentView, backingWebView);
+        //[backingWebView performSelector:@selector(_setWebGLEnabled:) withObject:@YES];
         
         UIPanGestureRecognizer *drag=[[UIPanGestureRecognizer alloc]initWithTarget:self action:@selector(dragMe:)];
         [self addGestureRecognizer:drag];
@@ -101,6 +116,14 @@ static NSHashTable* g_webViews = nil;
         self.actions = [[NSMutableDictionary alloc] init];
     }
     return self;
+}
+
+- (BOOL)pointInside:(CGPoint)point withEvent:(nullable UIEvent *)event;
+{
+    if(self.touchableAll || CGRectContainsPoint(self.touchableRect, point))
+        return [super pointInside:point withEvent:event];
+    else
+        return NO;
 }
 
 //-(void)setHidden:(BOOL)hidden

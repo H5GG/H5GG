@@ -115,10 +115,20 @@ H5GG v5.6 测试:
 6: 修复部分情况下上滑结果列表没有加载更多数据的问题
 
 H5GG v5.7 测试:
-1: 修复拖动悬浮窗口到屏幕边缘的时候尺寸自动改变的问题
+1: 修复拖动悬浮窗口到屏幕边缘的时候尺寸自动缩小的问题
 2: 增加顶部可拖动悬浮窗的区域尺寸, 横屏模式更易拖动
-3: 悬浮窗改为默认不透明, 调节透明度使用 body{background-color: rgba(255,255,255,0.8)}
-4: 优化悬浮窗口区域外可以触摸操作原先的APP界面
+3: 优化悬浮窗口区域外可以触摸操作原先的APP界面
+4: 悬浮窗改为默认不透明,调节透明度使用 body{background-color: rgba(255,255,255,0.8)}
+5: 新增js接口setWindowTouch, 可以设置悬浮窗口的触控穿透, 用于全屏绘图
+7: 新增js接口setButtonAction, 可以设置自定义的悬浮按钮点击动作
+8: 优化部分js接口(非h5gg引擎), 统一命名, 暂时旧版兼容
+
+H5GG v5.8 测试:
+1: 修复全屏绘图模式下ipad无法触控操作卡屏的问题
+2: 新增js接口setButtonImage, 可以设置悬浮按钮的图标
+3: 新增js接口setWindowVisible, 可以设置悬浮窗口的显示或隐藏
+4: 优化H5底层图形引擎, 增强图形引擎运行效率和性能
+
 -->
 <html>
 <head>
@@ -443,7 +453,7 @@ if(typeof $ == 'undefined')
 </script>
 
 <!--script>
-***************** H5GGv5.2 ** JS脚本引擎 *******************
+***************** H5GGv5.8 ** JS脚本引擎 *******************
 h5gg是引擎对象, 可以调用如下函数(类似安卓gg的lua接口,但是参数有些区别)
 
 h5gg.setFloatTolerance('浮点偏差'); //设置F32/F64浮点搜索的偏差范围, 引擎默认是0.0
@@ -464,10 +474,19 @@ h5gg.getProcList('进程名'); //获取进程数组, 数组中的元素有pid(�
     (若不传入进程名, 则返回所有运行中的app进程列表, 可以定时循环调用确定目标进程是否已经结束)
 
 其他接口:
-closeMenu(); //隐藏悬浮窗口
-setFloatButton(http或https网址); //从网址链接加载并替换悬浮按钮图标
-setFloatWindow(x, y, 高度, 宽度); //修改悬浮在屏幕中窗口位置和尺寸
-setWindowDrag(x, y, 高度, 宽度); //设置H5页面中可拖动悬浮窗的区域
+setButtonImage(图标); //设置悬浮按钮图标, 可以传入http开头网址图片或base64编码的DataURL图片
+setButtonAction(js回调函数); //设置自定义的悬浮按钮图标点击动作, 传入一个js函数点击时被调用
+
+setWindowRect(x, y, 宽度, 高度); //修改悬浮在屏幕中窗口位置和尺寸
+setWindowDrag(x, y, 宽度, 高度); //设置H5页面中可拖动悬浮窗的区域
+setWindowTouch(是否响应触控); //true=整个悬浮窗口触摸不可穿透, false=整个悬浮窗口触摸可以穿透
+setWindowTouch(x, y, 宽度, 高度); //单独设置H5页面中可触控操作的区域, 区域外触控可以穿透
+setWindowVisible(是否显示), //设置悬浮窗口的可见性, true=显示, false=隐藏
+
+已废弃接口(目前版本调用无效果, 将来版本调用可能报错):
+closeMenu
+setFloatButton
+setFloatWindow
 
 注意:
 1: 地址参数支持十进制或0x开头十六进制格式自动识别, 其他参数必须是字符串格式
@@ -477,13 +496,15 @@ setWindowDrag(x, y, 高度, 宽度); //设置H5页面中可拖动悬浮窗的区
     (不像lua中会自动将+号两边的字符串类型转换成数字类型, js中+号如果是字符串就会连接两个字符串)
 5: 数字类型可以用x.toString(16)转换成十六进制字符串格式, 但是x一定要是数字类型才能转成功
 6: 搜索的数值支持范围格式, 比如"50~100", 比如"2.3~7.8", 数值搜索和邻近(联合)搜索都支持
-5: 悬浮窗默认尺寸为宽380点,高400点, 可在H5页面开始通过js接口设置位置和尺寸以及可拖动区域
+5: 悬浮窗默认尺寸为370x370, 可在H5页面启动时通过js接口设置位置和尺寸以及可拖动区域
+
 </script>
 <!---->
 <script>
     
 if(typeof $ == 'undefined')
-    while(1) alert("网络连接失败, 请重新启动!");
+    //while(1)
+        alert("网络连接失败, 请重新启动!");
     
 //根据选择的有符号/无符号数确定搜索类型
 function h5ggType(type)
@@ -518,11 +539,7 @@ $(document).ready(function(){
     //激活webkit的button:active
     document.body.addEventListener('touchstart', function () {});
     
-    //设置菜单体高度 = 页面总高 - 标题高度
-    $("#bodyView").height(document.body.offsetHeight - $('#titleBar')[0].offsetHeight);
-    $("#listdiv").html($("#listdiv").html()); //刷新一下内容, 否则这个高度不会自动更新
-    
-        //绑定菜单点击切换子页面
+    //绑定菜单点击切换子页面
     $("div.menubox").unbind('click').click(function(){
         $("div.menubox").removeClass("current");
         $("div.menuview").removeClass("current");
@@ -531,7 +548,6 @@ $(document).ready(function(){
         var menuid = $(this).attr("menu");
         $("div#"+menuid).addClass("current");
     });
-
     
     //点击结果列表里面的地址时弹出修改窗口
     $("table#resultList").on('click','tr', function()
@@ -579,6 +595,13 @@ $(document).ready(function(){
         //设置标题栏区域可拖动悬浮窗
         setWindowDrag(0, 0, 400, 80);
         
+        //竖屏模式加大显示高度
+        if(window.screen.availHeight>window.screen.availWidth) {
+            var x = (window.screen.width-370)/2;
+            var y = (window.screen.height-600)/2;
+            setFloatWindow(x,y,370,600);
+        }
+        
         if(h5gg.getProcList()) { //不为空(null)说明是具有跨进程权限
             refreshProcList();
             $("#procname").text('');
@@ -612,8 +635,13 @@ $(document).ready(function(){
             }
             
         }, 1500);
-        
     }
+    
+    
+    //设置菜单体高度 = 页面总高 - 标题高度
+    $("#bodyView").height(document.body.offsetHeight - $('#titleBar')[0].offsetHeight);
+    $("#listdiv").html($("#listdiv").html()); //刷新一下内容, 否则这个高度不会自动更新
+    
 });
 
 function refreshProcList()
@@ -899,17 +927,17 @@ function onClickSearchNearby()
 <body bgcolor="#E8E8E8" style="margin:0;">
 <!--标题栏-->
 <div id="titleBar" style="background-color:#D1D1D1; padding:5px; margin:0px;">
-&nbsp;<font style="color:green">H5</font> <font style="color:red">GG</font>&nbsp;v5.7
+&nbsp;<font style="color:green">H5</font> <font style="color:red">GG</font>&nbsp;v5.8
 <span id="crossproc">
 <font style="color:blue">&nbsp;跨进程&nbsp;</font><font id="procname">procname</font>
 </span>
     
-<div style="float:right; font-size:16px; font-family: Arial, sans-serif;" onclick="closeMenu()">&nbsp;X&nbsp;</div>
+<div style="float:right; font-size:16px; font-family: Arial, sans-serif;" onclick="setWindowVisible(false)">&nbsp;X&nbsp;</div>
 </div>
 <!--用一个表格来布局左右两栏-->
 <table id="bodyView" width="100%" style="table-layout:fixed">
 <tr>
-<td style="vertical-align:top;width:140px;border-right:solid 2px #D1D1D1;">
+<td style="vertical-align:top;width:135px;border-right:solid 2px #D1D1D1;">
 <div>
 搜索下限:<input id="range_min" style="width:85px" value="0x00000000" />
 <br/>
@@ -928,9 +956,9 @@ function onClickSearchNearby()
 <button onclick="onShowLoadScript(true)">加载脚本</button>
 <button onclick="h5gg.make()">制作插件</button>
 <br/>
-邻近范围:<input id="nearby_range" style="width:80px"  value="0x100"/>
+邻近范围:<input id="nearby_range" style="width:82px"  value="0x100"/>
 <br/>
-浮点误差:<input id="float_tolerance" style="width:80px" value="0.0"/>
+浮点误差:<input id="float_tolerance" style="width:82px" value="0.0"/>
 <br/>
 <p id="results_count" style="display:none">共找到<span>0</span>条结果</p>
 </div>

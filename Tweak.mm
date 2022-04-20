@@ -4,6 +4,7 @@
 #import <pthread.h>
 #include <dlfcn.h>
 #import <SystemConfiguration/SystemConfiguration.h>
+#include <JavaScriptCore/JSTypedArray.h>
 
 //忽略一些警告
 #pragma GCC diagnostic ignored "-Warc-retain-cycles"
@@ -14,10 +15,6 @@
 #pragma GCC diagnostic ignored "-W#warnings"
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #pragma GCC diagnostic ignored "-Wformat"
-
-extern "C" {
-int memorystatus_control(uint32_t command, pid_t pid, uint32_t flags, void *buffer, size_t buffersize);
-}
 
 
 //引入悬浮按钮头文件
@@ -84,87 +81,14 @@ NSString* makeDYLIB(NSString* iconfile, NSString* htmlurl)
     return [NSString stringWithFormat:@"制作成功!\n\n专属H5GG.dylib已生成在当前App的Documents数据目录:\n\n%@/Documents/H5GG.dylib", NSHomeDirectory()];
 }
 
-
-#import <sys/sysctl.h>
-NSArray* getRunningProcess()
-{
-    //指定名字参数，按照顺序第一个元素指定本请求定向到内核的哪个子系统，第二个及其后元素依次细化指定该系统的某个部分。
-    //CTL_KERN，KERN_PROC,KERN_PROC_ALL 正在运行的所有进程
-    int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_ALL ,0};
-    
-    size_t miblen = 4;
-    //值-结果参数：函数被调用时，size指向的值指定该缓冲区的大小；函数返回时，该值给出内核存放在该缓冲区中的数据量
-    //如果这个缓冲不够大，函数就返回ENOMEM错误
-    size_t size;
-    //返回0，成功；返回-1，失败
-    int st = sysctl(mib, miblen, NULL, &size, NULL, 0);
-    NSLog(@"allproc=%d, %s", st, strerror(errno));
-    
-    struct kinfo_proc * process = NULL;
-    struct kinfo_proc * newprocess = NULL;
-    do
-    {
-        size += size / 10;
-        newprocess = (struct kinfo_proc *)realloc(process, size);
-        if (!newprocess)
-        {
-            if (process)
-            {
-                free(process);
-                process = NULL;
-            }
-            return nil;
-        }
-        
-        process = newprocess;
-        st = sysctl(mib, miblen, process, &size, NULL, 0);
-        NSLog(@"allproc=%d, %s", st, strerror(errno));
-    } while (st == -1 && errno == ENOMEM);
-    
-    if (st == 0)
-    {
-        if (size % sizeof(struct kinfo_proc) == 0)
-        {
-            int nprocess = size / sizeof(struct kinfo_proc);
-            if (nprocess)
-            {
-                NSMutableArray * array = [[NSMutableArray alloc] init];
-                for (int i = nprocess - 1; i >= 0; i--)
-                {
-                    [array addObject:@{
-                        @"pid": [NSNumber numberWithInt:process[i].kp_proc.p_pid],
-                        @"name": [NSString stringWithUTF8String:process[i].kp_proc.p_comm]
-                    }];
-                }
-                
-                free(process);
-                process = NULL;
-                NSLog(@"allproc=%d, %@", array.count, array);
-                return array;
-            }
-        }
-    }
-    
-    return nil;
-}
-
-pid_t pid_for_name(const char* name)
-{
-    NSArray* allproc = getRunningProcess();
-    for(NSDictionary* proc in allproc)
-    {
-        if([[proc valueForKey:@"name"] isEqualToString:[NSString stringWithUTF8String:name]])
-            return [[proc valueForKey:@"pid"] intValue];
-    }
-    return 0;
-}
-
-
 //定义悬浮按钮和悬浮菜单全局变量, 防止被自动释放
 UIWindow* floatWindow=NULL;
 FloatButton* floatBtn=NULL;
 FloatMenu* floatH5=NULL;
 h5ggEngine* h5gg = NULL;
+
+JSValue* gButtonAction=NULL;
+NSThread* gWebThread=NULL;
 
 @interface FloatWindow : UIWindow
 @end
@@ -264,47 +188,41 @@ UIWindow* makeWindow()
     return w;
 }
 
-void initFloatMenu()
+
+
+extern "C" {
+CGContextRef m_cgContext=0;
+IOSurfaceRef gCanvasSurface=0;
+}
+
+void initFloatWindow()
 {
     //获取窗口
     floatWindow = makeWindow();
     floatWindow.windowLevel = UIWindowLevelAlert - 1;
     floatWindow.rootViewController = [[FloatController alloc] init];
-    
-    //第一次makeKeyAndVisible的时候会自动添加一个全屏的UITransitionView=rootViewController.view
-//    FloatController_lastKeyWindow = [UIApplication sharedApplication].keyWindow;
-//    [floatWindow makeKeyAndVisible];
-//    for(int i=0;i<floatWindow.subviews.count;i++)
-//        [floatWindow.subviews[i] setHidden:YES];
-//    [FloatController_lastKeyWindow makeKeyWindow];
-//    FloatController_lastKeyWindow = nil;
-    
+        
     //创建悬浮菜单, 设置位置=居中  尺寸=380宽x屏幕高(最大400)
-    CGRect MenuRect = CGRectMake(0, 0, 380, floatWindow.frame.size.height);
-    if(MenuRect.size.height>600) MenuRect.size.height = 600;
+    CGRect MenuRect = CGRectMake(0, 0, 370, 370);
     MenuRect.origin.x = (floatWindow.frame.size.width-MenuRect.size.width)/2;
     MenuRect.origin.y = (floatWindow.frame.size.height-MenuRect.size.height)/2;
     
     floatH5 = [[FloatMenu alloc] initWithFrame:MenuRect];
-    
-    if([[[NSBundle mainBundle] bundlePath] hasPrefix:@"/Applications/"])
-        floatH5.alpha = 0.9;
-    
+        
     //创建并初始化h5gg内存搜索引擎
     h5gg = [[h5ggEngine alloc] init];
     //将h5gg内存搜索引擎添加到H5的JS环境中以便JS可以调用
     [floatH5 setAction:@"h5gg" callback:h5gg];
     
-    //给H5菜单添加一个JS函数closeMenu用于点击X时隐藏菜单
-    [floatH5 setAction:@"closeMenu" callback:^(void) {
-        //通过主线程执行下面的代码
-        dispatch_async(dispatch_get_main_queue(), ^{
-            void toggleWindow();toggleWindow();
-        });
-    }];
+    //隐藏悬浮菜单, 已废弃, 保持旧版API兼容
+    [floatH5 setAction:@"closeMenu" callback:^{}];
+    //设置网络图标, 已废弃, 保持旧版API兼容
+    [floatH5 setAction:@"setFloatButton" callback:^{}];
+    //设置悬浮窗位置尺寸, 已废弃, 保持旧版API兼容性
+    [floatH5 setAction:@"setFloatWindow" callback:^{}];
     
-    //给H5菜单添加一个JS函数setFloatButton用于设置网络图标
-    [floatH5 setAction:@"setFloatButton" callback:^(NSString* url) {
+    //给H5菜单添加一个JS函数setButtonImage用于设置网络图标
+    [floatH5 setAction:@"setButtonImage" callback:^(NSString* url) {
         NSURL* imageUrl = [NSURL URLWithString:url];
         NSData* data = [NSData dataWithContentsOfURL:imageUrl];
         NSLog(@"setFloatButton=%@", data);
@@ -315,24 +233,49 @@ void initFloatMenu()
         return data?YES:NO;
     }];
     
+    [floatH5 setAction:@"setButtonAction" callback:^(JSValue* callback) {
+        gButtonAction = callback;
+        gWebThread = [NSThread currentThread];
+    }];
+    
     //给H5菜单添加一个JS函数setFloatWindow用于设置悬浮窗位置尺寸
-    [floatH5 setAction:@"setFloatWindow" callback:^(int x, int y, int h, int w) {
+    [floatH5 setAction:@"setWindowRect" callback:^(int x, int y, int w, int h) {
         //通过主线程执行下面的代码
         dispatch_async(dispatch_get_main_queue(), ^{
-            floatH5.frame = CGRectMake(x,y,h,w);
+            floatH5.frame = CGRectMake(x,y,w,h);
         });
     }];
     
-    [floatH5 setAction:@"setWindowDrag" callback:^(int x, int y, int h, int w) {
+    [floatH5 setAction:@"setWindowDrag" callback:^(int x, int y, int w, int h) {
         //通过主线程执行下面的代码
         dispatch_async(dispatch_get_main_queue(), ^{
-            [floatH5 setDragRect: CGRectMake(x,y,h,w)];
+            [floatH5 setDragRect: CGRectMake(x,y,w,h)];
         });
     }];
+    
+    [floatH5 setAction:@"setWindowTouch" callback:^(int x, int y, int w, int h) {
+        NSLog(@"setWindowTouch %d %d %d %d", x, y, w, h);
+        if((y==0&&w==0&&h==0) && (x==0||x==1)) {
+            floatH5.touchableAll = x==1;
+            floatH5.touchableRect = CGRectZero;
+        } else {
+            floatH5.touchableAll = NO;
+            floatH5.touchableRect = CGRectMake(x,y,w,h);
+        }
+    }];
+     
+     [floatH5 setAction:@"setWindowVisible" callback:^(bool visible) {
+         NSLog(@"setWindowVisible=%d", visible);
+        //通过主线程执行下面的代码
+        dispatch_async(dispatch_get_main_queue(), ^{
+            void showFloatWindow(bool show);
+            showFloatWindow(visible);
+        });
+    }];
+    
     
     /* 三种加载方式任选其一 */
-    
-    
+
     NSString* htmlstub = [NSString stringWithUTF8String:(char*)gH5MENU_STUB_FILEData];
     NSLog(@"html stub hash=%p", [htmlstub hash]);
     
@@ -361,50 +304,46 @@ void initFloatMenu()
 }
 
 
-void toggleWindow2();
-void toggleWindow()
+void showFloatWindowContinue(bool show);
+void showFloatWindow(bool show)
 {
-    if(floatWindow) {
-        toggleWindow2();
-        return;
-    }
-    
-    SCNetworkReachabilityFlags flags;
-    SCNetworkReachabilityRef reachability = SCNetworkReachabilityCreateWithName(NULL, "www.baidu.com");
-    if(!SCNetworkReachabilityGetFlags(reachability, &flags) || (flags & kSCNetworkReachabilityFlagsReachable)==0)
+    if(!floatWindow)
     {
-        NSString* tips = @"H5GG可能无法正确加载!";
-        if([[[NSBundle mainBundle] bundlePath] hasPrefix:@"/Applications/"])
-            tips = @"请尝试使用以下越狱插件修复联网权限:\n\n<连个锤子>\n\n<FixNets>\n\n<NetworkManage>\n";
-        
-        [TopShow present:^{
-            UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"没有网络" message:tips preferredStyle:UIAlertControllerStyleAlert];
+        SCNetworkReachabilityFlags flags;
+        SCNetworkReachabilityRef reachability = SCNetworkReachabilityCreateWithName(NULL, "www.baidu.com");
+        if(!SCNetworkReachabilityGetFlags(reachability, &flags) || (flags & kSCNetworkReachabilityFlagsReachable)==0)
+        {
+            NSString* tips = @"H5GG可能无法正确加载!";
+            if([[[NSBundle mainBundle] bundlePath] hasPrefix:@"/Applications/"])
+                tips = @"请尝试使用以下越狱插件修复联网权限:\n\n<连个锤子>\n\n<FixNets>\n\n<NetworkManage>\n";
+            
+            [TopShow present:^{
+                UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"没有网络" message:tips preferredStyle:UIAlertControllerStyleAlert];
 
-            [alert addAction:[UIAlertAction actionWithTitle:@"继续启动" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
-                [TopShow dismiss];
-                
-                toggleWindow2();
-            }]];
-            return alert;
-        }];
-        
-        return;
+                [alert addAction:[UIAlertAction actionWithTitle:@"继续启动" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+                    [TopShow dismiss];
+                    
+                    showFloatWindowContinue(show);
+                }]];
+                return alert;
+            }];
+            
+            return;
+        }
+        CFRelease(reachability);
     }
-    CFRelease(reachability);
     
-    toggleWindow2();
+    showFloatWindowContinue(show);
 }
 
-void toggleWindow2()
+void showFloatWindowContinue(bool show)
 {
-    //第一次点击图标时再加载H5菜单,防止部分APP不兼容H5导致闪退卡死
     if(!floatWindow) {
-        initFloatMenu();
+        initFloatWindow();
     }
     
-    if(!floatWindow) return;
-    
-    if(floatWindow.isHidden) {
+    if(show)
+    {
         FloatController_lastKeyWindow = [UIApplication sharedApplication].keyWindow;
         
         [floatWindow makeKeyAndVisible];
@@ -416,8 +355,16 @@ void toggleWindow2()
          dispatch_once(&predicate, ^{
              //因为在makeKeyAndVisible之前就addSubView了, 所以需要加view移到前台才有响应
              [floatWindow bringSubviewToFront:floatH5];
+             //第一次如果悬浮窗口全屏会遮挡按钮无响应, 重置一次前台
+             [floatWindow bringSubviewToFront:floatBtn];
              
-             [floatWindow.rootViewController.view setHidden:YES];
+             //移除vc自动创建的全屏view (ipad模式还会有多层superview)
+             UIView* superview = floatWindow.rootViewController.view;
+             while(superview && superview!=floatWindow)
+             {
+                 [superview setHidden:YES];
+                 superview = superview.superview;
+             }
              
 
 //             floatWindow.clipsToBounds = TRUE;
@@ -430,16 +377,16 @@ void toggleWindow2()
              
          });
     } else {
-        [floatWindow setHidden:YES];
-        [FloatController_lastKeyWindow makeKeyAndVisible];
         [FloatController_lastKeyWindow addSubview:floatBtn];
+        [FloatController_lastKeyWindow makeKeyAndVisible];
+        [floatWindow setHidden:YES];
         floatBtn.keepFront = YES;
         
         FloatController_lastKeyWindow = nil;
     }
 }
 
-void loadFloatButtonAndMenu()
+void initFloatButton()
 {
     //获取窗口
     UIWindow *window = [UIApplication sharedApplication].keyWindow;
@@ -473,7 +420,15 @@ void loadFloatButtonAndMenu()
     
     //设置悬浮按钮点击处理, 点击时反转显示隐藏的状态
     [floatBtn setAction:^(void) {
-        toggleWindow();
+        if(gButtonAction) {
+            [h5gg performSelector:@selector(threadcall:) onThread:gWebThread withObject:^{
+                [gButtonAction callWithArguments:nil];
+            } waitUntilDone:NO];
+        } else {
+            bool show = floatWindow ? floatWindow.isHidden : YES;
+            NSLog(@"ButtonShowWindow=%d", show);
+            showFloatWindow(show);
+        }
     }];
     
     //将悬浮按钮添加到窗口上
@@ -495,19 +450,25 @@ void* thread_running(void* arg)
         }
         
         NSString* app_package = [[NSBundle mainBundle] bundleIdentifier];
-        if(app_package.hash == 0xccca3dc699edf771) {
+        NSString* htmlstub = [NSString stringWithUTF8String:(char*)gH5MENU_STUB_FILEData];
+        if(app_package.hash==0xccca3dc699edf771 && [htmlstub hash]==0xc25ce928da0ca2de) {
             [TopShow alert:@"风险提示!" message:@"建议卸载当前deb, 使用H5GG跨进程版!"];
         }
         
         //加载悬浮按钮和悬浮窗口
-        loadFloatButtonAndMenu();
+        initFloatButton();
         
+        //三方app中第一次点击图标时再加载H5菜单,防止部分APP不兼容H5导致闪退卡死
         if([[[NSBundle mainBundle] bundlePath] hasPrefix:@"/Applications/"])
-            toggleWindow();
+            showFloatWindow(true);
         
     });
     
     return 0;
+}
+
+extern "C" {
+int memorystatus_control(uint32_t command, pid_t pid, uint32_t flags, void *buffer, size_t buffersize);
 }
 
 //初始化函数, 插件加载后系统自动调用
@@ -568,6 +529,7 @@ static void __attribute__((constructor)) _init_()
         /* Set active memory limit = inactive memory limit, both fatal    */
         #define MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT          6
         //memorystatus_control(MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT, getpid (), 256, NULL, 0); //the other way
+        
     }
 }
 
