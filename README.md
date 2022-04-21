@@ -28,7 +28,7 @@ it's completely free & open source!
 
 currently supported JS APIs:
 
-**************** H5GGv5.2 ** JS script engine ********************
+**************** H5GGv5.9 ** JS script engine ********************
 
 h5gg is the engine object, which can call the following functions (similar to the lua interface of Android gg, but the parameters are somewhat different)
 
@@ -66,14 +66,14 @@ h5gg.getProcList('process name'); //Get the process array, the elements in the a
 
 Other APIs:
 
-closeMenu(); //Hide the floating window
+setButtonImage(icon); //Set the icon of the floating button, you can pass in the http starting URL image or the base64 encoded DataURL image
+setButtonAction(js callback function); //Set a custom floating button icon click action, which is called when a js function is passed in to click
 
-setFloatButton(http or https URL); //Load from URL link and replace floating button icon
-
-setFloatWindow(x, y, height, width); //Modify the position and size of the window suspended on the screen
-
-setWindowDrag(x, y, height, width); //Set the area of the draggable floating window in the H5 page
-
+setWindowRect(x, y, width, height); //Modify the position and size of the window suspended on the screen
+setWindowDrag(x, y, width, height); //Set the area of the draggable floating window in the H5 page
+setWindowTouch (whether to respond to touch); //true=the entire floating window is impenetrable by touch, false=the entire floating window can be touched by touch
+setWindowTouch(x, y, width, height); //Set the touch-operable area in the H5 page separately, and touch outside the area can penetrate
+setWindowVisible (whether to display), //Set the visibility of the floating window, true=display, false=hidden
  
 Notice:
 
@@ -91,6 +91,6 @@ Notice:
 
 6: The numerical value of the search supports the range format, such as "50～100", such as "2.3～7.8", both numerical search and adjacent (joint) search are supported
 
-5: The default size of the floating window is 380 points wide and 400 points high. You can set the position, size and draggable area through the js interface on the H5 page.
+5: The default size of the floating window is 370 points wide and 370 points high. You can set the position, size and draggable area through the js interface on the H5 page.
 
 
