@@ -67,13 +67,19 @@ h5gg.getProcList('process name'); //Get the process array, the elements in the a
 Other APIs:
 
 setButtonImage(icon); //Set the icon of the floating button, you can pass in the http starting URL image or the base64 encoded DataURL image
+
 setButtonAction(js callback function); //Set a custom floating button icon click action, which is called when a js function is passed in to click
 
 setWindowRect(x, y, width, height); //Modify the position and size of the window suspended on the screen
+
 setWindowDrag(x, y, width, height); //Set the area of the draggable floating window in the H5 page
+
 setWindowTouch (whether to respond to touch); //true=the entire floating window is impenetrable by touch, false=the entire floating window can be touched by touch
+
 setWindowTouch(x, y, width, height); //Set the touch-operable area in the H5 page separately, and touch outside the area can penetrate
+
 setWindowVisible (whether to display), //Set the visibility of the floating window, true=display, false=hidden
+
  
 Notice:
 
