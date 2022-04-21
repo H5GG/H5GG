@@ -129,6 +129,14 @@ H5GG v5.8 测试:
 3: 新增js接口setWindowVisible, 可以设置悬浮窗口的显示或隐藏
 4: 优化H5底层图形引擎, 增强图形引擎运行效率和性能
 
+H5GG v5.9 测试:
+1: 修复跨进程版中窗口显示尺寸不正确的问题
+2: 修复超大范围搜索可能报错内存不足的问题
+3: 降低搜索过程的内存占用, 更加流畅稳定
+4: 邻近搜索的临近范围限制为2~4096之间
+5: 新增横竖屏切换自动调整悬浮窗布局位置
+6: 修复ipad分屏模式下看不到悬浮窗口的问题
+7: 修复点击搜索结果无法弹出修改弹框的问题
 -->
 <html>
 <head>
@@ -483,10 +491,7 @@ setWindowTouch(是否响应触控); //true=整个悬浮窗口触摸不可穿透,
 setWindowTouch(x, y, 宽度, 高度); //单独设置H5页面中可触控操作的区域, 区域外触控可以穿透
 setWindowVisible(是否显示), //设置悬浮窗口的可见性, true=显示, false=隐藏
 
-已废弃接口(目前版本调用无效果, 将来版本调用可能报错):
-closeMenu
-setFloatButton
-setFloatWindow
+已废弃接口(目前版本调用无效果, 将来版本调用可能报错): closeMenu,setFloatButton,setFloatWindow
 
 注意:
 1: 地址参数支持十进制或0x开头十六进制格式自动识别, 其他参数必须是字符串格式
@@ -549,31 +554,6 @@ $(document).ready(function(){
         $("div#"+menuid).addClass("current");
     });
     
-    //点击结果列表里面的地址时弹出修改窗口
-    $("table#resultList").on('click','tr', function()
-    {
-        $("table#resultList tr").removeClass("hilight");
-        $(this).addClass("hilight");
-        
-        var address = $(this).attr("address");
-        var datatype = $(this).attr("datatype");
-        var datavalue = $(this).attr("datavalue");
-        
-        //读取该地址最新数据
-        if(typeof h5gg!='undefined')
-            datavalue = h5gg.getValue(address, h5ggType(datatype));
-        
-        showPopView("修改", function(type, value){
-            
-            if(!h5gg.setValue(address, value, h5ggType(type))) {
-                alert("修改失败,可能地址已失效!");
-            }
-            
-            onClickRefreshResults();
-            
-        }, datatype, datavalue);
-    });
-    
     $("#datavalue").focus(function(){
         var input = $(this);
         input.attr("type","number");
@@ -595,11 +575,27 @@ $(document).ready(function(){
         //设置标题栏区域可拖动悬浮窗
         setWindowDrag(0, 0, 400, 80);
         
-        //竖屏模式加大显示高度
-        if(window.screen.availHeight>window.screen.availWidth) {
-            var x = (window.screen.width-370)/2;
-            var y = (window.screen.height-600)/2;
-            setFloatWindow(x,y,370,600);
+        //布局调整函数
+        var layout = function() {
+            //window.screen中的宽高不会随着屏幕旋转更新(只会在初始化的时候固定)
+            if(Math.abs(window.orientation)==90) {
+                var x = (window.screen.height-370)/2;
+                var y = (window.screen.width-370)/2;
+                setWindowRect(x,y,370,370);
+            } else {
+                //竖屏模式加大显示高度
+                var x = (window.screen.width-370)/2;
+                var y = (window.screen.height-600)/2;
+                setWindowRect(x,y,370,600);
+            }
+        }
+        
+        if(navigator.userAgent.toString().indexOf("iPad")>0) {
+            //如果是ipad直接显示在左边, 防止分屏切换导致看不到悬浮窗口
+            setWindowRect(0,100,370,600);
+        } else {
+            layout();
+            window.addEventListener("orientationchange", layout, false);
         }
         
         if(h5gg.getProcList()) { //不为空(null)说明是具有跨进程权限
@@ -642,6 +638,30 @@ $(document).ready(function(){
     $("#bodyView").height(document.body.offsetHeight - $('#titleBar')[0].offsetHeight);
     $("#listdiv").html($("#listdiv").html()); //刷新一下内容, 否则这个高度不会自动更新
     
+    //点击结果列表里面的地址时弹出修改窗口, 要在listdiv刷新html之后绑定
+    $("table#resultList").on('click','tr', function()
+    {
+        $("table#resultList tr").removeClass("hilight");
+        $(this).addClass("hilight");
+        
+        var address = $(this).attr("address");
+        var datatype = $(this).attr("datatype");
+        var datavalue = $(this).attr("datavalue");
+        
+        //读取该地址最新数据
+        if(typeof h5gg!='undefined')
+            datavalue = h5gg.getValue(address, h5ggType(datatype));
+        
+        showPopView("修改", function(type, value){
+            
+            if(!h5gg.setValue(address, value, h5ggType(type))) {
+                alert("修改失败,可能地址已失效!");
+            }
+            
+            onClickRefreshResults();
+            
+        }, datatype, datavalue);
+    });
 });
 
 function refreshProcList()
@@ -927,7 +947,7 @@ function onClickSearchNearby()
 <body bgcolor="#E8E8E8" style="margin:0;">
 <!--标题栏-->
 <div id="titleBar" style="background-color:#D1D1D1; padding:5px; margin:0px;">
-&nbsp;<font style="color:green">H5</font> <font style="color:red">GG</font>&nbsp;v5.8
+&nbsp;<font style="color:green">H5</font> <font style="color:red">GG</font>&nbsp;v5.9
 <span id="crossproc">
 <font style="color:blue">&nbsp;跨进程&nbsp;</font><font id="procname">procname</font>
 </span>

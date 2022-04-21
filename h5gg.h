@@ -509,6 +509,11 @@ JSExportAs(getResults, -(NSArray*)getResults:(int)maxCount param1:(int)skipCount
         return;
     }
     
+    if(searchRange<2 || searchRange>4096) {
+        [floatH5 alert:@"邻近范围只能在2~4096之间"];
+        return;
+    }
+    
     if(self.engine->getResultsCount()==0) {
         [floatH5 alert:@"临近搜索错误: 当前列表为空, 请清除后再重新开始搜索"];
         return;

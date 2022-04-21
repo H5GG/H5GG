@@ -13,12 +13,13 @@
 #include <mach/mach.h>
 #include <sys/mman.h>
 #include <stdio.h>
-
+#include <unordered_map>
+#include <ext/hash_map>
 #include <vector>
 #include <map>
 #include <set>
 
-#include "name_for_tag.h"
+//#include "name_for_tag.h"
 
 using namespace std;
 
@@ -195,16 +196,58 @@ class JJMemoryEngine
         return p<=end ? p : 0;
     }
     
+    void* loadRegion(uint64_t base, uint64_t size, bool* remapped)
+    {
+        *remapped = true;
+        vm_prot_t cur_prot=0;
+        vm_prot_t max_prot=0;
+        vm_address_t buffer=0;
+        kern_return_t kr = vm_remap(mach_task_self(), &buffer, size, 0, VM_FLAGS_ANYWHERE,
+                                    this->task, base, false, &cur_prot, &max_prot, VM_INHERIT_NONE);
+        
+        if(kr!=KERN_SUCCESS) {
+            NSLog(@"read mem failed! %p %x, %d %s", base, size, kr, mach_error_string(kr));
+            if(kr==KERN_NO_SPACE) do {
+                if(this->task==mach_task_self()) {
+                    mach_port_t object_name;
+                    mach_vm_size_t region_size=size;
+                    mach_vm_address_t region_base = base;
+                    
+                    vm_region_extended_info info={0};
+                    mach_msg_type_number_t info_cnt = VM_REGION_EXTENDED_INFO_COUNT;
+                    vm_region_flavor_t flavor = VM_REGION_EXTENDED_INFO;
+                    
+                    kern_return_t kr = mach_vm_region(this->task, &region_base, &region_size,
+                                                          flavor, (vm_region_info_t)&info, &info_cnt, &object_name);
+                    if(kr==KERN_SUCCESS && info.user_tag==VM_MEMORY_MALLOC_NANO) {
+                        *remapped = false;
+                        buffer = base;
+                        break;
+                    }
+                }
+                
+                throw bad_alloc();
+                
+            } while(0);
+        }
+        return (void*)buffer;
+    }
+    
+    void unloadRegion(void* buffer, uint64_t size, bool remapped)
+    {
+        if(buffer&&remapped) vm_deallocate(mach_task_self(), (vm_address_t)buffer, size);
+    }
+    
     void ScanRegion(AddrRange range, uint64_t base, uint64_t size, void* target, int type)
     {
         int len = JJ_Search_Type_Len[type];
         
-        void* buffer = malloc(size);
-        if(!buffer) throw bad_alloc();
-        
         result_region* newRegion = NULL;
         
-        if(readMemory(buffer, base, size))
+        bool remapped;
+        void* buffer = loadRegion(base, size, &remapped);
+        
+        if(buffer)
         {
             uint64_t pcurdata = (uint64_t)buffer;
             uint64_t left_size = size;
@@ -227,8 +270,6 @@ class JJMemoryEngine
                 left_size = (uint64_t)buffer+size - pcurdata;
             }
             
-        } else {
-            NSLog(@"read mem failed! %p %x", base, size);
         }
         
         if(newRegion) {
@@ -236,7 +277,7 @@ class JJMemoryEngine
             this->result->regions.push_back(newRegion);
         }
         
-        free(buffer);
+        unloadRegion(buffer, size, remapped);
     }
     
     
@@ -254,13 +295,15 @@ class JJMemoryEngine
         mach_vm_size_t region_size=0;
         mach_vm_address_t region_base = range.start;
         
-//        vm_region_basic_info_data_64_t info = {0};
-//        mach_msg_type_number_t info_cnt = VM_REGION_BASIC_INFO_COUNT_64;
-//        vm_region_flavor_t flavor = VM_REGION_BASIC_INFO_64;
-        
+        //*/
+        vm_region_basic_info_data_64_t info = {0};
+        mach_msg_type_number_t info_cnt = VM_REGION_BASIC_INFO_COUNT_64;
+        vm_region_flavor_t flavor = VM_REGION_BASIC_INFO_64;
+        /*/
         vm_region_extended_info info={0};
         mach_msg_type_number_t info_cnt = VM_REGION_EXTENDED_INFO_COUNT;
         vm_region_flavor_t flavor = VM_REGION_EXTENDED_INFO;
+        //*/
         
         while(region_base < range.end) {
             region_base += region_size;
@@ -268,12 +311,12 @@ class JJMemoryEngine
                                               flavor, (vm_region_info_t)&info, &info_cnt, &object_name);
             
             if(kr != KERN_SUCCESS) {
-                NSLog(@"mach_vm_region failed! %p", region_base);
+                NSLog(@"mach_vm_region failed on %p for %d,%s", region_base, kr, mach_error_string(kr));
                 break;
             }
             
             NSLog(@"found region %p %x, %x", region_base, region_size, info.protection);
-//            NSLog(@"tag=%s", name_for_tag(info.user_tag));
+            //NSLog(@"tag=%s", name_for_tag(info.user_tag));
             
             uint64_t region_end = region_base+region_size;
             
@@ -293,8 +336,10 @@ class JJMemoryEngine
             this->regions[region_base] = region_size;
         }
         
+        int i=0;
         for(auto region : this->regions) {
-            NSLog(@"handle region %p %x [%d]", region.first, region.second, this->result->count);
+            NSLog(@"handle region[%d/%d] %p %x [%d]",i++, this->regions.size(),
+                  region.first, region.second, this->result->count);
             ScanRegion(range, region.first, region.second, target, type);
         }
         
@@ -311,18 +356,17 @@ class JJMemoryEngine
         {
             result_region* region = this->result->regions[i];
             
-            NSLog(@"handle region [%d] %p,%x : %d", i, region->region_base, region->region_size, region->slides.size());
+            NSLog(@"handle region [%d/%d] %p,%x : %d", i, this->result->regions.size(),
+                  region->region_base, region->region_size, region->slides.size());
             
             if((region->region_base+region->region_size)<range.start || region->region_base>range.end)
                 continue;
             
             result_region* newRegion = NULL;
             
-            void* buffer = malloc(region->region_size);
-            if(!buffer) throw bad_alloc();
-            
-            bool read = readMemory(buffer, region->region_base, region->region_size);
-            if(read) for(int j=0; j<region->slides.size(); j++)
+            bool remapped;
+            void* buffer = loadRegion(region->region_base, region->region_size, &remapped);
+            if(buffer) for(int j=0; j<region->slides.size(); j++)
             {
                 UInt64 address = (UInt64)region->region_base + (UInt64)region->slides[j];
                 void* pvalue = (void*)((UInt64)buffer + (UInt64)region->slides[j]);
@@ -348,7 +392,7 @@ class JJMemoryEngine
             this->result->regions[i] = newRegion;
             if(newRegion) newRegion->slides.shrink_to_fit();
             
-            free(buffer);
+            unloadRegion(buffer, region->region_size, remapped);
         }
         
         
@@ -413,19 +457,19 @@ public:
             bool hasType = region->types.size()>0;
             bool needType = hasType || type!=this->lastNumberType;
             
-            NSLog(@"handle region [%d] %p,%x : %d", i, region->region_base, region->region_size, region->slides.size());
+            NSLog(@"handle region [%d/%d] %p,%x : %d", i, this->result->regions.size(),
+                  region->region_base, region->region_size, region->slides.size());
             
             result_region* newRegion = NULL;
-            
-            void* buffer = malloc(region->region_size);
-            if(!buffer) throw bad_alloc();
             
             int lastold = 0;
             
             long lastpos = 0;
             
-            bool read = readMemory(buffer, region->region_base, region->region_size);
-            if(read) for(int j=0; j<region->slides.size(); j++)
+            
+            bool remapped;
+            void* buffer = loadRegion(region->region_base, region->region_size, &remapped);
+            if(buffer) for(int j=0; j<region->slides.size(); j++)
             {
                 map<uint32_t,int8_t> matched;
                 
@@ -500,7 +544,7 @@ public:
                     if(!newRegion)
                         newRegion = new result_region(region->region_base, region->region_size);
                     
-                    for(map<uint32_t,int8_t>::iterator it = matched.begin(); it != matched.end(); ++it) {
+                    for(auto it = matched.begin(); it != matched.end(); ++it) {
                         newRegion->slides.push_back(it->first);
                         if(needType) newRegion->types.push_back(it->second);
                     }
@@ -521,7 +565,7 @@ public:
                 newRegion->types.shrink_to_fit();
             }
             
-            free(buffer);
+            unloadRegion(buffer, region->region_size, remapped);
         }
         
         

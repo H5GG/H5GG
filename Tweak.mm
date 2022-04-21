@@ -525,10 +525,10 @@ static void __attribute__((constructor)) _init_()
         
         /* Set active memory limit = inactive memory limit, both non-fatal    */
         #define MEMORYSTATUS_CMD_SET_JETSAM_HIGH_WATER_MARK   5
-        //memorystatus_control(MEMORYSTATUS_CMD_SET_JETSAM_HIGH_WATER_MARK, getpid (), 1024, NULL, 0); //igg
+        memorystatus_control(MEMORYSTATUS_CMD_SET_JETSAM_HIGH_WATER_MARK, getpid (), 1024, NULL, 0); //igg
         /* Set active memory limit = inactive memory limit, both fatal    */
         #define MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT          6
-        //memorystatus_control(MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT, getpid (), 256, NULL, 0); //the other way
+        memorystatus_control(MEMORYSTATUS_CMD_SET_JETSAM_TASK_LIMIT, getpid (), 256, NULL, 0); //the other way
         
     }
 }
