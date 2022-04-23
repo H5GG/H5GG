@@ -16,6 +16,11 @@
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #pragma GCC diagnostic ignored "-Wformat"
 
+bool g_dylib_runmode = false;
+bool g_testapp_runmode = false;
+bool g_commonapp_runmode = false;
+bool g_systemapp_runmode = false;
+bool g_standalone_runmode = false;
 
 //引入悬浮按钮头文件
 #include "FloatButton.h"
@@ -90,6 +95,9 @@ h5ggEngine* h5gg = NULL;
 JSValue* gButtonAction=NULL;
 NSThread* gWebThread=NULL;
 
+//for gloablview call in other source file without header file
+void setButtonKeepWindow(BOOL keep){floatBtn.keepWindow = keep;}
+
 @interface FloatWindow : UIWindow
 @end
 
@@ -135,11 +143,6 @@ static UIWindow* FloatController_lastKeyWindow=nil;
 //如果不定义旋转相关委托函数, 并且屏幕锁定开关没有打开, 则UIAlertController会跟随陀螺仪旋转, 并且界面全部卡死
 //主要是supportedInterfaceOrientations返回的支持方向集合, 如果原window不支持竖屏, 新window旋转为横屏, 则原window会卡死
 
-- (BOOL)shouldAutorotate {
-    NSLog(@"FloatWindow shouldAutorotate=%d", [FloatController_lastKeyWindow.rootViewController shouldAutorotate]);
-    return [FloatController_lastKeyWindow.rootViewController shouldAutorotate];
-}
-
 -(UIInterfaceOrientation)interfaceOrientation {
     NSLog(@"FloatWindow interfaceOrientation=%d", [FloatController_lastKeyWindow.rootViewController interfaceOrientation]);
     return [FloatController_lastKeyWindow.rootViewController interfaceOrientation];
@@ -149,13 +152,18 @@ static UIWindow* FloatController_lastKeyWindow=nil;
     NSLog(@"FloatWindow shouldAutorotateToInterfaceOrientation=%d", toInterfaceOrientation);
     return [FloatController_lastKeyWindow.rootViewController shouldAutorotateToInterfaceOrientation:toInterfaceOrientation];
 }
+//上面两个废弃方法似乎没啥作用
+- (BOOL)shouldAutorotate {
+    NSLog(@"FloatWindow shouldAutorotate=%d", [FloatController_lastKeyWindow.rootViewController shouldAutorotate]);
+    return [FloatController_lastKeyWindow.rootViewController shouldAutorotate];
+}
 
 - (UIInterfaceOrientationMask)supportedInterfaceOrientations {
     NSLog(@"FloatWindow supportedInterfaceOrientations=%d", [FloatController_lastKeyWindow.rootViewController supportedInterfaceOrientations]);
     return [FloatController_lastKeyWindow.rootViewController supportedInterfaceOrientations];
 }
 
--(UIInterfaceOrientation) preferredInterfaceOrientationForPresentation {
+-(UIInterfaceOrientation)preferredInterfaceOrientationForPresentation {
     NSLog(@"FloatWindow preferredInterfaceOrientationForPresentation=%d", [FloatController_lastKeyWindow.rootViewController preferredInterfaceOrientationForPresentation]);
 
     NSLog(@"orientation=%d statusBarOrientation=%d", [[UIDevice currentDevice] orientation], [UIApplication sharedApplication].statusBarOrientation);
@@ -195,13 +203,8 @@ CGContextRef m_cgContext=0;
 IOSurfaceRef gCanvasSurface=0;
 }
 
-void initFloatWindow()
+void initFloatMenu()
 {
-    //获取窗口
-    floatWindow = makeWindow();
-    floatWindow.windowLevel = UIWindowLevelAlert - 1;
-    floatWindow.rootViewController = [[FloatController alloc] init];
-        
     //创建悬浮菜单, 设置位置=居中  尺寸=380宽x屏幕高(最大400)
     CGRect MenuRect = CGRectMake(0, 0, 370, 370);
     MenuRect.origin.x = (floatWindow.frame.size.width-MenuRect.size.width)/2;
@@ -298,9 +301,6 @@ void initFloatWindow()
         h5gghtml = [h5gghtml stringByReplacingOccurrencesOfString:@"var h5gg_jquery_stub;" withString:jquery];
         [floatH5 loadHTMLString:h5gghtml baseURL:[NSURL URLWithString:@"html@dylib"]];
     }
-
-    //添加H5悬浮菜单到窗口上
-    [floatWindow addSubview:floatH5];
 }
 
 
@@ -313,9 +313,7 @@ void showFloatWindow(bool show)
         SCNetworkReachabilityRef reachability = SCNetworkReachabilityCreateWithName(NULL, "www.baidu.com");
         if(!SCNetworkReachabilityGetFlags(reachability, &flags) || (flags & kSCNetworkReachabilityFlagsReachable)==0)
         {
-            NSString* tips = @"H5GG可能无法正确加载!";
-            if([[[NSBundle mainBundle] bundlePath] hasPrefix:@"/Applications/"])
-                tips = @"请尝试使用以下越狱插件修复联网权限:\n\n<连个锤子>\n\n<FixNets>\n\n<NetworkManage>\n";
+            NSString* tips = g_standalone_runmode ? @"请尝试使用以下越狱插件修复联网权限:\n\n<连个锤子>\n\n<FixNets>\n\n<NetworkManage>\n":@"H5GG可能无法正确加载!";
             
             [TopShow present:^{
                 UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"没有网络" message:tips preferredStyle:UIAlertControllerStyleAlert];
@@ -339,7 +337,15 @@ void showFloatWindow(bool show)
 void showFloatWindowContinue(bool show)
 {
     if(!floatWindow) {
-        initFloatWindow();
+        initFloatMenu();
+        
+        //获取窗口
+        floatWindow = makeWindow();
+        floatWindow.windowLevel = UIWindowLevelAlert - 1;
+        floatWindow.rootViewController = [[FloatController alloc] init];
+        
+        //添加H5悬浮菜单到窗口上
+        [floatWindow addSubview:floatH5];
     }
     
     if(show)
@@ -386,13 +392,16 @@ void showFloatWindowContinue(bool show)
     }
 }
 
-void initFloatButton()
+void initFloatButton(void (^callback)(void))
 {
     //获取窗口
     UIWindow *window = [UIApplication sharedApplication].keyWindow;
     
     //创建悬浮按钮
     floatBtn = [[FloatButton alloc] init];
+    
+    if(g_testapp_runmode)
+        floatBtn.center = CGPointMake(150, 60);
     
     UIImage* iconImage=nil;
     
@@ -419,23 +428,13 @@ void initFloatButton()
     [floatBtn setIcon:iconImage];
     
     //设置悬浮按钮点击处理, 点击时反转显示隐藏的状态
-    [floatBtn setAction:^(void) {
-        if(gButtonAction) {
-            [h5gg performSelector:@selector(threadcall:) onThread:gWebThread withObject:^{
-                [gButtonAction callWithArguments:nil];
-            } waitUntilDone:NO];
-        } else {
-            bool show = floatWindow ? floatWindow.isHidden : YES;
-            NSLog(@"ButtonShowWindow=%d", show);
-            showFloatWindow(show);
-        }
-    }];
+    [floatBtn setAction:callback];
     
     //将悬浮按钮添加到窗口上
     [window addSubview:floatBtn];
 }
 
-void* thread_running(void* arg)
+static void* thread_running(void* arg)
 {
     //等一秒, 等系统框架初始化完
     sleep(1);
@@ -443,10 +442,19 @@ void* thread_running(void* arg)
     //通过主线程执行下面的代码
     dispatch_async(dispatch_get_main_queue(), ^{
         
-        NSString* app_path = [[NSBundle mainBundle] bundlePath];
-        if([app_path hasPrefix:@"/Applications/"])
+        if(g_standalone_runmode)
         {
-            if(getRunningProcess()==nil) return;
+            if(getRunningProcess()==nil)
+                return;
+            
+//            for(UIWindow* window in UIApplication.sharedApplication.windows)
+//            {
+//                NSLog(@"GlobalView=windows=%@", window);
+//
+//                window.alpha = 0; //works fine
+//                window.opaque = NO; //no effect
+//                window.backgroundColor = [UIColor clearColor]; //no effect
+//            }
         }
         
         NSString* app_package = [[NSBundle mainBundle] bundleIdentifier];
@@ -455,13 +463,22 @@ void* thread_running(void* arg)
             [TopShow alert:@"风险提示!" message:@"建议卸载当前deb, 使用H5GG跨进程版!"];
         }
         
-        //加载悬浮按钮和悬浮窗口
-        initFloatButton();
-        
-        //三方app中第一次点击图标时再加载H5菜单,防止部分APP不兼容H5导致闪退卡死
-        if([[[NSBundle mainBundle] bundlePath] hasPrefix:@"/Applications/"])
-            showFloatWindow(true);
-        
+        if(g_standalone_runmode) {
+            showFloatWindow(true); //直接加载悬浮按钮和悬浮窗口
+        } else {
+            //三方app中第一次点击图标时再加载H5菜单,防止部分APP不兼容H5导致闪退卡死
+             initFloatButton(^(void) {
+                 if(gButtonAction) {
+                     [h5gg performSelector:@selector(threadcall:) onThread:gWebThread withObject:^{
+                         [gButtonAction callWithArguments:nil];
+                     } waitUntilDone:NO];
+                 } else {
+                     bool show = floatWindow ? floatWindow.isHidden : YES;
+                     NSLog(@"ButtonShowWindow=%d", show);
+                     showFloatWindow(show);
+                 }
+             });
+        }
     });
     
     return 0;
@@ -480,18 +497,31 @@ static void __attribute__((constructor)) _init_()
     NSString* app_path = [[NSBundle mainBundle] bundlePath];
     NSString* app_package = [[NSBundle mainBundle] bundleIdentifier];
     
-    NSLog(@"%d %d %p header=%p slide=%p %base=%p\nmodule=%s\napp_path=%@ ", getuid(), getgid(), [app_package hash],
-          _dyld_get_image_header(0),
-          _dyld_get_image_vmaddr_slide(0),
-          di.dli_fbase, di.dli_fname, app_path);
-
-    if([app_package isEqualToString:@"com.test.h5gg"] && [[NSString stringWithUTF8String:di.dli_fname] hasSuffix:@".dylib"])return;
+    NSLog(@"H5GGLoad:%d %d hash:%p app_path=%@\nfirst module header=%p slide=%p current=%p\nmodule=%s\n",
+          getuid(), getgid(), [app_package hash], app_path,
+          _dyld_get_image_header(0), _dyld_get_image_vmaddr_slide(0),
+          di.dli_fbase, di.dli_fname);
     
     //判断是APP程序加载插件(排除后台程序和APP扩展)
     if(![app_path hasSuffix:@".app"]) return;
     
+    if([app_path hasPrefix:@"/Applications/"])
+        g_standalone_runmode = true;
+    
+    if([app_package isEqualToString:@"com.test.h5gg"])
+        g_testapp_runmode = true;
+    
+    if([[NSString stringWithUTF8String:di.dli_fname] hasSuffix:@".dylib"])
+        g_dylib_runmode = true;
+    
+    if([app_path containsString:@"/var/"]||[app_path containsString:@"/Application/"])
+        g_commonapp_runmode = true;
+    
+    if(g_testapp_runmode && g_dylib_runmode)
+        return;
+    
     //判断是普通版还是跨进程版, 防止混用
-    if([app_path hasPrefix:@"/Applications/"] && [[NSString stringWithUTF8String:di.dli_fname] hasSuffix:@".dylib"])
+    if(g_standalone_runmode && g_dylib_runmode)
     {
         NSString* plistPath = [NSString stringWithUTF8String:di.dli_fname];
         char* p = (char*)plistPath.UTF8String + strlen(di.dli_fname) - 5;
@@ -501,6 +531,13 @@ static void __attribute__((constructor)) _init_()
         NSLog(@"plist=%@\n%@\n%@\n%@", plistPath, plist, plist[@"Filter"], plist[@"Filter"][@"Bundles"]);
         if(plist) {
             for(NSString* bundleId in plist[@"Filter"][@"Bundles"]) {
+                if([bundleId isEqualToString:app_package]) {
+                    g_systemapp_runmode = true;
+                    break;
+                }
+            }
+            
+            if(!g_systemapp_runmode) for(NSString* bundleId in plist[@"Filter"][@"Bundles"]) {
                 NSBundle* test = [NSBundle bundleWithIdentifier:bundleId];
                 NSLog(@"filter bundle id=%@, %@, %d", bundleId, test, [test isLoaded]);
                 if(test && ![bundleId isEqualToString:app_package]) {
@@ -508,15 +545,12 @@ static void __attribute__((constructor)) _init_()
                     return;
                 }
             }
+
         }
     }
     
     
-    if(
-       ([app_path hasPrefix:@"/Applications/"]) ||
-       ([app_path containsString:@"/var/"] ||  [app_path containsString:@"/Application/"]) //只对三方APP生效
-        //||  [app_package isEqualToString:@"com.apple.springboard"] //或者是指定APP的包名
-    )
+    if(g_standalone_runmode||g_commonapp_runmode)
     {
         pthread_t thread;
         pthread_attr_t attr;
@@ -532,5 +566,3 @@ static void __attribute__((constructor)) _init_()
         
     }
 }
-
-

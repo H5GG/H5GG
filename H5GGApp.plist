@@ -1,0 +1,7 @@
+{
+    Filter =     {
+        Bundles =         (
+            "com.shadow.h5ggapp","com.apple.springboard"
+        );
+    };
+}

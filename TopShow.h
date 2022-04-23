@@ -27,11 +27,6 @@ static UIWindow* TopShow_alertWindow = nil;
 //如果不定义旋转相关委托函数, 并且屏幕锁定开关没有打开, 则UIAlertController会跟随陀螺仪旋转, 并且界面全部卡死
 //主要是supportedInterfaceOrientations返回的支持方向集合, 如果原window不支持竖屏, 新window旋转为横屏, 则原window会卡死
 
-- (BOOL)shouldAutorotate {
-    NSLog(@"TopShow shouldAutorotate=%d", [TopShow_lastKeyWindow.rootViewController shouldAutorotate]);
-    return [TopShow_lastKeyWindow.rootViewController shouldAutorotate];
-}
-
 -(UIInterfaceOrientation)interfaceOrientation {
     NSLog(@"TopShow interfaceOrientation=%d", [TopShow_lastKeyWindow.rootViewController interfaceOrientation]);
     return [TopShow_lastKeyWindow.rootViewController interfaceOrientation];
@@ -41,7 +36,12 @@ static UIWindow* TopShow_alertWindow = nil;
     NSLog(@"TopShow shouldAutorotateToInterfaceOrientation=%d", toInterfaceOrientation);
     return [TopShow_lastKeyWindow.rootViewController shouldAutorotateToInterfaceOrientation:toInterfaceOrientation];
 }
+//上面两个废弃方法似乎没啥作用
 
+- (BOOL)shouldAutorotate {
+    NSLog(@"TopShow shouldAutorotate=%d", [TopShow_lastKeyWindow.rootViewController shouldAutorotate]);
+    return [TopShow_lastKeyWindow.rootViewController shouldAutorotate];
+}
 - (UIInterfaceOrientationMask)supportedInterfaceOrientations {
     NSLog(@"TopShow supportedInterfaceOrientations=%d", [TopShow_lastKeyWindow.rootViewController supportedInterfaceOrientations]);
     return [TopShow_lastKeyWindow.rootViewController supportedInterfaceOrientations];

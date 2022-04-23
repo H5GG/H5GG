@@ -694,7 +694,7 @@ JSExportAs(getResults, -(NSArray*)getResults:(int)maxCount param1:(int)skipCount
 
         const char* name = _dyld_get_image_name(i);
         void* baseaddr = (void*)_dyld_get_image_header(i);
-        void* slide = (void*)_dyld_get_image_vmaddr_slide(i);
+        void* slide = (void*)_dyld_get_image_vmaddr_slide(i); //no use
         
         NSLog(@"getRangesList[%d] %p %p %s", i, baseaddr, slide, name);
         

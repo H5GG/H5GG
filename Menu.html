@@ -137,6 +137,14 @@ H5GG v5.9 测试:
 5: 新增横竖屏切换自动调整悬浮窗布局位置
 6: 修复ipad分屏模式下看不到悬浮窗口的问题
 7: 修复点击搜索结果无法弹出修改弹框的问题
+
+H5GG v6.0 测试:
+1: 跨进程版app现在可以全局悬浮显示了!
+2: 修复5.9版本搜索闪退和结果不正确的问题
+3: 跨进程版app中隐藏图标和关闭菜单按钮
+4: 修复手机握持朝向变化时界面闪烁的问题
+5: 修复部分APP中开启提示JS加载失败的问题
+
 -->
 <html>
 <head>
@@ -461,7 +469,7 @@ if(typeof $ == 'undefined')
 </script>
 
 <!--script>
-***************** H5GGv5.8 ** JS脚本引擎 *******************
+***************** H5GGv6.0 ** JS脚本引擎 *******************
 h5gg是引擎对象, 可以调用如下函数(类似安卓gg的lua接口,但是参数有些区别)
 
 h5gg.setFloatTolerance('浮点偏差'); //设置F32/F64浮点搜索的偏差范围, 引擎默认是0.0
@@ -498,10 +506,11 @@ setWindowVisible(是否显示), //设置悬浮窗口的可见性, true=显示, f
 2: 浮点类型分为:F32,F64, 有符号数:I8,I16,I32,I64, 无符号数:U8,U16,U32,U64
 3: 如果搜索结果比较多, 不要一次性getResults获取全部数据, 容易造成内存爆增闪退崩溃, 应分段获取
 4: 搜索结果的地址和数值都是字符串类型, 如果要做数字运算请先用Number(x)转换成数字类型才能进行运算
-    (不像lua中会自动将+号两边的字符串类型转换成数字类型, js中+号如果是字符串就会连接两个字符串)
-5: 数字类型可以用x.toString(16)转换成十六进制字符串格式, 但是x一定要是数字类型才能转成功
-6: 搜索的数值支持范围格式, 比如"50~100", 比如"2.3~7.8", 数值搜索和邻近(联合)搜索都支持
-5: 悬浮窗默认尺寸为370x370, 可在H5页面启动时通过js接口设置位置和尺寸以及可拖动区域
+5: lua中会自动将+号两边的字符串类型转换成数字类型, js中+号如果是字符串就会连接两个字符串)
+6: lua中数组索引第一个是从[1]开始, js中数组索引第一个是从[0]开始, 这一点需要特别注意
+7: 数字类型可以用x.toString(16)转换成十六进制字符串格式, 但是x一定要是数字类型才能转成功
+8: 搜索的数值支持范围格式, 比如"50~100", 比如"2.3~7.8", 数值搜索和邻近(联合)搜索都支持
+9: 悬浮窗默认尺寸为370x370, 可在H5页面启动时通过js接口设置位置和尺寸以及可拖动区域
 
 </script>
 <!---->
@@ -577,6 +586,11 @@ $(document).ready(function(){
         
         //布局调整函数
         var layout = function() {
+            
+            //window.orientation是设备握持方向, 不是屏幕显示方向
+            if(window.lastorientation==window.orientation) return;
+            window.lastorientation=window.orientation;
+            
             //window.screen中的宽高不会随着屏幕旋转更新(只会在初始化的时候固定)
             if(Math.abs(window.orientation)==90) {
                 var x = (window.screen.height-370)/2;
@@ -598,12 +612,14 @@ $(document).ready(function(){
             window.addEventListener("orientationchange", layout, false);
         }
         
-        if(h5gg.getProcList()) { //不为空(null)说明是具有跨进程权限
+        if(h5gg.getProcList())  //不为空(null)说明是具有跨进程权限
+        {
             refreshProcList();
             $("#procname").text('');
             $("#crossproc").show();
             $("#popup_proclist").show();
             $("#maskview").show();
+            $("#closeMenu").hide();
         } else  {
             $("#crossproc").hide();
         }
@@ -947,12 +963,12 @@ function onClickSearchNearby()
 <body bgcolor="#E8E8E8" style="margin:0;">
 <!--标题栏-->
 <div id="titleBar" style="background-color:#D1D1D1; padding:5px; margin:0px;">
-&nbsp;<font style="color:green">H5</font> <font style="color:red">GG</font>&nbsp;v5.9
-<span id="crossproc">
+&nbsp;<font style="color:green">H5</font> <font style="color:red">GG</font>&nbsp;v6.0
+<span id="crossproc" style="display:none">
 <font style="color:blue">&nbsp;跨进程&nbsp;</font><font id="procname">procname</font>
 </span>
     
-<div style="float:right; font-size:16px; font-family: Arial, sans-serif;" onclick="setWindowVisible(false)">&nbsp;X&nbsp;</div>
+<div id="closeMenu" style="float:right; font-size:16px; font-family: Arial, sans-serif;" onclick="setWindowVisible(false)">&nbsp;X&nbsp;</div>
 </div>
 <!--用一个表格来布局左右两栏-->
 <table id="bodyView" width="100%" style="table-layout:fixed">

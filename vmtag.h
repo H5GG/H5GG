@@ -9,6 +9,208 @@
 #define name_for_tag_h
 
 
+#define VM_MEMORY_MALLOC 1
+#define VM_MEMORY_MALLOC_SMALL 2
+#define VM_MEMORY_MALLOC_LARGE 3
+#define VM_MEMORY_MALLOC_HUGE 4
+#define VM_MEMORY_SBRK 5// uninteresting -- no one should call
+#define VM_MEMORY_REALLOC 6
+#define VM_MEMORY_MALLOC_TINY 7
+#define VM_MEMORY_MALLOC_LARGE_REUSABLE 8
+#define VM_MEMORY_MALLOC_LARGE_REUSED 9
+
+#define VM_MEMORY_ANALYSIS_TOOL 10
+
+#define VM_MEMORY_MALLOC_NANO 11
+#define VM_MEMORY_MALLOC_MEDIUM 12
+#define VM_MEMORY_MALLOC_PGUARD 13  // Will be removed
+#define VM_MEMORY_MALLOC_PROB_GUARD 13
+
+#define VM_MEMORY_MACH_MSG 20
+#define VM_MEMORY_IOKIT 21
+#define VM_MEMORY_STACK  30
+#define VM_MEMORY_GUARD  31
+#define VM_MEMORY_SHARED_PMAP 32
+/* memory containing a dylib */
+#define VM_MEMORY_DYLIB 33
+#define VM_MEMORY_OBJC_DISPATCHERS 34
+
+/* Was a nested pmap (VM_MEMORY_SHARED_PMAP) which has now been unnested */
+#define VM_MEMORY_UNSHARED_PMAP 35
+
+
+// Placeholders for now -- as we analyze the libraries and find how they
+// use memory, we can make these labels more specific.
+#define VM_MEMORY_APPKIT 40
+#define VM_MEMORY_FOUNDATION 41
+#define VM_MEMORY_COREGRAPHICS 42
+#define VM_MEMORY_CORESERVICES 43
+#define VM_MEMORY_CARBON VM_MEMORY_CORESERVICES
+#define VM_MEMORY_JAVA 44
+#define VM_MEMORY_COREDATA 45
+#define VM_MEMORY_COREDATA_OBJECTIDS 46
+#define VM_MEMORY_ATS 50
+#define VM_MEMORY_LAYERKIT 51
+#define VM_MEMORY_CGIMAGE 52
+#define VM_MEMORY_TCMALLOC 53
+
+/* private raster data (i.e. layers, some images, QGL allocator) */
+#define VM_MEMORY_COREGRAPHICS_DATA     54
+
+/* shared image and font caches */
+#define VM_MEMORY_COREGRAPHICS_SHARED   55
+
+/* Memory used for virtual framebuffers, shadowing buffers, etc... */
+#define VM_MEMORY_COREGRAPHICS_FRAMEBUFFERS     56
+
+/* Window backing stores, custom shadow data, and compressed backing stores */
+#define VM_MEMORY_COREGRAPHICS_BACKINGSTORES    57
+
+/* x-alloc'd memory */
+#define VM_MEMORY_COREGRAPHICS_XALLOC 58
+
+/* catch-all for other uses, such as the read-only shared data page */
+#define VM_MEMORY_COREGRAPHICS_MISC VM_MEMORY_COREGRAPHICS
+
+/* memory allocated by the dynamic loader for itself */
+#define VM_MEMORY_DYLD 60
+/* malloc'd memory created by dyld */
+#define VM_MEMORY_DYLD_MALLOC 61
+
+/* Used for sqlite page cache */
+#define VM_MEMORY_SQLITE 62
+
+/* JavaScriptCore heaps */
+#define VM_MEMORY_JAVASCRIPT_CORE 63
+#define VM_MEMORY_WEBASSEMBLY VM_MEMORY_JAVASCRIPT_CORE
+/* memory allocated for the JIT */
+#define VM_MEMORY_JAVASCRIPT_JIT_EXECUTABLE_ALLOCATOR 64
+#define VM_MEMORY_JAVASCRIPT_JIT_REGISTER_FILE 65
+
+/* memory allocated for GLSL */
+#define VM_MEMORY_GLSL  66
+
+/* memory allocated for OpenCL.framework */
+#define VM_MEMORY_OPENCL    67
+
+/* memory allocated for QuartzCore.framework */
+#define VM_MEMORY_COREIMAGE 68
+
+/* memory allocated for WebCore Purgeable Buffers */
+#define VM_MEMORY_WEBCORE_PURGEABLE_BUFFERS 69
+
+/* ImageIO memory */
+#define VM_MEMORY_IMAGEIO       70
+
+/* CoreProfile memory */
+#define VM_MEMORY_COREPROFILE   71
+
+/* assetsd / MobileSlideShow memory */
+#define VM_MEMORY_ASSETSD       72
+
+/* libsystem_kernel os_once_alloc */
+#define VM_MEMORY_OS_ALLOC_ONCE 73
+
+/* libdispatch internal allocator */
+#define VM_MEMORY_LIBDISPATCH 74
+
+/* Accelerate.framework image backing stores */
+#define VM_MEMORY_ACCELERATE 75
+
+/* CoreUI image block data */
+#define VM_MEMORY_COREUI 76
+
+/* CoreUI image file */
+#define VM_MEMORY_COREUIFILE 77
+
+/* Genealogy buffers */
+#define VM_MEMORY_GENEALOGY 78
+
+/* RawCamera VM allocated memory */
+#define VM_MEMORY_RAWCAMERA 79
+
+/* corpse info for dead process */
+#define VM_MEMORY_CORPSEINFO 80
+
+/* Apple System Logger (ASL) messages */
+#define VM_MEMORY_ASL 81
+
+/* Swift runtime */
+#define VM_MEMORY_SWIFT_RUNTIME 82
+
+/* Swift metadata */
+#define VM_MEMORY_SWIFT_METADATA 83
+
+/* DHMM data */
+#define VM_MEMORY_DHMM 84
+
+
+/* memory allocated by SceneKit.framework */
+#define VM_MEMORY_SCENEKIT 86
+
+/* memory allocated by skywalk networking */
+#define VM_MEMORY_SKYWALK 87
+
+#define VM_MEMORY_IOSURFACE 88
+
+#define VM_MEMORY_LIBNETWORK 89
+
+#define VM_MEMORY_AUDIO 90
+
+#define VM_MEMORY_VIDEOBITSTREAM 91
+
+/* memory allocated by CoreMedia */
+#define VM_MEMORY_CM_XPC 92
+
+#define VM_MEMORY_CM_RPC 93
+
+#define VM_MEMORY_CM_MEMORYPOOL 94
+
+#define VM_MEMORY_CM_READCACHE 95
+
+#define VM_MEMORY_CM_CRABS 96
+
+/* memory allocated for QuickLookThumbnailing */
+#define VM_MEMORY_QUICKLOOK_THUMBNAILS 97
+
+/* memory allocated by Accounts framework */
+#define VM_MEMORY_ACCOUNTS 98
+
+/* memory allocated by Sanitizer runtime libraries */
+#define VM_MEMORY_SANITIZER 99
+
+/* Differentiate memory needed by GPU drivers and frameworks from generic IOKit allocations */
+#define VM_MEMORY_IOACCELERATOR 100
+
+/* memory allocated by CoreMedia for global image registration of frames */
+#define VM_MEMORY_CM_REGWARP 101
+
+/* memory allocated by EmbeddedAcousticRecognition for speech decoder */
+#define VM_MEMORY_EAR_DECODER 102
+
+/* CoreUI cached image data */
+#define VM_MEMORY_COREUI_CACHED_IMAGE_DATA 103
+
+/* ColorSync is using mmap for read-only copies of ICC profile data */
+#define VM_MEMORY_COLORSYNC 104
+
+/* Reserve 230-239 for Rosetta */
+#define VM_MEMORY_ROSETTA 230
+#define VM_MEMORY_ROSETTA_THREAD_CONTEXT 231
+#define VM_MEMORY_ROSETTA_INDIRECT_BRANCH_MAP 232
+#define VM_MEMORY_ROSETTA_RETURN_STACK 233
+#define VM_MEMORY_ROSETTA_EXECUTABLE_HEAP 234
+#define VM_MEMORY_ROSETTA_USER_LDT 235
+#define VM_MEMORY_ROSETTA_ARENA 236
+#define VM_MEMORY_ROSETTA_10 239
+
+/* Reserve 240-255 for application */
+#define VM_MEMORY_APPLICATION_SPECIFIC_1 240
+#define VM_MEMORY_APPLICATION_SPECIFIC_16 255
+
+#define VM_MAKE_TAG(tag) ((tag) << 24)
+
+
 static const char *name_for_tag(int tag)
 {
     switch (tag) {

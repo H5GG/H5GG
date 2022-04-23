@@ -19,7 +19,7 @@
 #include <map>
 #include <set>
 
-//#include "name_for_tag.h"
+#include "vmtag.h"
 
 using namespace std;
 
@@ -198,7 +198,6 @@ class JJMemoryEngine
     
     void* loadRegion(uint64_t base, uint64_t size, bool* remapped)
     {
-        *remapped = true;
         vm_prot_t cur_prot=0;
         vm_prot_t max_prot=0;
         vm_address_t buffer=0;
@@ -229,13 +228,19 @@ class JJMemoryEngine
                 throw bad_alloc();
                 
             } while(0);
+        } else {
+            *remapped = true;
         }
+        NSLog(@"loadRegion[%d] %p=>%p %x", *remapped, base, buffer, size);
         return (void*)buffer;
     }
     
     void unloadRegion(void* buffer, uint64_t size, bool remapped)
     {
-        if(buffer&&remapped) vm_deallocate(mach_task_self(), (vm_address_t)buffer, size);
+        if(buffer&&remapped) {
+            NSLog(@"unloadRegion %p %x", buffer, size);
+            vm_deallocate(mach_task_self(), (vm_address_t)buffer, size);
+        }
     }
     
     void ScanRegion(AddrRange range, uint64_t base, uint64_t size, void* target, int type)
@@ -256,7 +261,7 @@ class JJMemoryEngine
                 uint64_t pfound = ScanData(pcurdata, left_size, target, type);
                 if(!pfound) break;
                 
-                uint32_t slide = pfound - (uint64_t)buffer;
+                uint32_t slide = (uint32_t)(pfound - (uint64_t)buffer);
                 
                 if((base+slide)<range.start || (base+slide)>=range.end) break;
                 
@@ -295,7 +300,7 @@ class JJMemoryEngine
         mach_vm_size_t region_size=0;
         mach_vm_address_t region_base = range.start;
         
-        //*/
+        /*/
         vm_region_basic_info_data_64_t info = {0};
         mach_msg_type_number_t info_cnt = VM_REGION_BASIC_INFO_COUNT_64;
         vm_region_flavor_t flavor = VM_REGION_BASIC_INFO_64;
@@ -315,8 +320,8 @@ class JJMemoryEngine
                 break;
             }
             
-            NSLog(@"found region %p %x, %x", region_base, region_size, info.protection);
-            //NSLog(@"tag=%s", name_for_tag(info.user_tag));
+            const char* tag = name_for_tag(info.user_tag);
+            NSLog(@"found region %p %x, %x, %s", region_base, region_size, info.protection, tag);
             
             uint64_t region_end = region_base+region_size;
             
@@ -356,8 +361,8 @@ class JJMemoryEngine
         {
             result_region* region = this->result->regions[i];
             
-            NSLog(@"handle region [%d/%d] %p,%x : %d", i, this->result->regions.size(),
-                  region->region_base, region->region_size, region->slides.size());
+            NSLog(@"handle region [%d/%d]%d %p %x", i, this->result->regions.size(), region->slides.size(),
+                  region->region_base, region->region_size);
             
             if((region->region_base+region->region_size)<range.start || region->region_base>range.end)
                 continue;
@@ -388,11 +393,12 @@ class JJMemoryEngine
                 NSLog(@"read mem failed! [%d] %p %x", i, region->region_base, region->region_size);
             }
             
+            //BUG=一定要在delete old region之前, 不然这里size不可预料了
+            unloadRegion(buffer, region->region_size, remapped);
+            
             delete this->result->regions[i];
             this->result->regions[i] = newRegion;
             if(newRegion) newRegion->slides.shrink_to_fit();
-            
-            unloadRegion(buffer, region->region_size, remapped);
         }
         
         
@@ -503,7 +509,7 @@ public:
                     if(!pfound) break;
                     
                     
-                    uint32_t slide = pfound - (uint64_t)buffer;
+                    uint32_t slide = (uint32_t)(pfound - (uint64_t)buffer);
                     
                     JJLog(@"found %x", slide);
                     
@@ -558,16 +564,16 @@ public:
                 NSLog(@"read mem failed! [%d] %p %x", i, region->region_base, region->region_size);
             }
             
+            //BUG=一定要在delete old region之前, 不然这里size不可预料了
+            unloadRegion(buffer, region->region_size, remapped);
+            
             delete this->result->regions[i];
             this->result->regions[i] = newRegion;
             if(newRegion) {
                 newRegion->slides.shrink_to_fit();
                 newRegion->types.shrink_to_fit();
             }
-            
-            unloadRegion(buffer, region->region_size, remapped);
         }
-        
         
         this->result->regions.erase(
                                     remove(this->result->regions.begin(),this->result->regions.end(), (result_region*)NULL), this->result->regions.end());
@@ -705,7 +711,7 @@ public:
         for(int i=0; i<this->result->regions.size(); i++)
         {
             result_region* region = this->result->regions[i];
-            int hasTypes = region->types.size();
+            auto hasTypes = region->types.size();
             
             if((index + region->slides.size()) <= skip) {
                 index += region->slides.size();

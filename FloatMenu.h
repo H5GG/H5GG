@@ -289,12 +289,16 @@ static NSHashTable* g_webViews = nil;
     Method method2 = class_getInstanceMethod(class2, sel2);
 
     // Make sure that both methods are on the target class (the one to swizzle likely already is).
-    BOOL added = class_addMethod(class1,
+    BOOL added = class_replaceMethod(class1,
                     sel1,
                     method_getImplementation(method2),
                     method_getTypeEncoding(method2));
     
     NSLog(@"hook=%@ %p %p add?%d", class1, method1, method2, added);
+    
+    if(!added) {
+        
+    }
     
 //    class_addMethod(class1, // The swizzling is 'on' the first class, so it's the target here, not class2.
 //                    sel2,

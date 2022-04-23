@@ -13,6 +13,7 @@
  
 @interface FloatButton : UIImageView
 @property BOOL keepFront;
+@property BOOL keepWindow;
 @property NSTimer* frontTimer;
 @property CGPoint startLocation;
 @property void(^actionBlock)(void);
@@ -39,14 +40,17 @@
         self.userInteractionEnabled = YES;
         
         self.keepFront = YES;
+        self.keepWindow = NO;
         
         self.frontTimer = [NSTimer scheduledTimerWithTimeInterval:0.2 repeats:YES block:^(NSTimer*t){
             if(!self.hidden) {
                 //self.keepFront ? [self.superview bringSubviewToFront:self] : [self.superview sendSubviewToBack:self];
                 if(self.keepFront) [self.superview bringSubviewToFront:self];
                 
-                UIWindow *window = [UIApplication sharedApplication].keyWindow;
-                if(self.superview != window) [window addSubview:self];
+                if(!self.keepWindow) {
+                    UIWindow *window = [UIApplication sharedApplication].keyWindow;
+                    if(self.superview != window) [window addSubview:self];
+                }
             }
         }];
         
