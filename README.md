@@ -28,9 +28,10 @@ it's completely free & open source!
 
 ![text](https://static.gameguardian.net/monthly_2022_04/image.thumb.png.20dce31a6fb8d9458c569a05b3bd3349.png)
 
+
 currently supported JS APIs:
 
-**************** H5GGv5.9 ** JS script engine ********************
+**************** H5GG JavaScript Engine(update on v5.9) ********************
 
 h5gg is the engine object, which can call the following functions (similar to the lua interface of Android gg, but the parameters are somewhat different)
 
