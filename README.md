@@ -10,13 +10,15 @@ and you can customize UI by using HTML+CSS.
 
 and you can make your own tweak(dylib) by click one button, then just select your icon and .html file, so easy!
 
-supported 3 modes to run:
+supported 4 modes to run:
 
-1. inject to ipa in non-jailbreak devices
+1. inject to ipa for non-jailbreak devices
 
-2. tweak(deb) in jailbroken devices
+2. tweak(deb) common injected for jailbroken devices
 
-3. standalone APP(deb) in jailbroken devices
+3. standalone APP for jailbroken devices(support iPad SlideOver+SplitView)
+
+4. Floating In Screen (APP) for jailbroken devices(not support iPad SlideOver+SplitView), this has tested on ios12+
 
 it's completely free & open source!
  
@@ -99,4 +101,6 @@ Notice:
 
 5: The default size of the floating window is 370 points wide and 370 points high. You can set the position, size and draggable area through the js interface on the H5 page.
 
+
+[UpdateLog](https://zhuanlan.zhihu.com/p/491127943)
 
