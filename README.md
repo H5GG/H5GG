@@ -103,6 +103,10 @@ Notice:
 5: The default size of the floating window is 370 points wide and 370 points high. You can set the position, size and draggable area through the js interface on the H5 page.
 
 
-Welcome to join development and submit fixes! [UpdateLog](https://zhuanlan.zhihu.com/p/491127943)  
+Welcome to join development and submit fixes! 
+
+
+changlog is in the header of Menu.html
+
 
 
