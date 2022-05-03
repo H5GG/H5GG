@@ -18,7 +18,7 @@ supported 4 modes to run:
 
 3. standalone APP for jailbroken devices(support iPad SlideOver+SplitView)
 
-4. Floating On Screen for jailbroken devices(not support iPad SlideOver+SplitView), this has tested on ios12+
+4. Floating On Screen for jailbroken devices(not support iPad SlideOver+SplitView), this has tested on ios11+
 
 it's completely free & open source!
  
