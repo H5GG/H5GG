@@ -17,7 +17,7 @@
 @property NSTimer* frontTimer;
 @property CGPoint startLocation;
 @property void(^actionBlock)(void);
- 
+
 -(void)setIcon:(UIImage*)image;
 -(void)setAction:(void(^)(void))block;
 -(void)setLocation:(CGPoint*)point;
@@ -44,12 +44,32 @@
         
         self.frontTimer = [NSTimer scheduledTimerWithTimeInterval:0.2 repeats:YES block:^(NSTimer*t){
             if(!self.hidden) {
-                //self.keepFront ? [self.superview bringSubviewToFront:self] : [self.superview sendSubviewToBack:self];
+                
                 if(self.keepFront) [self.superview bringSubviewToFront:self];
                 
                 if(!self.keepWindow) {
                     UIWindow *window = [UIApplication sharedApplication].keyWindow;
                     if(self.superview != window) [window addSubview:self];
+                }
+                
+                CGRect newFrame = self.superview.frame;
+                static CGRect lastFrame = newFrame;
+                if(!CGRectEqualToRect(lastFrame, self.superview.frame)) {
+                    
+                    float newX = newFrame.size.width * self.frame.origin.x/lastFrame.size.width;
+                    float newY = newFrame.size.height * self.frame.origin.y/lastFrame.size.height;
+
+                    if(newX<0) newX=0;
+                    if((newX+self.frame.size.width) > newFrame.size.width)
+                        newX = newFrame.size.width - self.frame.size.width;
+                    
+                    if(newY<0) newY=0;
+                    if((newY+self.frame.size.height) > newFrame.size.height)
+                        newY = newFrame.size.height - self.frame.size.height;
+
+                    self.frame = CGRectMake(newX, newY, self.frame.size.width, self.frame.size.height);
+                    
+                    lastFrame = newFrame;
                 }
             }
         }];
@@ -115,6 +135,5 @@
 }
  
 @end
-
 
 #endif /* FloatButton_h */

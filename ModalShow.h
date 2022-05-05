@@ -33,8 +33,7 @@ extern "C"  {
     void (*WebThreadUnlockFromAnyThread)(void);
 }
 
-CFRunLoopRef ref;
-+(void)present:(UIViewController*(^)(void))alert {
++(void)present:(UIViewController*(^)(void))alert InWindow:(UIWindow*)window {
     
     NSLog(@"ModalShow present[%d] %@", [NSThread isMainThread], [NSThread currentThread].name);
     
@@ -42,8 +41,7 @@ CFRunLoopRef ref;
     
     void(^submit)() = ^{
         NSLog(@"ModalShow running[%d] %@", [NSThread isMainThread], [NSThread currentThread].name);
-        UIWindow* keyWindow = [UIApplication sharedApplication].keyWindow;
-        [keyWindow.rootViewController presentViewController:alert() animated:YES completion:nil];
+        [window.rootViewController presentViewController:alert() animated:YES completion:nil];
     };
     
     //NSLog(@"env=%@ %d",  [UIDevice currentDevice].systemVersion, [NSProcessInfo processInfo].isMacCatalystApp);
@@ -71,7 +69,7 @@ CFRunLoopRef ref;
     dispatch_semaphore_signal(semaphore);
 }
 
-+(void)alert:(NSString*)title message:(NSString*)message
++(void)alert:(NSString*)title message:(NSString*)message InWindow:(UIWindow*)window
 {
     [self present:^() {
         UIAlertController *alert = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
@@ -81,10 +79,10 @@ CFRunLoopRef ref;
         }]];
         
         return alert;
-    }];
+    }  InWindow:window ];
 }
 
-+(BOOL)confirm:(NSString*)message
++(BOOL)confirm:(NSString*)message InWindow:(UIWindow*)window
 {
     __block BOOL result = NO;
     
@@ -102,12 +100,12 @@ CFRunLoopRef ref;
         }]];
     
         return alert;
-    }];
+    }  InWindow:window ];
     
     return result;
 }
 
-+(NSString*)prompt:(NSString*)text defaultText:(NSString*)defaultText {
++(NSString*)prompt:(NSString*)text defaultText:(NSString*)defaultText InWindow:(UIWindow*)window {
     __block NSString* result;
     
     [self present:^() {
@@ -124,7 +122,7 @@ CFRunLoopRef ref;
         }]];
     
         return alert;
-    }];
+    } InWindow:window ];
     
     return result;
 }

@@ -20,88 +20,7 @@ extern FloatMenu* floatH5;
 //导入JJ内存搜索引擎头文件(专为H5GG定制)
 #include "MemScan.h"
 #include "TopShow.h"
-
-#import <sys/sysctl.h>
-#import <mach-o/dyld_images.h>
-
-extern "C" {
-#include "dyld64.h"
-#include "libproc.h"
-#include "proc_info.h"
-}
-
-NSArray* getRunningProcess()
-{
-    //指定名字参数，按照顺序第一个元素指定本请求定向到内核的哪个子系统，第二个及其后元素依次细化指定该系统的某个部分。
-    //CTL_KERN，KERN_PROC,KERN_PROC_ALL 正在运行的所有进程
-    int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_ALL ,0};
-    
-    size_t miblen = 4;
-    //值-结果参数：函数被调用时，size指向的值指定该缓冲区的大小；函数返回时，该值给出内核存放在该缓冲区中的数据量
-    //如果这个缓冲不够大，函数就返回ENOMEM错误
-    size_t size;
-    //返回0，成功；返回-1，失败
-    int st = sysctl(mib, miblen, NULL, &size, NULL, 0);
-    NSLog(@"allproc=%d, %s", st, strerror(errno));
-    
-    struct kinfo_proc * process = NULL;
-    struct kinfo_proc * newprocess = NULL;
-    do
-    {
-        size += size / 10;
-        newprocess = (struct kinfo_proc *)realloc(process, size);
-        if (!newprocess)
-        {
-            if (process)
-            {
-                free(process);
-                process = NULL;
-            }
-            return nil;
-        }
-        
-        process = newprocess;
-        st = sysctl(mib, miblen, process, &size, NULL, 0);
-        NSLog(@"allproc=%d, %s", st, strerror(errno));
-    } while (st == -1 && errno == ENOMEM);
-    
-    if (st == 0)
-    {
-        if (size % sizeof(struct kinfo_proc) == 0)
-        {
-            int nprocess = size / sizeof(struct kinfo_proc);
-            if (nprocess)
-            {
-                NSMutableArray * array = [[NSMutableArray alloc] init];
-                for (int i = nprocess - 1; i >= 0; i--)
-                {
-                    [array addObject:@{
-                        @"pid": [NSNumber numberWithInt:process[i].kp_proc.p_pid],
-                        @"name": [NSString stringWithUTF8String:process[i].kp_proc.p_comm]
-                    }];
-                }
-                
-                free(process);
-                process = NULL;
-                NSLog(@"allproc=%d, %@", array.count, array);
-                return array;
-            }
-        }
-    }
-    
-    return nil;
-}
-
-pid_t pid_for_name(const char* name)
-{
-    NSArray* allproc = getRunningProcess();
-    for(NSDictionary* proc in allproc)
-    {
-        if([[proc valueForKey:@"name"] isEqualToString:[NSString stringWithUTF8String:name]])
-            return [[proc valueForKey:@"pid"] intValue];
-    }
-    return 0;
-}
+#include "crossproc.h"
 
 @protocol h5ggJSExport <JSExport>
 
@@ -146,8 +65,15 @@ JSExportAs(getResults, -(NSArray*)getResults:(int)maxCount param1:(int)skipCount
 -(instancetype)init {
     if (self = [super init]) {
         self.firstSearchDone = FALSE;
-        self.targetpid = getpid();
-        self.targetport = mach_task_self();
+        
+        if(g_standalone_runmode) {
+            self.targetpid=0;
+            self.targetport=MACH_PORT_NULL;
+        } else {
+            self.targetpid = getpid();
+            self.targetport = mach_task_self();
+        }
+        
         self.engine = new JJMemoryEngine(self.targetport);
     }
     return self;
@@ -186,15 +112,20 @@ JSExportAs(getResults, -(NSArray*)getResults:(int)maxCount param1:(int)skipCount
 }
 
 -(BOOL)setTargetProc:(pid_t)pid {
+    
+    self.targetpid = 0;
+    self.targetport = MACH_PORT_NULL;
+    [self clearResults];
+    
     task_port_t _target_task=0;
     kern_return_t ret = task_for_pid(mach_task_self(), pid, &_target_task);
     NSLog(@"task_for_pid=%d %p %d %s!", pid, ret, _target_task, mach_error_string(ret));
     if(ret==KERN_SUCCESS) {
         self.targetpid = pid;
         self.targetport = _target_task;
-        [self clearResults];
         return YES;
     }
+    
     return NO;
 }
 
@@ -502,7 +433,7 @@ JSExportAs(getResults, -(NSArray*)getResults:(int)maxCount param1:(int)skipCount
     }
     
     char* pvaluerr=NULL;
-    int searchRange = strtoul([range UTF8String], &pvaluerr, 16);
+    size_t searchRange = strtoul([range UTF8String], &pvaluerr, 16);
     
     if((pvaluerr && pvaluerr[0]) || !searchRange) {
         [floatH5 alert:@"邻近范围格式错误"];
@@ -633,6 +564,7 @@ JSExportAs(getResults, -(NSArray*)getResults:(int)maxCount param1:(int)skipCount
 }
 
 -(void)threadcall:(void(^)())block {
+    NSLog(@"threadcall=%p", block);
     block();
 }
 
@@ -652,41 +584,10 @@ JSExportAs(getResults, -(NSArray*)getResults:(int)maxCount param1:(int)skipCount
     }];
 }
 
--(size_t)getMachoVMSize:(mach_vm_address_t)addr {
-    
-    struct mach_header_64 header;
-    mach_vm_size_t hdrsize = sizeof(header);
-    kern_return_t kr = mach_vm_read_overwrite(self.targetport, addr, hdrsize, (mach_vm_address_t)&header, &hdrsize);
-    if(kr != KERN_SUCCESS)
-        return 0;
-    
-    size_t sz = sizeof(header); // Size of the header
-    sz += header.sizeofcmds;    // Size of the load commands
-    
-    mach_vm_size_t lcsize=header.sizeofcmds;
-    void* buf = malloc(lcsize);
-    
-    kr = mach_vm_read_overwrite(self.targetport, addr+hdrsize, lcsize, (mach_vm_address_t)buf, &lcsize);
-    if(kr == KERN_SUCCESS)
-    {
-        struct load_command* lc = (struct load_command*)buf;
-        for (uint32_t i = 0; i < header.ncmds; i++) {
-            if (lc->cmd == LC_SEGMENT_64) {
-                struct segment_command_64 * sc = (struct segment_command_64 *) lc;
-                if(!(sc->vmaddr==0 && sc->vmsize==0x100000000 && sc->fileoff==0 && sc->filesize==0 && sc->flags==0 && sc->initprot==0 && sc->maxprot==0)) //skip __PAGEZERO
-                sz += ((struct segment_command_64 *) lc)->vmsize; // Size of segments
-            }
-            lc = (struct load_command *) ((char *)lc + lc->cmdsize);
-        }
-    }
-    free(buf);
-    return sz;
-}
-
 -(NSArray*)getRangesList:(JSValue*)filter
 {
     if(self.targetpid!=getpid())
-        return [self getRangesList2:filter];
+        return getRangesList2(self.targetport, [filter isUndefined] ? nil:[filter toString]);
     
     NSMutableArray* results = [[NSMutableArray alloc] init];
         
@@ -706,7 +607,7 @@ JSExportAs(getResults, -(NSArray*)getResults:(int)maxCount param1:(int)skipCount
                 @"name" : [NSString stringWithUTF8String:name],
                 @"start" : [NSString stringWithFormat:@"0x%llX", baseaddr],
                 @"end" : [NSString stringWithFormat:@"0x%llX",
-                          (uint64_t)baseaddr+[self getMachoVMSize:(uint64_t)baseaddr] ],
+                          (uint64_t)baseaddr+getMachoVMSize(self.targetport,(uint64_t)baseaddr) ],
                 //@"type" : @"rwxp",
             }];
             
@@ -717,89 +618,26 @@ JSExportAs(getResults, -(NSArray*)getResults:(int)maxCount param1:(int)skipCount
     return results;
 }
 
--(NSArray*)getRangesList2:(JSValue*)filter
-{
-    NSMutableArray* results = [[NSMutableArray alloc] init];
-    
-    task_port_t task = self.targetport;
-    
-    task_dyld_info_data_t task_dyld_info;
-    mach_msg_type_number_t count = TASK_DYLD_INFO_COUNT;
-    kern_return_t kr = task_info(task, TASK_DYLD_INFO, (task_info_t)&task_dyld_info, &count);
-    NSLog(@"getmodules TASK_DYLD_INFO=%p", task_dyld_info.all_image_info_addr);
-    
-    if(kr!=KERN_SUCCESS)
-        return results;
-    
-    struct dyld_all_image_infos64 aii;
-    mach_vm_size_t aiiSize = sizeof(aii);
-    kr = mach_vm_read_overwrite(task, task_dyld_info.all_image_info_addr, aiiSize, (mach_vm_address_t)&aii, &aiiSize);
-    
-    NSLog(@"getmodules all_image_info %d %p %d", aii.version, aii.infoArray, aii.infoArrayCount);
-    if(kr != KERN_SUCCESS)
-        return results;
-    
-    mach_vm_address_t        ii;
-    uint32_t                iiCount;
-    mach_msg_type_number_t    iiSize;
-    
-    
-    ii = aii.infoArray;
-    iiCount = aii.infoArrayCount;
-    iiSize = iiCount * sizeof(struct dyld_image_info64);
-        
-    // If ii is NULL, it means it is being modified, come back later.
-    kr = mach_vm_read(task, ii, iiSize, (vm_offset_t *)&ii, &iiSize);
-    if(kr != KERN_SUCCESS) {
-        NSLog(@"getmodules cannot read aii");
-        return results;
-    }
-    
-    for (int i = 0; i < iiCount; i++) {
-        mach_vm_address_t addr;
-        mach_vm_address_t path;
-        
-        struct dyld_image_info64 *ii64 = (struct dyld_image_info64 *)ii;
-        addr = ii64[i].imageLoadAddress;
-        path = ii64[i].imageFilePath;
-        
-        NSLog(@"getmodules image[%d] %p %p", i, addr, path);
-        
-        char pathbuffer[PATH_MAX];
-        
-        mach_vm_size_t size3;
-        if (mach_vm_read_overwrite(task, path, MAXPATHLEN, (mach_vm_address_t)pathbuffer, &size3) != KERN_SUCCESS)
-            strcpy(pathbuffer, "<Unknown>");
-        
-        NSLog(@"getmodules path=%s", pathbuffer);
-        
-        if([filter isUndefined]
-            || (i==0 && [[filter toString] isEqual:@"0"])
-            || [[filter toString] isEqual:[NSString stringWithUTF8String:basename((char*)pathbuffer) ]]
-        ){
-            [results addObject:@{
-                @"name" : [NSString stringWithUTF8String:pathbuffer],
-                @"start" : [NSString stringWithFormat:@"0x%llX", addr],
-                @"end" : [NSString stringWithFormat:@"0x%llX",
-                          (uint64_t)addr+[self getMachoVMSize:(uint64_t)addr] ],
-                //@"type" : @"rwxp",
-            }];
-            
-            if(i==0 && [[filter toString] isEqual:@"0"]) break;
-        }
-    }
-    vm_deallocate(mach_task_self(), ii, iiSize);
 
-    return results;
-}
+#define CS_VALID                    0x00000001  /* dynamically valid */
+#define CS_HARD                     0x00000100  /* don't load invalid pages */
+#define CS_KILL                     0x00000200  /* kill process if it becomes invalid */
+
+#define CS_OPS_STATUS           0       /* csops  operations *//* return status */
+extern "C" int csops(pid_t pid, unsigned int  ops, void * useraddr, size_t usersize);
 
 -(void)make {
 
-    struct statfs buf;
-    statfs("/", &buf);
-    NSLog(@"%s", buf.f_mntfromname);
-    const char* prefix = "com.apple.os.update-";
-    if(strstr(buf.f_mntfromname, prefix))
+//    struct statfs buf;
+//    statfs("/", &buf);
+//    NSLog(@"%s", buf.f_mntfromname);
+//    const char* prefix = "com.apple.os.update-";
+//    if(strstr(buf.f_mntfromname, prefix))
+    uint32_t g_csops_flags = 0;
+    csops(getpid(), 0, &g_csops_flags, 0);
+    NSLog(@"csops=%x", g_csops_flags);
+    uint32_t normalstate = CS_VALID|CS_HARD|CS_KILL;
+    if((g_csops_flags&normalstate) == normalstate)
     {
         if(![floatH5 confirm:@"你的设备未越狱! 你可以将:\n悬浮按钮图标文件 H5Icon.png\n悬浮菜单H5文件  H5Menu.html\n打包进ipa中的.app目录中即可自动加载!\n\n是否需要继续制作dylib ?"])
             return;

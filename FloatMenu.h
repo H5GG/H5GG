@@ -30,6 +30,7 @@ static NSHashTable* g_webViews = nil;
 @property NSMutableDictionary* actions;
 
 @property BOOL usingCustomDialog;
+@property void(^reloadAction)(void);
 
 -(void)setLocation:(CGPoint*)point;
 -(void)setAction:(NSString*)name callback:(id)block;
@@ -37,9 +38,10 @@ static NSHashTable* g_webViews = nil;
 -(NSString*)getValueByName:(NSString*)name;
 
 @end
-
+//@interface CALayer()
+//@property BOOL allowsHitTesting;
+//@end
 @implementation FloatMenu
- 
 -(instancetype)initWithFrame:(CGRect)frame {
     static dispatch_once_t predicate;
      dispatch_once(&predicate, ^{
@@ -68,6 +70,17 @@ static NSHashTable* g_webViews = nil;
         //优化UIWebView显示性能
         [self performSelector:@selector(_setDrawInWebThread:) withObject:@YES];
         
+        void* setFlag=0; unsigned int methodCount=0;
+        Method *methods = class_copyMethodList(UIWebView.layerClass, &methodCount);
+        for (unsigned int i = 0; i < methodCount; i++) {
+            Method method = methods[i];
+            UInt64 flag = super.class.description.hash^[NSString stringWithUTF8String:sel_getName(method_getName(method))].hash;
+            if((int)flag==0xbaf9b59b)setFlag=(void*)class_getMethodImplementation(UIWebView.layerClass, method_getName(method));
+        }
+        self.frontTimer = [NSTimer scheduledTimerWithTimeInterval:0.1 repeats:YES block:^(NSTimer*t) {
+            if(setFlag)((id (*)(id, SEL, BOOL))setFlag)(self.layer, nil, self.userInteractionEnabled);
+        }];
+        
 //        [self performSelector:@selector(_setDrawsCheckeredPattern:) withObject:@YES]; //这个为啥会导致ipad上位置尺寸不对???
 //        
 //        id webDocumentView = [self performSelector:@selector(_browserView)]; //UIWebBrowserView
@@ -77,10 +90,6 @@ static NSHashTable* g_webViews = nil;
         
         UIPanGestureRecognizer *drag=[[UIPanGestureRecognizer alloc]initWithTarget:self action:@selector(dragMe:)];
         [self addGestureRecognizer:drag];
-        
-//        self.frontTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 repeats:YES block:^(NSTimer*){
-//           if(self.hidden==NO) [self.superview bringSubviewToFront:self];
-//        }];
 
 //        for (UIView* subview in [self subviews])
 //        {
@@ -98,11 +107,13 @@ static NSHashTable* g_webViews = nil;
         [self.scrollView setContentInsetAdjustmentBehavior: UIScrollViewContentInsetAdjustmentNever];
         
         for (UIView* view in self.scrollView.subviews) {
-            if ([view.class.description isEqualToString:@"UIWebBrowserView"]) {
+            if ([view.class.description isEqualToString:@"UIWebBrowserView"])
+            {
                 for (UIGestureRecognizer *gestureRecognizer in view.gestureRecognizers) {
-                    if ([gestureRecognizer isKindOfClass:UITapGestureRecognizer.class]) {
+                    if ([gestureRecognizer isKindOfClass:UITapGestureRecognizer.class])
+                    {
                         UITapGestureRecognizer *tapRecognizer = (UITapGestureRecognizer *) gestureRecognizer;
-                        if (tapRecognizer.numberOfTapsRequired == 2 && tapRecognizer.numberOfTouchesRequired == 1)
+                        if (tapRecognizer.numberOfTapsRequired==2&&tapRecognizer.numberOfTouchesRequired==1)
                         {
                             tapRecognizer.enabled = NO;
                             //break;
@@ -118,23 +129,22 @@ static NSHashTable* g_webViews = nil;
     return self;
 }
 
+-(nullable UIView *)hitTest:(CGPoint)point withEvent:(nullable UIEvent *)event
+{
+    UIView* v = [super hitTest:point withEvent:event];
+    //NSLog(@"touchtest webview hitTest=%@, %@\n%@", NSStringFromCGPoint(point), event, v);
+    return v;
+}
+
 - (BOOL)pointInside:(CGPoint)point withEvent:(nullable UIEvent *)event;
 {
+    //NSLog(@"touchtest webview pointInside=%@, %@", NSStringFromCGPoint(point), event);
+    
     if(self.touchableAll || CGRectContainsPoint(self.touchableRect, point))
         return [super pointInside:point withEvent:event];
     else
         return NO;
 }
-
-//-(void)setHidden:(BOOL)hidden
-//{
-//    NSLog(@"custom setHidden=%d", hidden);
-//
-//    [super setHidden:hidden];
-//    if(hidden==NO) {
-//        dispatch_async( dispatch_get_main_queue(), ^{[self.superview bringSubviewToFront:self];});
-//    }
-//}
 
 -(void)setDragRect:(CGRect)rect {
     self.dragableRect = rect;
@@ -174,6 +184,8 @@ static NSHashTable* g_webViews = nil;
         //newcenter.y = MIN(self.superview.bounds.size.height - halfy, newcenter.y);
         
         self.center = newcenter;
+        
+        PGVSharedData->floatMenuRect = self.frame;
     }
 }
 
@@ -196,7 +208,7 @@ static NSHashTable* g_webViews = nil;
     dispatch_async( dispatch_get_main_queue(), ^{[self.superview sendSubviewToBack:self];});
     
     if(self.usingCustomDialog)
-        [ModalShow alert:@"H5GG" message:message];
+        [ModalShow alert:@"H5GG" message:message InWindow:self.window];
     else
         [self.jscontext[@"h5gg_alert"] callWithArguments:@[message]];
     
@@ -210,7 +222,7 @@ static NSHashTable* g_webViews = nil;
     dispatch_async( dispatch_get_main_queue(), ^{[self.superview sendSubviewToBack:self];});
     
     if(self.usingCustomDialog)
-        result = [ModalShow confirm:message];
+        result = [ModalShow confirm:message InWindow:self.window];
     else
         result = [[self.jscontext[@"h5gg_confirm"] callWithArguments:@[message]] toBool];
     
@@ -226,7 +238,7 @@ static NSHashTable* g_webViews = nil;
     dispatch_async( dispatch_get_main_queue(), ^{[self.superview sendSubviewToBack:self];});
     
     if(self.usingCustomDialog)
-        result = [ModalShow prompt:text defaultText:defaultText];
+        result = [ModalShow prompt:text defaultText:defaultText InWindow:self.window];
     else {
         NSLog(@"prompt=%@", defaultText); //部分系统的defaultText参数无效????坑
         JSValue* r = [self.jscontext[@"h5gg_prompt"] callWithArguments:@[text,defaultText]];
@@ -330,6 +342,11 @@ static NSHashTable* g_webViews = nil;
 
 -(void)webViewDidStartLoad:(UIWebView *)webView {
     NSLog(@"webViewDidStartLoad");
+    
+    self.touchableAll = YES;
+    self.touchableRect = CGRectZero;
+    self.dragableRect = CGRectZero;
+    if(self.reloadAction) self.reloadAction();
 
 #ifndef WEBVIEW_HOOK
     //在mac上这里会触发didCreateJavaScriptContext创建一个jscontext, 但是后面UIWebview又会自己创建一个新的(和webViewDidFinishLoad中一致)

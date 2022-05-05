@@ -1,9 +1,0 @@
-Package: com.shadow.h5ggapp
-Name: H5GGApp
-Depends: mobilesubstrate
-Architecture: iphoneos-arm
-Description: H5GG跨进程App v5.9
-Maintainer: Shadow-
-Author: Shadow-
-Section: System
-Version: 5.9

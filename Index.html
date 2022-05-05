@@ -2,7 +2,7 @@
 H5GG 版本更新记录:
 
 H5GG v3.5 正式发布：
-1：修复QQ卡死和部分APP悬浮菜单消失问题
+1：修复个别APP卡死和悬浮菜单消失问题
 2：修复浮点显示为0问题并区分显示浮点
 3：修复邻近搜索，保留匹配的原数据，保留原数据格式，基本上和igg一模一样
 4：搜索排除一部分插件自己数据
@@ -145,6 +145,59 @@ H5GG v6.0 测试:
 4: 修复手机握持朝向变化时界面闪烁的问题
 5: 修复部分APP中开启提示JS加载失败的问题
 
+H5GG v6.1 测试:
+1: 修复跨进程APP打开可能的闪退问题
+2: 修复点击桌面悬浮按钮卡屏无反应问题
+3: 修复旋转屏幕时悬浮按钮到屏幕外的问题
+
+H5GG v6.2 测试:
+1: 修复跨进程悬浮锁屏后解锁无法打开问题
+2: 跨进程悬浮模式支持全局透明背景
+3: 跨进程悬浮模式支持悬浮窗口外触摸穿透
+4: 跨进程悬浮模式支持自定义按钮动作
+5: 分离跨进程悬浮模块为可插拔式
+
+H5GG v6.3 测试:
+1: 完美支持ipad分屏/悬浮自动调整界面布局
+2: 修复ipad分屏旋转屏幕悬浮图标位置错乱问题
+3: 修复跨进程划出多任务悬浮界面显示异常问题
+4: 重新优化跨进程悬浮旋转方式,自动跟随当前APP
+5: 加载新的H5页面前自动清除拖动区域,按钮动作等
+
+H5GG v6.4 测试:
+1: 跨进程悬浮版不在支持iPad分屏和浮动
+2: 新增跨进程普通版,支持iPad分屏和浮动
+3: 修复iPad分屏浮动时显示超出边框问题
+4: 修复跨进程悬浮在ipad旋转布局异常问题
+5: 修复跨进程悬浮在ipad可能开启卡住问题
+6: 修复通用版无网络情况下开启可能闪退的问题
+
+H5GG v6.5 测试:
+1: 修复跨进程版全屏绘图无法触控屏幕的问题
+2: 修复全屏模式下隐藏显示菜单可能闪退问题
+3: 修复搜索结果列表高度显示可能异常的问题
+4: 修复部分ios13弹出提示框显示在下层的问题
+
+H5GG v6.6 测试:
+1: 跨进程全屏悬浮适配ios12系统
+2: 通用版禁入部分会出现冲突的APP
+
+H5GG v6.7 测试:
+1: 跨进程全屏悬浮适配ios11系统悬浮
+2: 修复跨进程版卸载deb自动结束的问题
+3: 增加跨进程版本没有选择目标的提示信息
+4: 增加js接口setLayoutAction处理动态布局
+5: 优化部分逻辑判断提前适配ios15系统越狱
+6: 优化悬浮窗口自动布局适配部分老旧设备
+
+H5GG v6.8 测试:
+1: 跨进程悬浮图标调整为开启APP后才显示
+2: 跨进程悬浮版支持制作插件的自定义图标
+
+H5GG v6.9 更新:
+1: 修复跨进程悬浮版开启无反应问题
+2: 修复跨进程版卸载后图标残留问题
+
 -->
 <html>
 <head>
@@ -201,8 +254,8 @@ button {
     outline: none;
     border: none;
     border-radius: 5px;
-    padding: 0 8px;
-    margin: 1px;
+    padding: 0 6px;
+    margin: 2px;
 }
 
 button:active {
@@ -220,7 +273,7 @@ input[type=radio]  {
     vertical-align:middle;
     border:1px solid #686868F0;
     border-radius:50%;
-    margin:6px;
+    margin:6px 4px;
 }
 input[type=radio]:checked {
     border:5px solid #2F7DCDF0;
@@ -469,7 +522,7 @@ if(typeof $ == 'undefined')
 </script>
 
 <!--script>
-***************** H5GGv6.0 ** JS脚本引擎 *******************
+***************** H5GG JS脚本引擎 (v6.7更新) *******************
 h5gg是引擎对象, 可以调用如下函数(类似安卓gg的lua接口,但是参数有些区别)
 
 h5gg.setFloatTolerance('浮点偏差'); //设置F32/F64浮点搜索的偏差范围, 引擎默认是0.0
@@ -498,6 +551,8 @@ setWindowDrag(x, y, 宽度, 高度); //设置H5页面中可拖动悬浮窗的区
 setWindowTouch(是否响应触控); //true=整个悬浮窗口触摸不可穿透, false=整个悬浮窗口触摸可以穿透
 setWindowTouch(x, y, 宽度, 高度); //单独设置H5页面中可触控操作的区域, 区域外触控可以穿透
 setWindowVisible(是否显示), //设置悬浮窗口的可见性, true=显示, false=隐藏
+
+setLayoutAction(js回调函数); //设置屏幕旋转或iPad分屏浮动变化时的js回调,回调函数参数为(宽,高)
 
 已废弃接口(目前版本调用无效果, 将来版本调用可能报错): closeMenu,setFloatButton,setFloatWindow
 
@@ -585,33 +640,18 @@ $(document).ready(function(){
         setWindowDrag(0, 0, 400, 80);
         
         //布局调整函数
-        var layout = function() {
-            
-            //window.orientation是设备握持方向, 不是屏幕显示方向
-            if(window.lastorientation==window.orientation) return;
-            window.lastorientation=window.orientation;
-            
-            //window.screen中的宽高不会随着屏幕旋转更新(只会在初始化的时候固定)
-            if(Math.abs(window.orientation)==90) {
-                var x = (window.screen.height-370)/2;
-                var y = (window.screen.width-370)/2;
-                setWindowRect(x,y,370,370);
-            } else {
-                //竖屏模式加大显示高度
-                var x = (window.screen.width-370)/2;
-                var y = (window.screen.height-600)/2;
-                setWindowRect(x,y,370,600);
+        setLayoutAction(function(w,h) {
+            var width = 370; var height = 370; //默认尺寸
+            if(w<h) {
+                height = 600; //竖屏模式加大显示高度
             }
-        }
-        
-        if(navigator.userAgent.toString().indexOf("iPad")>0) {
-            //如果是ipad直接显示在左边, 防止分屏切换导致看不到悬浮窗口
-            setWindowRect(0,100,370,600);
-        } else {
-            layout();
-            window.addEventListener("orientationchange", layout, false);
-        }
-        
+            width = Math.min(width, w); //适配iPad浮窗, 最大宽度不超出
+            height = Math.min(height, h); //适配老设备, 最大高度不超出
+            var x = (w-width)/2;
+            var y = (h-height)/2;
+            setWindowRect(x,y,width,height);
+        });
+
         if(h5gg.getProcList())  //不为空(null)说明是具有跨进程权限
         {
             refreshProcList();
@@ -620,39 +660,40 @@ $(document).ready(function(){
             $("#popup_proclist").show();
             $("#maskview").show();
             $("#closeMenu").hide();
-        } else  {
-            $("#crossproc").hide();
-        }
-        
-        setInterval(function(){
-            if($("#popup_proclist").is(":visible"))
-                refreshProcList();
+            
+            setInterval(function(){
+                if($("#popup_proclist").is(":visible"))
+                    refreshProcList();
 
-            if($("#procname").attr('pid'))
-            {
-                var procs = h5gg.getProcList();
-                var alive = false;
-                for(var i=0; i<procs.length; i++) {
-                    if(procs[i].pid == $("#procname").attr('pid')) {
-                        alive=true;
-                        break;
+                if($("#procname").attr('pid'))
+                {
+                    var procs = h5gg.getProcList();
+                    var alive = false;
+                    for(var i=0; i<procs.length; i++) {
+                        if(procs[i].pid == $("#procname").attr('pid')) {
+                            alive=true;
+                            break;
+                        }
+                    }
+                    
+                    if(!alive) {
+                        alert("目标进程已结束\n\n请点击标题栏选择新的目标");
+                        $("#procname").removeAttr('pid');
+                        $("#procname").text('');
                     }
                 }
                 
-                if(!alive) {
-                    alert("目标进程已结束\n\n请点击标题栏选择新的目标");
-                    $("#procname").removeAttr('pid');
-                    $("#procname").text('');
-                }
-            }
+            }, 1500);
             
-        }, 1500);
+        } else  {
+            $("#crossproc").hide();
+        }
     }
     
-    
-    //设置菜单体高度 = 页面总高 - 标题高度
+    //改为用css3的calc计算了可以自动调整
+    /*/设置菜单体高度 = 页面总高 - 标题高度
     $("#bodyView").height(document.body.offsetHeight - $('#titleBar')[0].offsetHeight);
-    $("#listdiv").html($("#listdiv").html()); //刷新一下内容, 否则这个高度不会自动更新
+    $("#listdiv").html($("#listdiv").html()); //刷新一下内容, 否则这个高度不会自动更新*/
     
     //点击结果列表里面的地址时弹出修改窗口, 要在listdiv刷新html之后绑定
     $("table#resultList").on('click','tr', function()
@@ -962,22 +1003,22 @@ function onClickSearchNearby()
 </head>
 <body bgcolor="#E8E8E8" style="margin:0;">
 <!--标题栏-->
-<div id="titleBar" style="background-color:#D1D1D1; padding:5px; margin:0px;">
-&nbsp;<font style="color:green">H5</font> <font style="color:red">GG</font>&nbsp;v6.0
+<div id="titleBar" style="background-color:#D1D1D1; padding:5px; margin:0px; height:12px">
+&nbsp;<font style="color:green">H5</font> <font style="color:red">GG</font>&nbsp;v6.9
 <span id="crossproc" style="display:none">
 <font style="color:blue">&nbsp;跨进程&nbsp;</font><font id="procname">procname</font>
 </span>
     
-<div id="closeMenu" style="float:right; font-size:16px; font-family: Arial, sans-serif;" onclick="setWindowVisible(false)">&nbsp;X&nbsp;</div>
+<div id="closeMenu" style="float:right; font-size:16px; line-height:14px; font-family: Arial, sans-serif;" onclick="setWindowVisible(false)">&nbsp;X&nbsp;</div>
 </div>
 <!--用一个表格来布局左右两栏-->
-<table id="bodyView" width="100%" style="table-layout:fixed">
+<table id="bodyView" width="100%" style="table-layout:fixed;height: calc(100% - 22px) ;">
 <tr>
-<td style="vertical-align:top;width:135px;border-right:solid 2px #D1D1D1;">
+<td style="vertical-align:top;width:130px;border-right:solid 2px #D1D1D1;">
 <div>
-搜索下限:<input id="range_min" style="width:85px" value="0x00000000" />
+搜索下限:<input id="range_min" style="width:80px;padding-left:0" value="0x00000000" />
 <br/>
-搜索上限:<input id="range_max" style="width:85px"  value="0x200000000" />
+搜索上限:<input id="range_max" style="width:80px;padding-left:0"  value="0x200000000" />
 <br/>
 <label><input type=radio name="numtype" value="signed" checked />有符号</label>
 <label><input type=radio name="numtype" value="unsigned" />无符号</label>
@@ -992,9 +1033,9 @@ function onClickSearchNearby()
 <button onclick="onShowLoadScript(true)">加载脚本</button>
 <button onclick="h5gg.make()">制作插件</button>
 <br/>
-邻近范围:<input id="nearby_range" style="width:82px"  value="0x100"/>
+邻近范围:<input id="nearby_range" style="width:80px"  value="0x100"/>
 <br/>
-浮点误差:<input id="float_tolerance" style="width:82px" value="0.0"/>
+浮点误差:<input id="float_tolerance" style="width:80px" value="0.0"/>
 <br/>
 <p id="results_count" style="display:none">共找到<span>0</span>条结果</p>
 </div>

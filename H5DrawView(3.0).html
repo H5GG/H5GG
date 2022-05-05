@@ -107,13 +107,38 @@ $(document).ready(function(){
     document.body.addEventListener('touchstart', function () {});
     
     
-    if(typeof h5gg != 'undefined') {
+    if(typeof h5gg != 'undefined')
+    {
+        //设置不可拖动
+        setWindowDrag(0, 0, 0, 0);
     
-        //全屏显示
-        if(window.screen.availWidth < window.screen.availHeight)
-            setWindowRect(0, 0, window.screen.width, window.screen.height); //竖屏
-        else
-            setWindowRect(0, 0, window.screen.height, window.screen.width); //横屏
+        var layout = function()
+        {
+            //window.orientation是设备握持方向, 不是屏幕显示方向
+            if(window.lastorientation==window.orientation) return;
+            window.lastorientation=window.orientation;
+            
+            //获取画布
+            var canvas = document.querySelector("#cav");
+            //设置按照屏幕像素尺寸绘图(高清模式)
+            var scale = window.devicePixelRatio;
+            
+            //window.screen中的宽高不会随着屏幕旋转更新(只会在初始化的时候固定)
+            if(Math.abs(window.orientation)==90) {
+                //横屏模式
+                setWindowRect(0,0,window.screen.height,window.screen.width);
+                canvas.width = window.screen.height * scale;
+                canvas.height = window.screen.width * scale;
+            } else {
+                //竖屏模式
+                setWindowRect(0,0,window.screen.width,window.screen.height);
+                canvas.height = window.screen.height * scale;
+                canvas.width = window.screen.width * scale;
+            }
+        }
+        
+        layout(); //设置旋转屏幕时自动调整布局和画布
+        window.addEventListener("orientationchange", layout, false);
        
        //设置自定义的悬浮按钮图标点击动作
        setButtonAction(function(){
@@ -132,20 +157,6 @@ $(document).ready(function(){
        });
     }
     
-    //获取画布
-    var canvas = document.querySelector("#cav");
-    //设置按照屏幕像素尺寸绘图(高清模式)
-    var scale = window.devicePixelRatio;
-    if(window.screen.availWidth < window.screen.availHeight) {
-        //竖屏模式
-        canvas.height = window.screen.height * scale;
-        canvas.width = window.screen.width * scale;
-    } else {
-        //横屏模式
-        canvas.width = window.screen.height * scale;
-        canvas.height = window.screen.width * scale;
-    }
-    
     //添加圆角矩形功能
     CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
         if (w < 2 * r) r = w / 2;
@@ -159,6 +170,9 @@ $(document).ready(function(){
         this.closePath();
         return this;
     }
+    
+    //获取画布
+    var canvas = document.querySelector("#cav");
     
     //获取绘图
     var ctx = canvas.getContext("2d", {

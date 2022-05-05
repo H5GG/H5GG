@@ -445,7 +445,7 @@ public:
         }
     }
 
-    void JJNearBySearch(int range, void *target, int type)
+    void JJNearBySearch(size_t range, void *target, int type)
     {
         if(type<=0 || type>=JJ_Search_Type_Max) return;
         

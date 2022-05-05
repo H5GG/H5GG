@@ -10,13 +10,15 @@ and you can customize UI by using HTML+CSS.
 
 and you can make your own tweak(dylib) by click one button, then just select your icon and .html file, so easy!
 
-supported 3 modes to run:
+supported 4 modes to run:
 
-1. inject to ipa in non-jailbreak devices
+1. inject H5GG.dylib to ipa for non-jailbreak devices
 
-2. tweak(deb) in jailbroken devices
+2. tweak(deb) auto load for all app in jailbroken devices
 
-3. standalone APP(deb) in jailbroken devices
+3. standalone APP for jailbroken devices(support iPad SlideOver+SplitView)
+
+4. Floating On Screen for jailbroken devices(not support iPad SlideOver+SplitView), this has tested on ios11+
 
 it's completely free & open source!
  
@@ -26,9 +28,10 @@ it's completely free & open source!
 
 ![text](https://static.gameguardian.net/monthly_2022_04/image.thumb.png.20dce31a6fb8d9458c569a05b3bd3349.png)
 
+
 currently supported JS APIs:
 
-**************** H5GGv5.9 ** JS script engine ********************
+**************** H5GG JavaScript Engine(update on v5.9) ********************
 
 h5gg is the engine object, which can call the following functions (similar to the lua interface of Android gg, but the parameters are somewhat different)
 
@@ -98,5 +101,12 @@ Notice:
 6: The numerical value of the search supports the range format, such as "50～100", such as "2.3～7.8", both numerical search and adjacent (joint) search are supported
 
 5: The default size of the floating window is 370 points wide and 370 points high. You can set the position, size and draggable area through the js interface on the H5 page.
+
+
+Welcome to join development and submit fixes! 
+
+
+changlog is in the header of Menu.html
+
 
 

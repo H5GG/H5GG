@@ -1,5 +1,0 @@
-#!/bin/sh
-
-ln -s /Library/MobileSubstrate/DynamicLibraries/H5GGApp.dylib /Applications/h5ggapp.app/H5GG.dylib
-uicache -p /Applications/h5ggapp.app
-killall -9 SpringBoard
