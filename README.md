@@ -22,11 +22,11 @@ supported 4 modes to run:
 
 it's completely free & open source!
  
-![text](https://static.gameguardian.net/monthly_2022_04/image.thumb.png.433774be109efdf5813f767a9bd9edb4.png)
+![text](/pictures/h5gg1.png)
 
-![text](https://static.gameguardian.net/monthly_2022_04/image.thumb.png.c814bd0ae4ea89f3aa260e50d03172e8.png)
+![text](/pictures/h5gg2.png)
 
-![text](https://static.gameguardian.net/monthly_2022_04/image.thumb.png.20dce31a6fb8d9458c569a05b3bd3349.png)
+![text](/pictures/h5gg3.png)
 
 
 currently supported JS APIs:
