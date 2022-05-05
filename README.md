@@ -83,6 +83,7 @@ setWindowTouch(x, y, width, height); //Set the touch-operable area in the H5 pag
 
 setWindowVisible (whether to display), //Set the visibility of the floating window, true=display, false=hidden
 
+setLayoutAction(js callback function); //Set the js callback when the screen rotates or the iPad split screen float changes, the callback function parameters are (width, height)
  
 Notice:
 
