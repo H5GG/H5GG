@@ -107,7 +107,7 @@ Notice:
 Welcome to join development and submit fixes! 
 
 
-changlog is in the header of Menu.html
+changlog is in the header of Index.html
 
 
 
