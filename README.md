@@ -31,7 +31,7 @@ it's completely free & open source!
 
 currently supported JS APIs:
 
-**************** H5GG JavaScript Engine(update on v5.9) ********************
+**************** H5GG JavaScript Engine(update on v7.0) ********************
 
 h5gg is the engine object, which can call the following functions (similar to the lua interface of Android gg, but the parameters are somewhat different)
 
@@ -78,8 +78,6 @@ setWindowRect(x, y, width, height); //Modify the position and size of the window
 setWindowDrag(x, y, width, height); //Set the area of the draggable floating window in the H5 page
 
 setWindowTouch (whether to respond to touch); //true=the entire floating window is impenetrable by touch, false=the entire floating window can be touched by touch
-
-setWindowTouch(x, y, width, height); //Set the touch-operable area in the H5 page separately, and touch outside the area can penetrate
 
 setWindowVisible (whether to display), //Set the visibility of the floating window, true=display, false=hidden
 
