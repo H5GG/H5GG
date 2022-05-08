@@ -1,3 +1,50 @@
+<script>
+***************** H5GG JS脚本引擎 (v7.0更新) *******************
+h5gg是引擎对象, 可以调用如下函数(类似安卓gg的lua接口,但是参数有些区别)
+
+h5gg.setFloatTolerance('浮点偏差'); //设置F32/F64浮点搜索的偏差范围, 引擎默认是0.0
+h5gg.searchNumber('数值', '类型', '搜索下限', '搜索上限'); //搜索或二次搜索(改善)精确数值
+h5gg.searchNearby('数值', '类型', '邻近范围');  //邻近(联合)搜索, 和igg的一致
+h5gg.getValue('地址', '类型'); //读取指定地址的数值, 返回数值字符串
+h5gg.setValue('地址', '数值', '类型'); //设置指定地址的数值, 返回成功或失败
+h5gg.editAll('数值', '类型'); //修改搜索结果中的全部数值(清除结果后不能调用),返回修改成功个数
+h5gg.getResultsCount(); //获取搜索结果的总数量, 返回总个数
+h5gg.getResults('获取个数', '跳过个数'); //获取结果数组, 每个元素有address,value,type三个属性
+h5gg.clearResults(); //清除搜索结果, 开始新的搜索
+h5gg.getRangesList(‘模块文件名’); //返回模块数组,模块有start(基址),end(结尾地址),name(路径)属性
+    (若模块文件名=0, 则返回APP主程序模块信息, 若不传入模块文件名, 则返回所有模块列表)
+
+跨进程版专用(跨进程版制作插件的html需要先调用选择进程):
+h5gg.setTargetProc(进程号); //设定当前目标进程, 返回成功或失败
+h5gg.getProcList('进程名'); //获取进程数组, 数组中的元素有pid(进程号), name(进程名) 属性
+    (若不传入进程名, 则返回所有运行中的app进程列表, 可以定时循环调用确定目标进程是否已经结束)
+
+其他接口:
+setButtonImage(图标); //设置悬浮按钮图标, 可以传入http开头网址图片或base64编码的DataURL图片
+setButtonAction(js回调函数); //设置自定义的悬浮按钮图标点击动作, 传入一个js函数点击时被调用
+
+setWindowRect(x, y, 宽度, 高度); //修改悬浮窗口在屏幕中位置和尺寸
+setWindowDrag(x, y, 宽度, 高度); //设置悬浮窗口中可拖动悬浮窗的区域
+setWindowTouch(是否响应触控); //true=整个悬浮窗口触摸不可穿透, false=整个悬浮窗口触摸可以穿透
+setWindowVisible(悬浮窗显示状态), //设置悬浮窗口的可见性, true=显示, false=隐藏
+
+setLayoutAction(js回调函数); //设置屏幕旋转或iPad分屏浮动变化时的js回调,回调函数参数为(宽,高)
+
+已废弃接口(目前版本调用无效果, 将来版本调用可能报错): closeMenu,setFloatButton,setFloatWindow
+
+注意:
+1: 地址参数支持十进制或0x开头十六进制格式自动识别, 其他参数必须是字符串格式
+2: 浮点类型分为:F32,F64, 有符号数:I8,I16,I32,I64, 无符号数:U8,U16,U32,U64
+3: 如果搜索结果比较多, 不要一次性getResults获取全部数据, 容易造成内存爆增闪退崩溃, 应分段获取
+4: 搜索结果的地址和数值都是字符串类型, 如果要做数字运算请先用Number(x)转换成数字类型才能进行运算
+5: lua中会自动将+号两边的字符串类型转换成数字类型, js中+号如果是字符串就会连接两个字符串)
+6: lua中数组索引第一个是从[1]开始, js中数组索引第一个是从[0]开始, 这一点需要特别注意
+7: 数字类型可以用x.toString(16)转换成十六进制字符串格式, 但是x一定要是数字类型才能转成功
+8: 搜索的数值支持范围格式, 比如"50~100", 比如"2.3~7.8", 数值搜索和邻近(联合)搜索都支持
+9: 悬浮窗默认尺寸为370x370, 可在H5页面启动时通过js接口设置位置和尺寸以及可拖动区域
+
+</script>
+<!---->
 <!--
 H5GG 版本更新记录:
 
@@ -197,6 +244,11 @@ H5GG v6.8 测试:
 H5GG v6.9 更新:
 1: 修复跨进程悬浮版开启无反应问题
 2: 修复跨进程版卸载后图标残留问题
+
+H5GG v7.0 更新:
+1: 修复制作插件生成的dylib在部分设备系统可能闪退的问题
+2: 修复部分特殊情况下js脚本出错的提示信息不完整的问题
+3: 支持单独调整悬浮窗口的位置或尺寸
 
 -->
 <html>
@@ -514,66 +566,12 @@ table.datatype {
 
 </style>
 
-<!--JS脚本代码开始, 先引入jquery库方便使用 $ 操作符-->
 <script>
+
 var h5gg_jquery_stub;
+
 if(typeof $ == 'undefined')
     document.write("<script src=\"https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js\"><\/script>");
-</script>
-
-<!--script>
-***************** H5GG JS脚本引擎 (v6.7更新) *******************
-h5gg是引擎对象, 可以调用如下函数(类似安卓gg的lua接口,但是参数有些区别)
-
-h5gg.setFloatTolerance('浮点偏差'); //设置F32/F64浮点搜索的偏差范围, 引擎默认是0.0
-h5gg.searchNumber('数值', '类型', '搜索下限', '搜索上限'); //搜索或二次搜索(改善)精确数值
-h5gg.searchNearby('数值', '类型', '邻近范围');  //邻近(联合)搜索, 和igg的一致
-h5gg.getValue('地址', '类型'); //读取指定地址的数值, 返回数值字符串
-h5gg.setValue('地址', '数值', '类型'); //设置指定地址的数值, 返回成功或失败
-h5gg.editAll('数值', '类型'); //修改搜索结果中的全部数值(清除结果后不能调用),返回修改成功个数
-h5gg.getResultsCount(); //获取搜索结果的总数量, 返回总个数
-h5gg.getResults('获取个数', '跳过个数'); //获取结果数组, 每个元素有address,value,type三个属性
-h5gg.clearResults(); //清除搜索结果, 开始新的搜索
-h5gg.getRangesList(‘模块文件名’); //返回模块数组,模块有start(基址),end(结尾地址),name(路径)属性
-    (若模块文件名=0, 则返回APP主程序模块信息, 若不传入模块文件名, 则返回所有模块列表)
-
-跨进程版专用:
-h5gg.setTargetProc(进程号); //设定当前目标进程, 返回成功或失败
-h5gg.getProcList('进程名'); //获取进程数组, 数组中的元素有pid(进程号), name(进程名) 属性
-    (若不传入进程名, 则返回所有运行中的app进程列表, 可以定时循环调用确定目标进程是否已经结束)
-
-其他接口:
-setButtonImage(图标); //设置悬浮按钮图标, 可以传入http开头网址图片或base64编码的DataURL图片
-setButtonAction(js回调函数); //设置自定义的悬浮按钮图标点击动作, 传入一个js函数点击时被调用
-
-setWindowRect(x, y, 宽度, 高度); //修改悬浮在屏幕中窗口位置和尺寸
-setWindowDrag(x, y, 宽度, 高度); //设置H5页面中可拖动悬浮窗的区域
-setWindowTouch(是否响应触控); //true=整个悬浮窗口触摸不可穿透, false=整个悬浮窗口触摸可以穿透
-setWindowTouch(x, y, 宽度, 高度); //单独设置H5页面中可触控操作的区域, 区域外触控可以穿透
-setWindowVisible(是否显示), //设置悬浮窗口的可见性, true=显示, false=隐藏
-
-setLayoutAction(js回调函数); //设置屏幕旋转或iPad分屏浮动变化时的js回调,回调函数参数为(宽,高)
-
-已废弃接口(目前版本调用无效果, 将来版本调用可能报错): closeMenu,setFloatButton,setFloatWindow
-
-注意:
-1: 地址参数支持十进制或0x开头十六进制格式自动识别, 其他参数必须是字符串格式
-2: 浮点类型分为:F32,F64, 有符号数:I8,I16,I32,I64, 无符号数:U8,U16,U32,U64
-3: 如果搜索结果比较多, 不要一次性getResults获取全部数据, 容易造成内存爆增闪退崩溃, 应分段获取
-4: 搜索结果的地址和数值都是字符串类型, 如果要做数字运算请先用Number(x)转换成数字类型才能进行运算
-5: lua中会自动将+号两边的字符串类型转换成数字类型, js中+号如果是字符串就会连接两个字符串)
-6: lua中数组索引第一个是从[1]开始, js中数组索引第一个是从[0]开始, 这一点需要特别注意
-7: 数字类型可以用x.toString(16)转换成十六进制字符串格式, 但是x一定要是数字类型才能转成功
-8: 搜索的数值支持范围格式, 比如"50~100", 比如"2.3~7.8", 数值搜索和邻近(联合)搜索都支持
-9: 悬浮窗默认尺寸为370x370, 可在H5页面启动时通过js接口设置位置和尺寸以及可拖动区域
-
-</script>
-<!---->
-<script>
-    
-if(typeof $ == 'undefined')
-    //while(1)
-        alert("网络连接失败, 请重新启动!");
     
 //根据选择的有符号/无符号数确定搜索类型
 function h5ggType(type)
@@ -593,11 +591,11 @@ function h5ggType(type)
     
     return type;
 }
-    
+
 //页面显示完毕事件
 $(document).ready(function(){
     /*禁止文本选择和拖动*/
-    document.body.onselectstart = document.body.ondrag =function(){
+    document.body.onselectstart = document.body.ondrag = function(){
         return false;
     }
     //文本框等输入完毕后页面自动滚动到顶部
@@ -690,11 +688,6 @@ $(document).ready(function(){
         }
     }
     
-    //改为用css3的calc计算了可以自动调整
-    /*/设置菜单体高度 = 页面总高 - 标题高度
-    $("#bodyView").height(document.body.offsetHeight - $('#titleBar')[0].offsetHeight);
-    $("#listdiv").html($("#listdiv").html()); //刷新一下内容, 否则这个高度不会自动更新*/
-    
     //点击结果列表里面的地址时弹出修改窗口, 要在listdiv刷新html之后绑定
     $("table#resultList").on('click','tr', function()
     {
@@ -784,9 +777,9 @@ function onShowLoadScript(show)
     }
 }
 
-function onClickLoadScript(url)
+function onClickLoadScript(url, type)
 {
-    if(!url)return;
+    if(!url) return;
     
     $("#popup_progress").show();
     $("#maskview_script").show();
@@ -796,7 +789,7 @@ function onClickLoadScript(url)
     url = new URL(url);
     url.searchParams.append("_", Math.random());
     
-    if(/\.js$/.test(url.pathname)==false) {
+    if(type=='h5' || (!type&&!/\.js$/.test(url.pathname))) {
         window.location = url.href;
         return;
     }
@@ -1004,7 +997,7 @@ function onClickSearchNearby()
 <body bgcolor="#E8E8E8" style="margin:0;">
 <!--标题栏-->
 <div id="titleBar" style="background-color:#D1D1D1; padding:5px; margin:0px; height:12px">
-&nbsp;<font style="color:green">H5</font> <font style="color:red">GG</font>&nbsp;v6.9
+&nbsp;<font style="color:green">H5</font> <font style="color:red">GG</font>&nbsp;v7.0
 <span id="crossproc" style="display:none">
 <font style="color:blue">&nbsp;跨进程&nbsp;</font><font id="procname">procname</font>
 </span>
@@ -1033,9 +1026,9 @@ function onClickSearchNearby()
 <button onclick="onShowLoadScript(true)">加载脚本</button>
 <button onclick="h5gg.make()">制作插件</button>
 <br/>
-邻近范围:<input id="nearby_range" style="width:80px"  value="0x100"/>
+邻近范围:<input id="nearby_range" style="width:78px"  value="0x100"/>
 <br/>
-浮点误差:<input id="float_tolerance" style="width:80px" value="0.0"/>
+浮点误差:<input id="float_tolerance" style="width:78px" value="0.0"/>
 <br/>
 <p id="results_count" style="display:none">共找到<span>0</span>条结果</p>
 </div>
@@ -1119,8 +1112,8 @@ function onClickSearchNearby()
 <input id="netjsurl" style="width:100%" placeholder="请输入http/https开头的js/html文件网址链接" />
 <br/><br/><br/>
 <hr/>
-<button onclick="onClickLoadScript($('#netjsurl').val())">加载JS脚本</button>
-<button onclick="if($('#netjsurl').val())window.location=$('#netjsurl').val();">加载H5页面</button>
+<button onclick="onClickLoadScript($('#netjsurl').val(), 'js')">加载JS脚本</button>
+<button onclick="onClickLoadScript($('#netjsurl').val(), 'h5');">加载H5页面</button>
 </div>
 
 <!--运行脚本灰色遮罩层(执行脚本时用)-->

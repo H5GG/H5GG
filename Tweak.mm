@@ -26,7 +26,7 @@ bool g_standalone_runmode = false;
 
 #include "globalview/globalview.h"
 
-GVData StaticGVSharedData;
+GVData StaticGVSharedData = GVDataDefault;
 GVData* PGVSharedData = &StaticGVSharedData;
 
 //使用incbin库用于嵌入其他资源文件
@@ -286,7 +286,11 @@ FloatMenu* initFloatMenu(UIWindow* win)
     [floatH5 setAction:@"setWindowRect" callback:^(int x, int y, int w, int h) {
         //通过主线程执行下面的代码
         dispatch_async(dispatch_get_main_queue(), ^{
-            floatH5.frame = CGRectMake(x,y,w,h);
+            CGFloat tx = x==-1 ? floatH5.frame.origin.x : x;
+            CGFloat ty = y==-1 ? floatH5.frame.origin.y : y;
+            CGFloat tw = w==-1 ? floatH5.frame.size.width : w;
+            CGFloat th = h==-1 ? floatH5.frame.size.height : h;
+            floatH5.frame = CGRectMake(tx,ty,tw,th);
             PGVSharedData->floatMenuRect = floatH5.frame;
         });
     }];
@@ -356,7 +360,7 @@ FloatMenu* initFloatMenu(UIWindow* win)
         if([[htmlstub lowercaseString] hasPrefix:@"http"])
             [floatH5 loadRequest:[[NSURLRequest alloc] initWithURL:[NSURL URLWithString:htmlstub]]];
         else
-            [floatH5 loadHTMLString:htmlstub baseURL:[NSURL URLWithString:@"html@dylib"]];
+            [floatH5 loadHTMLString:htmlstub baseURL:[NSURL URLWithString:@"Index"]];
     } else if([[NSFileManager defaultManager] fileExistsAtPath:h5file]) {
         //第二优先级: 从文件加载H5
         [floatH5 loadRequest:[[NSURLRequest alloc] initWithURL:[NSURL URLWithString:h5file]]];
@@ -365,7 +369,7 @@ FloatMenu* initFloatMenu(UIWindow* win)
         NSString* h5gghtml = [NSString stringWithUTF8String:gMenuData];
         NSString* jquery = [NSString stringWithUTF8String:gH5GG_JQUERY_FILEData];
         h5gghtml = [h5gghtml stringByReplacingOccurrencesOfString:@"var h5gg_jquery_stub;" withString:jquery];
-        [floatH5 loadHTMLString:h5gghtml baseURL:[NSURL URLWithString:@"html@dylib"]];
+        [floatH5 loadHTMLString:h5gghtml baseURL:[NSURL URLWithString:@"Index"]];
     }
     
     return floatH5;

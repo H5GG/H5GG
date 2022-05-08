@@ -528,6 +528,41 @@ JSExportAs(getResults, -(NSArray*)getResults:(int)maxCount param1:(int)skipCount
     return self.engine->JJWriteAll(valuebuf, jjtype);
 }
 
+-(NSArray*)getRangesList:(JSValue*)filter
+{
+    if(self.targetpid!=getpid())
+        return getRangesList2(self.targetport, [filter isUndefined] ? nil:[filter toString]);
+    
+    NSMutableArray* results = [[NSMutableArray alloc] init];
+        
+    for(int i=0; i< _dyld_image_count(); i++) {
+
+        const char* name = _dyld_get_image_name(i);
+        void* baseaddr = (void*)_dyld_get_image_header(i);
+        void* slide = (void*)_dyld_get_image_vmaddr_slide(i); //no use
+        
+        NSLog(@"getRangesList[%d] %p %p %s", i, baseaddr, slide, name);
+        
+        if([filter isUndefined]
+            || (i==0 && [[filter toString] isEqual:@"0"])
+            || [[filter toString] isEqual:[NSString stringWithUTF8String:basename((char*)name) ]]
+        ){
+            [results addObject:@{
+                @"name" : [NSString stringWithUTF8String:name],
+                @"start" : [NSString stringWithFormat:@"0x%llX", baseaddr],
+                @"end" : [NSString stringWithFormat:@"0x%llX",
+                          (uint64_t)baseaddr+getMachoVMSize(self.targetport,(uint64_t)baseaddr) ],
+                //@"type" : @"rwxp",
+            }];
+            
+            if(i==0 && [[filter toString] isEqual:@"0"]) break;
+        }
+    }
+    
+    return results;
+}
+
+
 
 -(NSArray*)getLocalScripts
 {
@@ -583,41 +618,6 @@ JSExportAs(getResults, -(NSArray*)getResults:(int)maxCount param1:(int)skipCount
         
     }];
 }
-
--(NSArray*)getRangesList:(JSValue*)filter
-{
-    if(self.targetpid!=getpid())
-        return getRangesList2(self.targetport, [filter isUndefined] ? nil:[filter toString]);
-    
-    NSMutableArray* results = [[NSMutableArray alloc] init];
-        
-    for(int i=0; i< _dyld_image_count(); i++) {
-
-        const char* name = _dyld_get_image_name(i);
-        void* baseaddr = (void*)_dyld_get_image_header(i);
-        void* slide = (void*)_dyld_get_image_vmaddr_slide(i); //no use
-        
-        NSLog(@"getRangesList[%d] %p %p %s", i, baseaddr, slide, name);
-        
-        if([filter isUndefined]
-            || (i==0 && [[filter toString] isEqual:@"0"])
-            || [[filter toString] isEqual:[NSString stringWithUTF8String:basename((char*)name) ]]
-        ){
-            [results addObject:@{
-                @"name" : [NSString stringWithUTF8String:name],
-                @"start" : [NSString stringWithFormat:@"0x%llX", baseaddr],
-                @"end" : [NSString stringWithFormat:@"0x%llX",
-                          (uint64_t)baseaddr+getMachoVMSize(self.targetport,(uint64_t)baseaddr) ],
-                //@"type" : @"rwxp",
-            }];
-            
-            if(i==0 && [[filter toString] isEqual:@"0"]) break;
-        }
-    }
-    
-    return results;
-}
-
 
 #define CS_VALID                    0x00000001  /* dynamically valid */
 #define CS_HARD                     0x00000100  /* don't load invalid pages */

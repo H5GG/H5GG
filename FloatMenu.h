@@ -15,7 +15,12 @@
 #include <objc/runtime.h>
 #include "ModalShow.h"
 
+INCTXT(INITIAL_JS, "initial.js");
+
 static NSHashTable* g_webViews = nil;
+
+typedef id (*objc_method_pointer)(id,SEL,...);
+objc_method_pointer g_orig_didCreateJavaScriptContext=NULL;
 
 @interface FloatMenu : UIWebView <UIWebViewDelegate>
 @property NSTimer* frontTimer;
@@ -34,7 +39,7 @@ static NSHashTable* g_webViews = nil;
 
 -(void)setLocation:(CGPoint*)point;
 -(void)setAction:(NSString*)name callback:(id)block;
--(NSString*)callJavascript:(NSString*)code;
+-(NSString*)evalJS:(NSString*)code;
 -(NSString*)getValueByName:(NSString*)name;
 
 @end
@@ -66,6 +71,9 @@ static NSHashTable* g_webViews = nil;
         self.opaque = NO;
         self.backgroundColor=[UIColor clearColor];
         self.userInteractionEnabled = YES;
+        
+        //禁止选择
+        //[self performSelector:@selector(_setWebSelectionEnabled:) withObject:@NO];
         
         //优化UIWebView显示性能
         [self performSelector:@selector(_setDrawInWebThread:) withObject:@YES];
@@ -196,7 +204,7 @@ static NSHashTable* g_webViews = nil;
     if(self.jscontext) self.jscontext[name] = block;
 }
 
--(NSString*)callJavascript:(NSString*)code
+-(NSString*)evalJS:(NSString*)code
 {
     //这里的js错误window.onerror似乎捕获不到, 只能setExceptionHandler捕获
     // window.error可以捕获stringByEvaluatingJavaScriptFromString的js错误
@@ -251,18 +259,11 @@ static NSHashTable* g_webViews = nil;
 
 -(void)injectJS {
     NSLog(@"injectJS...");
-    
-    //设置JS错误处理的block回调(这里只能捕获evaluateScript的js错误)
-    //stringByEvaluatingJavaScriptFromString只能由window.error捕获
-   [self.jscontext setExceptionHandler:^(JSContext *ctx, JSValue *value) {
-       NSLog(@"Javascript Error:%@", value);
-       [TopShow alert:@"OC执行JS错误" message:[NSString stringWithFormat:@"%@", value]];
-   }];
-    
+
     self.jscontext[@"h5gg_alert"] = self.jscontext[@"alert"];
     self.jscontext[@"h5gg_confirm"] = self.jscontext[@"confirm"];
     self.jscontext[@"h5gg_prompt"] = self.jscontext[@"prompt"];
-    
+
     self.jscontext[@"alert"] = ^(JSValue* message) {
         [self alert:[message isUndefined] ? @"" : [message toString]];
     };
@@ -273,65 +274,67 @@ static NSHashTable* g_webViews = nil;
         return [self prompt:[message isUndefined] ? @"" : [message toString]
                   defaultText:[defaultText isUndefined] ? @"" : [defaultText toString]];
     };
-   
-   NSString* onerror = @"window.onerror = function (message, url, line, column, error) {\
-   console.log('log---onerror::::',message, url, line, column, error);\
-   url = new URL(url);\
-   var fname = decodeURI(url.pathname);\
-   fname = fname.substring(fname.lastIndexOf('/')+1);\
-   alert('JS错误: 在'+fname+'第'+line+'行第'+column+\"列:\\n\\n\"+message);\
-   };";
-   
-   [self callJavascript:onerror];
 
-   for (id key in self.actions) {
-       NSLog(@"actions[%@]=%@", key, self.actions[key]);
-       self.jscontext[key] = self.actions[key];
-   }
+    [self evalJS:[NSString stringWithUTF8String:gINITIAL_JSData]];
+    
+    //设置JS错误处理的block回调(这里只能捕获evaluateScript的js错误)
+    //stringByEvaluatingJavaScriptFromString只能由window.error捕获
+    [self.jscontext setExceptionHandler:^(JSContext *ctx, JSValue *value) {
+       NSLog(@"Javascript Error: %@", value);
+        JSValue* onerror = self.jscontext[@"h5gg_js_error_handler"];
+        if(!onerror.isUndefined)
+            [onerror callWithArguments:@[
+                [value valueForProperty:@"message"],
+                [value valueForProperty:@"sourceURL"],
+                [value valueForProperty:@"line"],
+                [value valueForProperty:@"column"],
+                value
+            ]];
+    }];
+    
+    for (id key in self.actions) {
+        NSLog(@"actions[%@]=%@", key, self.actions[key]);
+        self.jscontext[key] = self.actions[key];
+    }
 }
 
 - (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request navigationType:(UIWebViewNavigationType)navigationType {
     NSLog(@"webView shouldStartLoadWithRequest [%d] %@", navigationType, request);
-    return YES;
-}
-
--(void)swizzleSelector:(SEL)sel1 onClass:(Class)class1 withSelector:(SEL)sel2 fromClass:(Class)class2
-{
-    Method method1 = class_getInstanceMethod(class1, sel1);
-    Method method2 = class_getInstanceMethod(class2, sel2);
-
-    // Make sure that both methods are on the target class (the one to swizzle likely already is).
-    BOOL added = class_replaceMethod(class1,
-                    sel1,
-                    method_getImplementation(method2),
-                    method_getTypeEncoding(method2));
     
-    NSLog(@"hook=%@ %p %p add?%d", class1, method1, method2, added);
-    
-    if(!added) {
+    NSError* error=nil;
+    NSString* html = [NSString stringWithContentsOfURL:[request mainDocumentURL] encoding:NSASCIIStringEncoding error:&error];
+    NSLog(@"checkHtmlFile %p %@", html, error);
+    if(html)
+    {
+        NSInteger CR_count = ([html length] - [[html stringByReplacingOccurrencesOfString:@"\r" withString:@""] length]) / 1;
         
+        NSInteger CRLF_count = ([html length] - [[html stringByReplacingOccurrencesOfString:@"\r\n" withString:@""] length]) / 2;
+        
+        NSLog(@"checkHtmlFile %d %d", CR_count, CRLF_count);
+        
+        if(CR_count>0 && CR_count!=CRLF_count) {
+            [TopShow alert:@"提示" message:@"该页面为CR换行符格式, 请修改为LF或CRLF换行符格式, 否则JS错误提示无法显示准确的行数!"];
+        }
     }
     
-//    class_addMethod(class1, // The swizzling is 'on' the first class, so it's the target here, not class2.
-//                    sel2,
-//                    method_getImplementation(method2),
-//                    method_getTypeEncoding(method2));
-    
-    //class_replaceMethod(class1, sel1, method_getImplementation(method2), method_getTypeEncoding(method2));
-
-//    // Once they are both added to the class, exchange the implementations of the methods.
-//    method_exchangeImplementations(class_getInstanceMethod(class1,sel1),
-//                                   class_getInstanceMethod(class1,sel2));
+    return YES;
 }
 
 -(void) hookWebFrameLoadDelegate
 {
     Class clazz = NSClassFromString(@"NSObject");
+    
+    SEL sel = @selector(webView:didCreateJavaScriptContext:forFrame:);
+    
+    Method method = class_getInstanceMethod(self.class, sel);
 
-    [self swizzleSelector:@selector(webView:didCreateJavaScriptContext:forFrame:)
-                  onClass:clazz
-             withSelector:@selector(webView:didCreateJavaScriptContext:forFrame:)
-                fromClass:self.class];
+    // Make sure that both methods are on the target class (the one to swizzle likely already is).
+    IMP old = class_replaceMethod(clazz, sel,
+                    method_getImplementation(method), method_getTypeEncoding(method));
+    
+    NSLog(@"hook=%@ %p old=%p", clazz, method, old);
+    
+    g_orig_didCreateJavaScriptContext = (objc_method_pointer)old;
 }
 
 - (void)webView:(UIWebView *)webView didFailLoadWithError:(NSError *)error {
@@ -362,14 +365,10 @@ static NSHashTable* g_webViews = nil;
 -(void)webViewDidFinishLoad:(UIWebView *)webView {
     NSLog(@"webViewDidFinishLoad");
 
-    if(!self.jscontext)
+    if(!self.jscontext) { //如果页面中没有js的话....
         [TopShow alert:@"JS模块异常" message:@"请检查检查是否重复安装!"];
-    
-    //通过UIWebView获得网页中的JavaScript执行环境
-    self.jscontext = [webView valueForKeyPath:@"documentView.webView.mainFrame.javaScriptContext"];
-    NSLog(@"jscontext=%@", self.jscontext);
-    
-    //[self injectJS];
+        return;
+    }
     
     //只能在webViewDidFinishLoad中检查
     NSLog(@"FastClick=%@", self.jscontext[@"FastClick"]);
@@ -401,6 +400,9 @@ static NSHashTable* g_webViews = nil;
 
 -(void)webView:(id)webView didCreateJavaScriptContext:(JSContext*)ctx forFrame:(id<TSWebFrame>)frame
 {
+    if(g_orig_didCreateJavaScriptContext)
+        g_orig_didCreateJavaScriptContext(self, _cmd, ctx, frame);
+
     NSLog(@"webViewdidCreateJavaScriptContext=%@\n%@\n%@\n%@", self, webView, ctx, frame);
 
     NSParameterAssert( [frame respondsToSelector: @selector( parentFrame )] );
