@@ -119,7 +119,7 @@ class JJMemoryEngine
         kern_return_t kr = vm_read_overwrite(this->task, (vm_address_t)addr, len, (vm_address_t)buf, &size);
         if(kr != KERN_SUCCESS || size!=len)
         {
-            NSLog(@"readMemory failed! %p %x : %d", addr, len, kr);
+            NSLog(@"readMemory failed! %p %x, (%d)%s", addr, len, kr, mach_error_string(kr));
             return false;
         }
         
@@ -196,8 +196,23 @@ class JJMemoryEngine
         return p<=end ? p : 0;
     }
     
-    void* loadRegion(uint64_t base, uint64_t size, bool* remapped)
+    void* loadRegion(uint64_t base, uint64_t* psize, bool* remapped)
     {
+        size_t size=*psize;
+        for(int s=0; s<size; s+=PAGE_SIZE)
+        {
+            uint64_t a=0;
+            if(vm_read_overwrite(this->task, (vm_address_t)(base+s), sizeof(a), (vm_address_t)&a, (vm_size_t*)&a)!=KERN_SUCCESS)
+            {
+                size = s;
+                break;
+            }
+        }
+        
+        if(!size) return NULL;
+        
+        *psize = size;
+        
         vm_prot_t cur_prot=0;
         vm_prot_t max_prot=0;
         vm_address_t buffer=0;
@@ -231,7 +246,7 @@ class JJMemoryEngine
         } else {
             *remapped = true;
         }
-        NSLog(@"loadRegion[%d] %p=>%p %x", *remapped, base, buffer, size);
+        NSLog(@"loadRegion[%d] %p=>%p %x,%x,%x", *remapped, base, buffer, size, cur_prot, max_prot);
         return (void*)buffer;
     }
     
@@ -250,7 +265,7 @@ class JJMemoryEngine
         result_region* newRegion = NULL;
         
         bool remapped;
-        void* buffer = loadRegion(base, size, &remapped);
+        void* buffer = loadRegion(base, &size, &remapped);
         
         if(buffer)
         {
@@ -290,30 +305,25 @@ class JJMemoryEngine
     {
         int len = JJ_Search_Type_Len[type];
         
-        
         size_t stack_size=pthread_get_stacksize_np(pthread_self());
         size_t stack_addr=(size_t)pthread_get_stackaddr_np(pthread_self());
         size_t stack_end = stack_addr + stack_size;
         NSLog(@"stack=%p %x => %p", stack_addr, stack_size, stack_end);
         
-        mach_port_t object_name;
-        mach_vm_size_t region_size=0;
-        mach_vm_address_t region_base = range.start;
+        vm_size_t region_size=0;
+        vm_address_t region_base = range.start;
+
         
-        /*/
-        vm_region_basic_info_data_64_t info = {0};
-        mach_msg_type_number_t info_cnt = VM_REGION_BASIC_INFO_COUNT_64;
-        vm_region_flavor_t flavor = VM_REGION_BASIC_INFO_64;
-        /*/
-        vm_region_extended_info info={0};
-        mach_msg_type_number_t info_cnt = VM_REGION_EXTENDED_INFO_COUNT;
-        vm_region_flavor_t flavor = VM_REGION_EXTENDED_INFO;
-        //*/
+        natural_t depth = 1;
         
         while(region_base < range.end) {
             region_base += region_size;
-            kern_return_t kr = mach_vm_region(this->task, &region_base, &region_size,
-                                              flavor, (vm_region_info_t)&info, &info_cnt, &object_name);
+            
+            struct vm_region_submap_info_64 info={0};
+            mach_msg_type_number_t info_cnt = VM_REGION_SUBMAP_INFO_COUNT_64;
+            
+            kern_return_t kr = vm_region_recurse_64(this->task, &region_base, &region_size,
+                                              &depth, (vm_region_info_t)&info, &info_cnt);
             
             if(kr != KERN_SUCCESS) {
                 NSLog(@"mach_vm_region failed on %p for %d,%s", region_base, kr, mach_error_string(kr));
@@ -321,7 +331,13 @@ class JJMemoryEngine
             }
             
             const char* tag = name_for_tag(info.user_tag);
-            NSLog(@"found region %p %x, %x, %s", region_base, region_size, info.protection, tag);
+            NSLog(@"found region %p %x [%d/%d], %x, %s", region_base, region_size, info.is_submap, depth, info.protection, tag);
+            
+            if(info.is_submap) {
+                region_size=0;
+                depth++;
+                continue;
+            }
             
             uint64_t region_end = region_base+region_size;
             
@@ -369,8 +385,8 @@ class JJMemoryEngine
             
             result_region* newRegion = NULL;
             
-            bool remapped;
-            void* buffer = loadRegion(region->region_base, region->region_size, &remapped);
+            bool remapped; uint64_t mapsize=region->region_size;
+            void* buffer = loadRegion(region->region_base, &mapsize, &remapped);
             if(buffer) for(int j=0; j<region->slides.size(); j++)
             {
                 UInt64 address = (UInt64)region->region_base + (UInt64)region->slides[j];
@@ -394,7 +410,7 @@ class JJMemoryEngine
             }
             
             //BUG=一定要在delete old region之前, 不然这里size不可预料了
-            unloadRegion(buffer, region->region_size, remapped);
+            unloadRegion(buffer, mapsize, remapped);
             
             delete this->result->regions[i];
             this->result->regions[i] = newRegion;
@@ -473,8 +489,8 @@ public:
             long lastpos = 0;
             
             
-            bool remapped;
-            void* buffer = loadRegion(region->region_base, region->region_size, &remapped);
+            bool remapped; uint64_t mapsize=region->region_size;
+            void* buffer = loadRegion(region->region_base, &mapsize, &remapped);
             if(buffer) for(int j=0; j<region->slides.size(); j++)
             {
                 map<uint32_t,int8_t> matched;
@@ -565,7 +581,7 @@ public:
             }
             
             //BUG=一定要在delete old region之前, 不然这里size不可预料了
-            unloadRegion(buffer, region->region_size, remapped);
+            unloadRegion(buffer, mapsize, remapped);
             
             delete this->result->regions[i];
             this->result->regions[i] = newRegion;

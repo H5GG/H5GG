@@ -1,7 +1,7 @@
 
 #need theos branch kabiroberai/arch-schemas
 
-ARCHS = arm64 arm64e:v1 arm64e:v2
+ARCHS = arm64 arm64e:v1
 
 TARGET = iphone:13.7:11.4
 #to support arch:subtype we need a patched lipo

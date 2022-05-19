@@ -250,6 +250,11 @@ H5GG v7.0 更新:
 2: 修复部分特殊情况下js脚本出错的提示信息不完整的问题
 3: 支持单独调整悬浮窗口的位置或尺寸
 
+H5GGv7.2 更新:
+1: 修复部分情况下搜索功能可能导致引擎闪退的问题
+2: 修复部分情况下搜索结果可能存在遗漏数据的问题
+3: 修复部分老旧设备悬浮窗口界面与状态栏重叠问题
+
 -->
 <html>
 <head>
@@ -647,21 +652,30 @@ $(document).ready(function(){
             height = Math.min(height, h); //适配老设备, 最大高度不超出
             var x = (w-width)/2;
             var y = (h-height)/2;
+            if(w<h) {
+                y = Math.max(20, y);
+                height = Math.min(height, h-y);
+            }
             setWindowRect(x,y,width,height);
         });
 
-        if(h5gg.getProcList())  //不为空(null)说明是具有跨进程权限
+        var checkprocs = function() {
+        var procs = h5gg.getProcList();
+        if(procs)  //不为空(null)说明是具有跨进程权限
         {
-            refreshProcList();
-            $("#procname").text('');
+            refreshProcList(procs);
             $("#crossproc").show();
-            $("#popup_proclist").show();
-            $("#maskview").show();
             $("#closeMenu").hide();
             
-            setInterval(function(){
+            if(!$("#procname").attr('pid')) {
+                $("#popup_proclist").show();
+                $("#maskview").show();
+                $("#procname").text('');
+            }
+            
+            //setInterval(function(){
                 if($("#popup_proclist").is(":visible"))
-                    refreshProcList();
+                    refreshProcList(h5gg.getProcList());
 
                 if($("#procname").attr('pid'))
                 {
@@ -681,11 +695,17 @@ $(document).ready(function(){
                     }
                 }
                 
-            }, 1500);
+            //}, 1500);
             
         } else  {
             $("#crossproc").hide();
         }
+        
+    };
+    checkprocs();
+    setInterval(checkprocs, 1500);
+    
+    
     }
     
     //点击结果列表里面的地址时弹出修改窗口, 要在listdiv刷新html之后绑定
@@ -714,11 +734,9 @@ $(document).ready(function(){
     });
 });
 
-function refreshProcList()
+function refreshProcList(procs)
 {
     $("#proctable button").remove();
-    
-    var procs = h5gg.getProcList();
     
     for(var i=0; i<procs.length; i++) {
         var proc = procs[i];
@@ -781,13 +799,18 @@ function onClickLoadScript(url, type)
 {
     if(!url) return;
     
-    $("#popup_progress").show();
-    $("#maskview_script").show();
-    
     if(/^\w+\:/.test(url)==false) url = "file://"+url;
     
-    url = new URL(url);
-    url.searchParams.append("_", Math.random());
+    try{
+        url = new URL(url);
+        url.searchParams.append("_", Math.random());
+    }catch(e){
+        alert("无效的脚本URL");
+        return;
+    }
+    
+    $("#popup_progress").show();
+    $("#maskview_script").show();
     
     if(type=='h5' || (!type&&!/\.js$/.test(url.pathname))) {
         window.location = url.href;
@@ -997,7 +1020,7 @@ function onClickSearchNearby()
 <body bgcolor="#E8E8E8" style="margin:0;">
 <!--标题栏-->
 <div id="titleBar" style="background-color:#D1D1D1; padding:5px; margin:0px; height:12px">
-&nbsp;<font style="color:green">H5</font> <font style="color:red">GG</font>&nbsp;v7.01
+&nbsp;<font style="color:green">H5</font> <font style="color:red">GG</font>&nbsp;v7.2
 <span id="crossproc" style="display:none">
 <font style="color:blue">&nbsp;跨进程&nbsp;</font><font id="procname">procname</font>
 </span>

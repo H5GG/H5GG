@@ -436,7 +436,7 @@ case VM_MEMORY_APPLICATION_SPECIFIC_16: return "APPLICATION_SPECIFIC_16";
         case 0: return "";
             
         default: {
-            char* s = (char*)malloc(10);
+            char* s = (char*)malloc(64);
             sprintf(s, "<Unknown:%d>", tag);
             return s;
         }
