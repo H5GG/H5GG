@@ -18,6 +18,10 @@
 #include "../makeWindow.h"
 #include "../incbin.h"
 
+FILE* logger = NULL;
+#define LOGGER(...) if(logger){fprintf(logger, __VA_ARGS__);fprintf(logger,"\r\n");fflush(logger);}
+
+
 bool g_dismiss_on_switchapp = true;
 bool g_dismiss_on_backtohome = true;
 
@@ -283,6 +287,11 @@ void toggleGlobalView()
                 }
                 [GlobalView addSubview:hostView];
             }
+
+            if(GVSharedData.setWindowVisible) {
+                [hostView setHidden:!GVSharedData.windowVisibleState];
+                GVSharedData.setWindowVisible = NO;
+            }
         }
     }];
 
@@ -343,9 +352,14 @@ void toggleGlobalView()
 
 void initload()
 {
+    LOGGER("run in initload");
+    
     void* backgrounder=NULL;
     if (@available(iOS 13, *)) {
         backgrounder=dlopen("/Library/MobileSubstrate/DynamicLibraries/libH5GG.B.dylib", RTLD_NOW);
+        dlopen("/Library/MobileSubstrate/DynamicLibraries/libH5GG.A.dylib", RTLD_NOW);
+        Class APAppViewClass = NSClassFromString(@"APAppView");
+        appView = [[APAppViewClass alloc] init];
     } else {
         backgrounder=dlopen("/Library/MobileSubstrate/DynamicLibraries/libH5GG.B12.dylib", RTLD_NOW);
     }
@@ -362,10 +376,6 @@ void initload()
     GlobalView.backgroundColor=[UIColor clearColor];
     GlobalView.windowLevel = UIWindowLevelStatusBar + 1;
     GlobalView.rootViewController = [[GVController alloc] init];
-    
-    if (@available(iOS 13, *)) {
-        appView = [[APAppView alloc] init];
-    }
 
     floatBtn = [[FloatButton alloc] init];
     floatBtn.keepWindow = YES;
@@ -429,27 +439,32 @@ void initload()
         if(GVSharedData.buttonImageSize) {
             NSData* iconData = [[NSData alloc] initWithBytes:GVSharedData.buttonImageData length:GVSharedData.buttonImageSize];
             g_pinnedBundleIcon = [[UIImage alloc] initWithData:iconData];
-            [floatBtn setIcon:g_pinnedBundleIcon];
+            if(g_pinnedBundleIcon) [floatBtn setIcon:g_pinnedBundleIcon];
             GVSharedData.buttonImageSize = 0;
         }
 
-
         SBApplication *appToHost = applicationForID(g_pinnedBundleId);
         bool running = appToHost && appToHost.processState;
-        if(floatBtn.isHidden!=!running) [floatBtn setHidden:!running];
+        if(floatBtn.isHidden!=!running) {
+            LOGGER("state change %d", running);
+            [floatBtn setHidden:!running];
+        }
     }];
 }
 
 static void* thread_running(void* arg)
 {
+    LOGGER("run in newthread");
     //等一下, 等系统框架初始化完
     sleep(2);
     
     //通过主线程执行下面的代码
     dispatch_async(dispatch_get_main_queue(), ^{
+        LOGGER("run in main");
         __block NSTimer* timer = [NSTimer scheduledTimerWithTimeInterval:1 repeats:YES block:^(NSTimer*t){
-
+        LOGGER("run in timer");
             if(UIApplication.sharedApplication && UIApplication.sharedApplication.keyWindow) {
+                LOGGER("run in appdone");
                 [timer invalidate];
                 initload();
             }
@@ -461,8 +476,12 @@ static void* thread_running(void* arg)
 
 static void __attribute__((constructor)) _init_()
 {
+    //logger = fopen("/tmp/h5gglog.txt", "w+");
+
     struct dl_info di={0};
     dladdr((void*)_init_, &di);
+
+    LOGGER("run in %s", NSBundle.mainBundle.bundleIdentifier.UTF8String);
 
     if([NSBundle.mainBundle.bundleIdentifier isEqualToString:@"com.apple.springboard"])
     {

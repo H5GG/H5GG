@@ -255,6 +255,14 @@ H5GGv7.2 更新:
 2: 修复部分情况下搜索结果可能存在遗漏数据的问题
 3: 修复部分老旧设备悬浮窗口界面与状态栏重叠问题
 
+H5GGv7.3 更新:
+1: 修复ios12无法悬浮问题
+2: 修复一个内存泄漏的BUG
+3: 优化多国语言本地化支持
+4: 优化提升安全性和稳定性
+5: 修复跨进程版APP可能提示没有网络的问题
+6: 修复跨进程悬浮版setWindowVisible接口
+
 -->
 <html>
 <head>
@@ -577,7 +585,7 @@ var h5gg_jquery_stub;
 
 if(typeof $ == 'undefined')
     document.write("<script src=\"https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js\"><\/script>");
-    
+
 //根据选择的有符号/无符号数确定搜索类型
 function h5ggType(type)
 {
@@ -597,8 +605,15 @@ function h5ggType(type)
     return type;
 }
 
+    
 //页面显示完毕事件
-$(document).ready(function(){
+document.addEventListener("DOMContentLoaded", function(){
+
+    if(typeof $ == 'undefined') {
+        alert("jquery load failed!");
+        return;
+    }
+
     /*禁止文本选择和拖动*/
     document.body.onselectstart = document.body.ondrag = function(){
         return false;
@@ -1020,7 +1035,7 @@ function onClickSearchNearby()
 <body bgcolor="#E8E8E8" style="margin:0;">
 <!--标题栏-->
 <div id="titleBar" style="background-color:#D1D1D1; padding:5px; margin:0px; height:12px">
-&nbsp;<font style="color:green">H5</font> <font style="color:red">GG</font>&nbsp;v7.2
+&nbsp;<font style="color:green">H5</font> <font style="color:red">GG</font>&nbsp;v7.3
 <span id="crossproc" style="display:none">
 <font style="color:blue">&nbsp;跨进程&nbsp;</font><font id="procname">procname</font>
 </span>

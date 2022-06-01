@@ -1,5 +1,8 @@
 #!/bin/sh
 
+rm -f /Library/BawAppie/Libraries
+rm -f /Library/BawAppie
+
 uicache -p /Applications/h5ggapp.app
 killall -9 SpringBoard
 killall -9 backboardd

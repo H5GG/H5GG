@@ -102,7 +102,10 @@ static void screenLockStateChanged(CFNotificationCenterRef center,void* observer
     NSString* lockstate = (__bridge NSString*)name;
     if ([lockstate isEqualToString:(__bridge  NSString*)NotificationLock]) {
         NSLog(@"SetGlobalView=locked.");
-        if(PGVSharedData->viewHosted) exit(0);
+        if(PGVSharedData->viewHosted) {
+            NSLog(@"SetGlobalView=locked.exit");
+            exit(0);
+        }
     } else {
         NSLog(@"SetGlobalView=lock state changed.");
     }
@@ -189,6 +192,9 @@ extern "C" __attribute__ ((visibility ("default"))) void SetGlobalView(char* dyl
             if(!appWindowHandled && PGVSharedData->viewHosted && appWindow)
             {
                 appWindowHandled = YES;
+                
+                void showFloatWindow(bool show);
+                showFloatWindow(true);//悬浮之后强制显示H5
                 
                 NSLog(@"SetGlobalView=appWindow=%@\n delegateWindow=%@\n windows=%@\n keyWindow=%@", appWindow, UIApplication.sharedApplication.delegate.window, UIApplication.sharedApplication.windows, UIApplication.sharedApplication.keyWindow);
                 
@@ -317,16 +323,19 @@ FloatMenu* initFloatMenu(UIWindow* win)
             floatH5.userInteractionEnabled = floatH5.touchableAll;
         });
     }];
-     
+    
+    void showFloatWindow(bool show);
      [floatH5 setAction:@"setWindowVisible" callback:^(bool visible) {
          NSLog(@"setWindowVisible=%d", visible);
          if(PGVSharedData->enable && PGVSharedData->viewHosted) {
              PGVSharedData->setWindowVisible = YES;
              PGVSharedData->windowVisibleState = visible;
+             
+             //visible = YES;
+             return;
          }
         //通过主线程执行下面的代码
         dispatch_async(dispatch_get_main_queue(), ^{
-            void showFloatWindow(bool show);
             showFloatWindow(visible);
         });
     }];
@@ -359,8 +368,11 @@ FloatMenu* initFloatMenu(UIWindow* win)
         //第一优先级: 从网址加载H5
         if([[htmlstub lowercaseString] hasPrefix:@"http"])
             [floatH5 loadRequest:[[NSURLRequest alloc] initWithURL:[NSURL URLWithString:htmlstub]]];
-        else
+        else {
+            NSString* jquery = [NSString stringWithUTF8String:gH5GG_JQUERY_FILEData];
+            htmlstub = [htmlstub stringByReplacingOccurrencesOfString:@"var h5gg_jquery_stub;" withString:jquery];
             [floatH5 loadHTMLString:htmlstub baseURL:[NSURL URLWithString:@"Index"]];
+        }
     } else if([[NSFileManager defaultManager] fileExistsAtPath:h5file]) {
         //第二优先级: 从文件加载H5
         [floatH5 loadRequest:[[NSURLRequest alloc] initWithURL:[NSURL URLWithString:h5file]]];

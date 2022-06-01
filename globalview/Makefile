@@ -25,7 +25,8 @@ TWEAK_NAME = libH5GGApp
 libH5GGApp_FILES = globalview.mm ContextHostManager.mm
 libH5GGApp_CFLAGS = -fobjc-arc -fvisibility=hidden 
 libH5GGApp_CCFLAGS = -fobjc-arc -fvisibility=hidden -std=c++11
-libH5GGApp_LDFLAGS += -weak_library libAPAppView.dylib
+
+#libH5GGApp_LDFLAGS += -weak_library libAPAppView.dylib
 
 #libH5GGApp_LOGOS_DEFAULT_GENERATOR = internal
 
