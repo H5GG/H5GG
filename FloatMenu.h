@@ -299,21 +299,24 @@ objc_method_pointer g_orig_didCreateJavaScriptContext=NULL;
 }
 
 - (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request navigationType:(UIWebViewNavigationType)navigationType {
-    NSLog(@"webView shouldStartLoadWithRequest [%d] %@", navigationType, request);
+    NSLog(@"webView %@ shouldStartLoadWithRequest [%d] %@", webView, navigationType, request);
     
-    NSError* error=nil;
-    NSString* html = [NSString stringWithContentsOfURL:[request mainDocumentURL] encoding:NSASCIIStringEncoding error:&error];
-    NSLog(@"checkHtmlFile %p %@", html, error);
-    if(html)
+    if([request.mainDocumentURL.scheme isEqualToString:@"file"])
     {
-        NSInteger CR_count = ([html length] - [[html stringByReplacingOccurrencesOfString:@"\r" withString:@""] length]) / 1;
-        
-        NSInteger CRLF_count = ([html length] - [[html stringByReplacingOccurrencesOfString:@"\r\n" withString:@""] length]) / 2;
-        
-        NSLog(@"checkHtmlFile %d %d", CR_count, CRLF_count);
-        
-        if(CR_count>0 && CR_count!=CRLF_count) {
-            [TopShow alert:@"提示" message:@"该页面为CR换行符格式, 请修改为LF或CRLF换行符格式, 否则JS错误提示无法显示准确的行数!"];
+        NSError* error=nil;
+        NSString* html = [NSString stringWithContentsOfURL:[request mainDocumentURL] encoding:NSASCIIStringEncoding error:&error];
+        NSLog(@"checkHtmlFile %p %@", html, error);
+        if(html)
+        {
+            NSInteger CR_count = ([html length] - [[html stringByReplacingOccurrencesOfString:@"\r" withString:@""] length]) / 1;
+            
+            NSInteger CRLF_count = ([html length] - [[html stringByReplacingOccurrencesOfString:@"\r\n" withString:@""] length]) / 2;
+            
+            NSLog(@"checkHtmlFile %d %d", CR_count, CRLF_count);
+            
+            if(CR_count>0 && CR_count!=CRLF_count) {
+                [TopShow alert:@"提示" message:@"该页面为CR换行符格式, 请修改为LF或CRLF换行符格式, 否则JS错误提示无法显示准确的行数!"];
+            }
         }
     }
     
@@ -338,23 +341,19 @@ objc_method_pointer g_orig_didCreateJavaScriptContext=NULL;
 }
 
 - (void)webView:(UIWebView *)webView didFailLoadWithError:(NSError *)error {
-    NSLog(@"webView didFailLoadWithError %@", error);
-    
-    [TopShow alert:@"H5加载失败" message:[NSString stringWithFormat:@"%@",error]];
+    NSLog(@"webView %@ didFailLoadWithError %@", webView, error);
+    NSString* scheme = [[error.userInfo[NSURLErrorFailingURLErrorKey] scheme] lowercaseString];
+    if([scheme isEqualToString:@"file"] || [scheme isEqualToString:@"http"] || [scheme isEqualToString:@"https"])
+        [TopShow alert:@"H5加载失败" message:[NSString stringWithFormat:@"%@",error]];
 }
 
 -(void)webViewDidStartLoad:(UIWebView *)webView {
-    NSLog(@"webViewDidStartLoad");
-    
-    self.touchableAll = YES;
-    self.touchableRect = CGRectZero;
-    self.dragableRect = CGRectZero;
-    if(self.reloadAction) self.reloadAction();
+    NSLog(@"webViewDidStartLoad=%@", webView);
 
 #ifndef WEBVIEW_HOOK
     //在mac上这里会触发didCreateJavaScriptContext创建一个jscontext, 但是后面UIWebview又会自己创建一个新的(和webViewDidFinishLoad中一致)
     //ios则这里会和didCreateJavaScriptContext触发同一个jscontext两次导致injectJS重入异常
-    //如果页面发生跳转, 这里取到的是上一个页面的jscontext, UIWebkit设计上的BUG
+    //如果页面发生跳转, 这里取到的是上一个页面的jscontext, UIWebkit设计上的BUG(evalJS也是在上一个页面中执行)
 //    self.jscontext = [webView valueForKeyPath:@"documentView.webView.mainFrame.javaScriptContext"];
 //    NSLog(@"jscontext=%@", self.jscontext);
     
@@ -363,8 +362,8 @@ objc_method_pointer g_orig_didCreateJavaScriptContext=NULL;
 }
 
 -(void)webViewDidFinishLoad:(UIWebView *)webView {
-    NSLog(@"webViewDidFinishLoad");
-
+    NSLog(@"webViewDidFinishLoad=%@", webView);
+    
     if(!self.jscontext) { //如果页面中没有js的话....
         [TopShow alert:@"JS模块异常" message:@"请检查检查是否重复安装!"];
         return;
@@ -384,6 +383,22 @@ objc_method_pointer g_orig_didCreateJavaScriptContext=NULL;
 
     self.jscontext = ctx;
     NSLog(@"jscontext=%@", self.jscontext);
+    
+    
+    BOOL reload = [self.jscontext[@"h5gg_mainframe_reload"] toBool];
+    if(!reload) {
+        self.jscontext[@"h5gg_mainframe_reload"] = @YES;
+        
+        self.dragableRect = CGRectZero;
+        
+        self.touchableAll = YES;
+        self.touchableRect = CGRectZero;
+        
+        PGVSharedData->touchableAll = YES;
+        PGVSharedData->touchableRect = CGRectZero;
+        
+        if(self.reloadAction) self.reloadAction();
+    }
 
     [self injectJS];
 }

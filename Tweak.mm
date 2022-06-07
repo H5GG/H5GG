@@ -292,11 +292,9 @@ FloatMenu* initFloatMenu(UIWindow* win)
     [floatH5 setAction:@"setWindowRect" callback:^(int x, int y, int w, int h) {
         //通过主线程执行下面的代码
         dispatch_async(dispatch_get_main_queue(), ^{
-            CGFloat tx = x==-1 ? floatH5.frame.origin.x : x;
-            CGFloat ty = y==-1 ? floatH5.frame.origin.y : y;
-            CGFloat tw = w==-1 ? floatH5.frame.size.width : w;
-            CGFloat th = h==-1 ? floatH5.frame.size.height : h;
-            floatH5.frame = CGRectMake(tx,ty,tw,th);
+            CGFloat tx = x==-1&&y==-1 ? floatH5.frame.origin.x : x;
+            CGFloat ty = x==-1&&y==-1 ? floatH5.frame.origin.y : y;
+            floatH5.frame = CGRectMake(tx,ty,w,h);
             PGVSharedData->floatMenuRect = floatH5.frame;
         });
     }];
@@ -350,6 +348,7 @@ FloatMenu* initFloatMenu(UIWindow* win)
     }];
     
     floatH5.reloadAction = ^{
+        NSLog(@"reloadAction!");
         gWebThread = nil;
         gButtonAction = nil;
         gLayoutAction = nil;

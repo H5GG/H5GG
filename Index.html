@@ -1,5 +1,5 @@
 <!--script>
-***************** H5GG JS脚本引擎 (v7.0更新) *******************
+***************** H5GG JS脚本引擎 (v7.4更新) *******************
 h5gg是引擎对象, 可以调用如下函数(类似安卓gg的lua接口,但是参数有些区别)
 
 h5gg.setFloatTolerance('浮点偏差'); //设置F32/F64浮点搜索的偏差范围, 引擎默认是0.0
@@ -19,6 +19,9 @@ h5gg.setTargetProc(进程号); //设定当前目标进程, 返回成功或失败
 h5gg.getProcList('进程名'); //获取进程数组, 数组中的元素有pid(进程号), name(进程名) 属性
     (若不传入进程名, 则返回所有运行中的app进程列表, 可以定时循环调用确定目标进程是否已经结束)
 
+h5gg.loadPlugin('OC类名','dylib路径'); //加载dylib插件, 返回插件中的OC类名的对象实例
+    (返回的OC对象实例可在js中直接调用, dylib支持绝对路径或.app中的相对路径)
+
 其他接口:
 setButtonImage(图标); //设置悬浮按钮图标, 可以传入http开头网址图片或base64编码的DataURL图片
 setButtonAction(js回调函数); //设置自定义的悬浮按钮图标点击动作, 传入一个js函数点击时被调用
@@ -29,8 +32,6 @@ setWindowTouch(是否响应触控); //true=整个悬浮窗口触摸不可穿透,
 setWindowVisible(悬浮窗显示状态), //设置悬浮窗口的可见性, true=显示, false=隐藏
 
 setLayoutAction(js回调函数); //设置屏幕旋转或iPad分屏浮动变化时的js回调,回调函数参数为(宽,高)
-
-已废弃接口(目前版本调用无效果, 将来版本调用可能报错): closeMenu,setFloatButton,setFloatWindow
 
 注意:
 1: 地址参数支持十进制或0x开头十六进制格式自动识别, 其他参数必须是字符串格式
@@ -262,6 +263,14 @@ H5GGv7.3 更新:
 4: 优化提升安全性和稳定性
 5: 修复跨进程版APP可能提示没有网络的问题
 6: 修复跨进程悬浮版setWindowVisible接口
+
+H5GGv7.4 更新:
+1: 新增h5gg.loadPlugin接口调用dylib插件
+2: 优化加载网络html文件的访问速度
+3: 修复跨进程接口一个资源泄漏问题
+4: 修复加载frame导致悬浮按钮动作失效问题
+5: 修复跨进程悬浮版切换html时触控穿透未重置的问题
+6: 优化H5加载失败的错误提示过滤多余的无效提示
 
 -->
 <html>
@@ -1035,7 +1044,7 @@ function onClickSearchNearby()
 <body bgcolor="#E8E8E8" style="margin:0;">
 <!--标题栏-->
 <div id="titleBar" style="background-color:#D1D1D1; padding:5px; margin:0px; height:12px">
-&nbsp;<font style="color:green">H5</font> <font style="color:red">GG</font>&nbsp;v7.3
+&nbsp;<font style="color:green">H5</font> <font style="color:red">GG</font>&nbsp;v7.4
 <span id="crossproc" style="display:none">
 <font style="color:blue">&nbsp;跨进程&nbsp;</font><font id="procname">procname</font>
 </span>

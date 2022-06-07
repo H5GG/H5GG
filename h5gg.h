@@ -15,6 +15,7 @@ extern FloatMenu* floatH5;
 
 //导入JavaScriptCore框架头文件
 #include <libgen.h>
+#include <sys/stat.h>
 #include <sys/mount.h>
 #import <JavaScriptCore/JavaScriptCore.h>
 //导入JJ内存搜索引擎头文件(专为H5GG定制)
@@ -45,10 +46,12 @@ JSExportAs(getResults, -(NSArray*)getResults:(int)maxCount param1:(int)skipCount
 
 -(NSArray*)getRangesList:(JSValue*)filter;
 
--(void)make;
-
 -(JSValue*)getProcList:(JSValue*)filter;
 -(BOOL)setTargetProc:(pid_t)pid;
+
+JSExportAs(loadPlugin, -(NSObject*)loadPlugin:(NSString*)className path:(NSString*)dylib);
+
+-(void)make;
 
 @end
 
@@ -112,6 +115,9 @@ JSExportAs(getResults, -(NSArray*)getResults:(int)maxCount param1:(int)skipCount
 }
 
 -(BOOL)setTargetProc:(pid_t)pid {
+    
+    if(self.targetport!=MACH_PORT_NULL && self.targetport!=mach_task_self())
+        mach_port_deallocate(mach_task_self(), self.targetport);
     
     self.targetpid = 0;
     self.targetport = MACH_PORT_NULL;
@@ -633,6 +639,7 @@ extern "C" int csops(pid_t pid, unsigned int  ops, void * useraddr, size_t users
 //    NSLog(@"%s", buf.f_mntfromname);
 //    const char* prefix = "com.apple.os.update-";
 //    if(strstr(buf.f_mntfromname, prefix))
+    
     uint32_t g_csops_flags = 0;
     csops(getpid(), 0, &g_csops_flags, 0);
     NSLog(@"csops=%x", g_csops_flags);
@@ -662,12 +669,14 @@ extern "C" int csops(pid_t pid, unsigned int  ops, void * useraddr, size_t users
         
         [self performSelector:@selector(threadcall:) onThread:webThread withObject:^{
             
-            BOOL choice = [floatH5 confirm:@"第二步: 设置H5悬浮菜单\n\n请问是否需要使用网络H5链接, 否则使用本地html文件"];
+            [floatH5 alert:@"第二步: 选择默认加载的html文件"];
             
-            if(choice) {
-                NSString* html = [floatH5 prompt:@"请输入以http或https开头的H5链接地址" defaultText:@""];
-                if(html) make(icon, html);
-            } else
+//            BOOL choice = [floatH5 confirm:@"第二步: 设置H5悬浮菜单\n\n请问是否需要使用网络H5链接, 否则使用本地html文件"];
+//
+//            if(choice) {
+//                NSString* html = [floatH5 prompt:@"请输入以http或https开头的H5链接地址" defaultText:@""];
+//                if(html) make(icon, html);
+//            } else
                 [TopShow filePicker:@[@"public.html"] callback:^(NSString *html) {
                     [self performSelector:@selector(threadcall:) onThread:webThread withObject:^{
                         make(icon, html);
@@ -677,6 +686,34 @@ extern "C" int csops(pid_t pid, unsigned int  ops, void * useraddr, size_t users
         } waitUntilDone:NO];
         
     }];
+}
+
+-(NSObject*)loadPlugin:(NSString*)className path:(NSString*)dylib
+{
+    static NSMutableDictionary* cache = [[NSMutableDictionary alloc] init];
+    
+    NSObject* pluginObject = [cache objectForKey:className];
+    if(pluginObject) return pluginObject;
+    
+    if(![dylib hasPrefix:@"/"])
+        dylib = [NSBundle.mainBundle.bundlePath stringByAppendingPathComponent:dylib];
+    
+    if(access(dylib.UTF8String, F_OK) != 0)
+        return nil;
+        
+    chmod(dylib.UTF8String, 0755);
+    
+    if(!dlopen(dylib.UTF8String, RTLD_NOW))
+        return nil;
+    
+    Class pluginClass = NSClassFromString(className);
+    if(!pluginClass) return nil;
+    
+    pluginObject = [pluginClass new];
+    
+    [cache setObject:pluginObject forKey:className];
+    
+    return pluginObject;
 }
 
 @end
