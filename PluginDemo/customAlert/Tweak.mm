@@ -1,3 +1,5 @@
+//为了保持未来版本兼容性, 请勿使用JSContext
+//To maintain compatibility with future versions, do not use JSContext
 #import <CoreFoundation/CoreFoundation.h>
 #import <Foundation/Foundation.h>
 #import <JavaScriptCore/JavaScriptCore.h>

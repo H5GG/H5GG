@@ -161,6 +161,9 @@ extern "C" __attribute__ ((visibility ("default"))) void SetGlobalView(char* dyl
     if(iconstub.hash!=0x1fdd7fff7d401bd2 && gH5ICON_STUB_FILESize<=sizeof(PGVSharedData->buttonImageData)) {
         PGVSharedData->buttonImageSize = gH5ICON_STUB_FILESize;
         memcpy(PGVSharedData->buttonImageData, gH5ICON_STUB_FILEData, gH5ICON_STUB_FILESize);
+    } else {
+        PGVSharedData->buttonImageSize = gIconSize;
+        memcpy(PGVSharedData->buttonImageData, gIconData, gIconSize);
     }
     
     CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, screenLockStateChanged, NotificationLock, NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
@@ -258,11 +261,17 @@ FloatMenu* initFloatMenu(UIWindow* win)
     [floatH5 setAction:@"h5gg" callback:h5gg];
     
     //隐藏悬浮菜单, 已废弃, 保持旧版API兼容
-    [floatH5 setAction:@"closeMenu" callback:^{}];
+    [floatH5 setAction:@"closeMenu" callback:^{
+        [floatH5 alert:@"closeMenu已废弃请勿调用"];
+    }];
     //设置网络图标, 已废弃, 保持旧版API兼容
-    [floatH5 setAction:@"setFloatButton" callback:^{}];
+    [floatH5 setAction:@"setFloatButton" callback:^{
+        [floatH5 alert:@"setFloatButton已废弃请勿调用"];
+    }];
     //设置悬浮窗位置尺寸, 已废弃, 保持旧版API兼容性
-    [floatH5 setAction:@"setFloatWindow" callback:^{}];
+    [floatH5 setAction:@"setFloatWindow" callback:^{
+        [floatH5 alert:@"setFloatButton已废弃请勿调用"];
+    }];
     
     //给H5菜单添加一个JS函数setButtonImage用于设置网络图标
     [floatH5 setAction:@"setButtonImage" callback:^(NSString* url) {
@@ -636,7 +645,6 @@ static void __attribute__((constructor)) _init_()
 
         }
     }
-    
     
     if(g_standalone_runmode||g_commonapp_runmode)
     {

@@ -9,3 +9,4 @@ window.onerror=h5gg_js_error_handler=function(message, url, line, column, error)
     } catch(e) {}
     alert('JS错误: 在'+fname+'第'+line+'行第'+column+"列:\n\n"+message);
 };
+

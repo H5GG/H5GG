@@ -31,9 +31,12 @@ it's completely free & open source!
 
 currently supported JS APIs:
 
-**************** H5GG JavaScript Engine(update on v7.0) ********************
+**************** H5GG JavaScript Engine(update on v7.5) ********************
 
 h5gg is the engine object, which can call the following functions (similar to the lua interface of Android gg, but the parameters are somewhat different)
+
+
+h5gg.require(H5GG version number); //Set the minimum H5GG version number required by the script, which can be written in the first line at the beginning of the script
 
 h5gg.setFloatTolerance('floating-point deviation'); //Set the deviation range of F32/F64 floating-point search, the engine defaults to 0.0
 
@@ -56,7 +59,9 @@ h5gg.clearResults(); //Clear search results, start a new search
 h5gg.getRangesList('module file name'); //Return the module array, the module has start (base address), end (end address), name (path) attributes
 
     (If the module file name=0, it will return the APP main program module information, if the module file name is not passed in, it will return a list of all modules)
-    
+
+h5gg.loadPlugin('Objective-C Class Name','dylib file path'); //load a dylib plugin, return an OC Instance Object
+    (The returned OC object instance can be called directly in js, dylib supports absolute path or relative path in .app)
 
 For standalone APP version only:
 
@@ -65,7 +70,7 @@ h5gg.setTargetProc(process number); //Set the current target process, return suc
 h5gg.getProcList('process name'); //Get the process array, the elements in the array have pid (process number), name (process name) attributes
 
     (If the process name is not passed in, it will return a list of all running app processes, which can be called periodically to determine whether the target process has ended)
-    
+
 
 Other APIs:
 

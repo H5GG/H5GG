@@ -22,8 +22,13 @@ extern FloatMenu* floatH5;
 #include "MemScan.h"
 #include "TopShow.h"
 #include "crossproc.h"
+#include "version"
 
 @protocol h5ggJSExport <JSExport>
+
+-(BOOL)require:(double)minver;
+
+-(void)setFloatTolerance:(NSString*)value;
 
 JSExportAs(searchNumber, -(void)searchNumber:(NSString*)value param2:(NSString*)type param3:(NSString*)memoryFrom param4:(NSString*)memoryTo);
 
@@ -39,19 +44,17 @@ JSExportAs(getResults, -(NSArray*)getResults:(int)maxCount param1:(int)skipCount
 -(long)getResultsCount;
 -(void)clearResults;
 
--(void)setFloatTolerance:(NSString*)value;
-
 -(NSArray*)getLocalScripts;
--(void)pickScriptFile:(JSValue*)callback;
+JSExportAs(pickScriptFile, -(void)pickScriptFile:(JSValue*)callback withTypes:(JSValue*)types);
 
 -(NSArray*)getRangesList:(JSValue*)filter;
 
 -(JSValue*)getProcList:(JSValue*)filter;
 -(BOOL)setTargetProc:(pid_t)pid;
 
-JSExportAs(loadPlugin, -(NSObject*)loadPlugin:(NSString*)className path:(NSString*)dylib);
+JSExportAs(loadPlugin, -(NSObject*)loadPlugin:(JSValue*)className path:(NSString*)dylib);
 
--(void)make;
+JSExportAs(makeTweak, -(NSString*)makeTweak:(NSString*)icon with:(NSString*)html);
 
 @end
 
@@ -80,6 +83,14 @@ JSExportAs(loadPlugin, -(NSObject*)loadPlugin:(NSString*)className path:(NSStrin
         self.engine = new JJMemoryEngine(self.targetport);
     }
     return self;
+}
+
+-(BOOL)require:(double)minver {
+    if(H5GG_VERSION < minver) {
+        JSContext.currentContext.exception = [JSValue valueWithNewErrorFromMessage:@"当前H5GG版本过低" inContext:[JSContext currentContext]];
+        return NO;
+    }
+    return YES;
 }
 
 -(JSValue*)getProcList:(JSValue*)filter {
@@ -115,6 +126,9 @@ JSExportAs(loadPlugin, -(NSObject*)loadPlugin:(NSString*)className path:(NSStrin
 }
 
 -(BOOL)setTargetProc:(pid_t)pid {
+    
+    if(pid==self.targetpid && self.targetport!=MACH_PORT_NULL)
+        return YES;
     
     if(self.targetport!=MACH_PORT_NULL && self.targetport!=mach_task_self())
         mach_port_deallocate(mach_task_self(), self.targetport);
@@ -568,8 +582,6 @@ JSExportAs(loadPlugin, -(NSObject*)loadPlugin:(NSString*)className path:(NSStrin
     return results;
 }
 
-
-
 -(NSArray*)getLocalScripts
 {
     NSMutableArray* results = [[NSMutableArray alloc] init];
@@ -609,12 +621,14 @@ JSExportAs(loadPlugin, -(NSObject*)loadPlugin:(NSString*)className path:(NSStrin
     block();
 }
 
--(void)pickScriptFile:(JSValue*)callback {
-    NSLog(@"pickScriptFile=%@", callback);
+-(void)pickScriptFile:(JSValue*)callback withTypes:(JSValue*)types {
+    NSLog(@"pickScriptFile=%@ %@", types, callback);
+    
+    NSArray* _types = types.isUndefined ? @[@"public.executable", @"public.html"] : types.toArray;
     
     NSThread *webThread = [NSThread currentThread];
     
-    [TopShow filePicker:@[@"public.executable", @"public.html"] callback:^(NSString* path){
+    [TopShow filePicker:_types callback:^(NSString* path) {
         
         [self performSelector:@selector(threadcall:) onThread:webThread withObject:^{
             
@@ -632,13 +646,17 @@ JSExportAs(loadPlugin, -(NSObject*)loadPlugin:(NSString*)className path:(NSStrin
 #define CS_OPS_STATUS           0       /* csops  operations *//* return status */
 extern "C" int csops(pid_t pid, unsigned int  ops, void * useraddr, size_t usersize);
 
--(void)make {
+NSString* makeDYLIB(NSString* iconfile, NSString* htmlfile);
 
+-(NSString*)makeTweak:(NSString*)icon with:(NSString*)html
+{
 //    struct statfs buf;
 //    statfs("/", &buf);
 //    NSLog(@"%s", buf.f_mntfromname);
 //    const char* prefix = "com.apple.os.update-";
 //    if(strstr(buf.f_mntfromname, prefix))
+    
+    NSString* result = makeDYLIB(icon, html);
     
     uint32_t g_csops_flags = 0;
     csops(getpid(), 0, &g_csops_flags, 0);
@@ -646,55 +664,14 @@ extern "C" int csops(pid_t pid, unsigned int  ops, void * useraddr, size_t users
     uint32_t normalstate = CS_VALID|CS_HARD|CS_KILL;
     if((g_csops_flags&normalstate) == normalstate)
     {
-        if(![floatH5 confirm:@"你的设备未越狱! 你可以将:\n悬浮按钮图标文件 H5Icon.png\n悬浮菜单H5文件  H5Menu.html\n打包进ipa中的.app目录中即可自动加载!\n\n是否需要继续制作dylib ?"])
-            return;
+        result = [result stringByAppendingString:@"\n\n你的设备未越狱, 你也可以将:\n悬浮按钮图标文件 H5Icon.png\n悬浮菜单H5文件  H5Menu.html\n打包进ipa中的.app目录中即可自动加载!"];
     }
     
-    
-    NSThread *webThread = [NSThread currentThread];
-    
-    [floatH5 alert:@"制作自己专属的dylib\n\n第一步: 选择悬浮按钮图标文件"];
-    
-    void (^make)(NSString* icon, NSString* html) = ^(NSString* icon, NSString* html) {
-        
-        if(!html.length || !icon.length) return;
-        
-        NSString* makeDYLIB(NSString* iconfile, NSString* htmlfile);
-        [floatH5 alert:makeDYLIB(icon, html)];
-    };
-    
-    [TopShow filePicker:@[@"public.image"] callback:^(NSString *icon) {
-        
-        if(!icon.length) return;
-        
-        [self performSelector:@selector(threadcall:) onThread:webThread withObject:^{
-            
-            [floatH5 alert:@"第二步: 选择默认加载的html文件"];
-            
-//            BOOL choice = [floatH5 confirm:@"第二步: 设置H5悬浮菜单\n\n请问是否需要使用网络H5链接, 否则使用本地html文件"];
-//
-//            if(choice) {
-//                NSString* html = [floatH5 prompt:@"请输入以http或https开头的H5链接地址" defaultText:@""];
-//                if(html) make(icon, html);
-//            } else
-                [TopShow filePicker:@[@"public.html"] callback:^(NSString *html) {
-                    [self performSelector:@selector(threadcall:) onThread:webThread withObject:^{
-                        make(icon, html);
-                    } waitUntilDone:NO];
-                }];
-            
-        } waitUntilDone:NO];
-        
-    }];
+    return result;
 }
 
--(NSObject*)loadPlugin:(NSString*)className path:(NSString*)dylib
+-(NSObject*)loadPlugin:(JSValue*)clazz path:(NSString*)dylib
 {
-    static NSMutableDictionary* cache = [[NSMutableDictionary alloc] init];
-    
-    NSObject* pluginObject = [cache objectForKey:className];
-    if(pluginObject) return pluginObject;
-    
     if(![dylib hasPrefix:@"/"])
         dylib = [NSBundle.mainBundle.bundlePath stringByAppendingPathComponent:dylib];
     
@@ -705,6 +682,16 @@ extern "C" int csops(pid_t pid, unsigned int  ops, void * useraddr, size_t users
     
     if(!dlopen(dylib.UTF8String, RTLD_NOW))
         return nil;
+    
+    static NSObject* nullObject = [NSObject new];
+    if(clazz.isNull) return nullObject;
+    
+    static NSMutableDictionary* cache = [[NSMutableDictionary alloc] init];
+    
+    NSString* className = [clazz toString];
+    
+    NSObject* pluginObject = [cache objectForKey:className];
+    if(pluginObject) return pluginObject;
     
     Class pluginClass = NSClassFromString(className);
     if(!pluginClass) return nil;

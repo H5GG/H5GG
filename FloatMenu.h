@@ -14,6 +14,7 @@
 #import <JavaScriptCore/JavaScriptCore.h>
 #include <objc/runtime.h>
 #include "ModalShow.h"
+#include "version.h"
 
 INCTXT(INITIAL_JS, "initial.js");
 
@@ -259,7 +260,14 @@ objc_method_pointer g_orig_didCreateJavaScriptContext=NULL;
 
 -(void)injectJS {
     NSLog(@"injectJS...");
-
+    
+    self.jscontext[@"h5gg_internel_version"] = @H5GG_VERSION;
+    
+    for (id key in self.actions) {
+        NSLog(@"actions[%@]=%@", key, self.actions[key]);
+        self.jscontext[key] = self.actions[key];
+    }
+    
     self.jscontext[@"h5gg_alert"] = self.jscontext[@"alert"];
     self.jscontext[@"h5gg_confirm"] = self.jscontext[@"confirm"];
     self.jscontext[@"h5gg_prompt"] = self.jscontext[@"prompt"];
@@ -291,11 +299,6 @@ objc_method_pointer g_orig_didCreateJavaScriptContext=NULL;
                 value
             ]];
     }];
-    
-    for (id key in self.actions) {
-        NSLog(@"actions[%@]=%@", key, self.actions[key]);
-        self.jscontext[key] = self.actions[key];
-    }
 }
 
 - (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request navigationType:(UIWebViewNavigationType)navigationType {

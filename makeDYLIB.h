@@ -91,7 +91,7 @@ NSString* makeDYLIB(NSString* iconfile, NSString* htmlurl)
     const char* ldidargs[] = {"ldid", "-S", filePath.UTF8String};
     ldid_main(sizeof(ldidargs)/sizeof(ldidargs[0]), (char**)ldidargs);
     
-    return [NSString stringWithFormat:@"制作成功!\n\n专属H5GG.dylib已生成在当前App的Documents数据目录:\n\n%@", filePath];
+    return [NSString stringWithFormat:@"制作成功!\n\n专属H5GG.dylib已生成在当前App的Documents数据目录: %@", filePath];
 }
 
 
