@@ -20,3 +20,6 @@ h5frida_LDFLAGS += libfrida-core-15.1.24.a -lresolv
 h5frida_LOGOS_DEFAULT_GENERATOR = internal
 
 include $(THEOS_MAKE_PATH)/tweak.mk
+
+clean::
+	rm -rf ./packages/*

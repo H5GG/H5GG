@@ -75,10 +75,14 @@ static void on_detached (FridaSession * session, FridaSessionDetachReason reason
     g_print ("on_detached: reason=%s crash=%p\n", reason_str, crash);
 
     h5fridaSession* s = (__bridge id)user_data;
-    for(h5fridaScript* script in s.scripts) {
+    for(id key in s.scripts)
+    {
+        h5fridaScript* script = s.scripts[key];
+        
         script.rpc_result=nil;
         dispatch_semaphore_signal(script.rpc_semaphore);
     }
+    
     if(s.on_detached) {
         NSString* r=[NSString stringWithUTF8String:reason_str];
         [s performSelector:@selector(threadcall:) onThread:s.jsthread withObject:^{

@@ -12,13 +12,13 @@ and you can make your own tweak(dylib) by click one button, then just select you
 
 supported 4 modes to run:
 
-1. inject H5GG.dylib to ipa for non-jailbreak devices
+1. [inject H5GG.dylib to ipa for non-jailbreak devices](/packages/)
 
-2. tweak(deb) auto load for all app in jailbroken devices
+2. [tweak(deb) auto load for all app in jailbroken devices](/packages/)
 
-3. standalone APP for jailbroken devices(support iPad SlideOver+SplitView)
+3. [standalone APP for jailbroken devices(support iPad SlideOver+SplitView)](/appstand/packages/)
 
-4. Floating On Screen for jailbroken devices(not support iPad SlideOver+SplitView), this has tested on ios11+
+4. [Floating On Screen for jailbroken devices(not support iPad SlideOver+SplitView), this has tested on ios11+](/globalview/packages/)
 
 it's completely free & open source!
  

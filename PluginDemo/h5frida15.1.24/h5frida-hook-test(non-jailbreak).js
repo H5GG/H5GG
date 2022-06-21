@@ -39,9 +39,15 @@ var script = session.create_script(frida_script_code); //注入frida的js脚本�
 if(!script) throw "frida注入脚本失败";
 
 //启动脚本前先设置frida脚本消息接收函数
+//不要在frida脚本里发太多高频消息过来让h5gg弹出alert
+//消息太多让alert阻塞在后台内存会爆导致闪退崩溃
 script.on('message', function(msg) {
     if(msg.type=='error')
+    {
+        script.unload(); //如果脚本发生错误就停止frida脚本
         alert("frida脚本错误:\n"+JSON.stringify(msg));
+    }
+    
     if(msg.type=='send')
         alert("frida脚本消息:\n"+JSON.stringify(msg.payload));
     if(msg.type=='log')
