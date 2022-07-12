@@ -22,7 +22,7 @@ supported 4 modes to run:
 
 support dylib plugin for javascript ([Demo](/PluginDemo/CustomAlert/)).  
 
-[h5frida](/PluginDemo/h5frida15.1.24):
+[h5gg-plugin=>h5frida](/PluginDemo/h5frida15.1.24):
 
 1: support invoke any C/C++/Objective-C function (jailbroken/non-jailbreak)
 
