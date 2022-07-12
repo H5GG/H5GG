@@ -213,39 +213,45 @@ class JJMemoryEngine
         
         *psize = size;
         
+        vm_address_t buffer=0;
+        
         vm_prot_t cur_prot=0;
         vm_prot_t max_prot=0;
-        vm_address_t buffer=0;
-        kern_return_t kr = vm_remap(mach_task_self(), &buffer, size, 0, VM_FLAGS_ANYWHERE,
-                                    this->task, base, false, &cur_prot, &max_prot, VM_INHERIT_NONE);
         
-        if(kr!=KERN_SUCCESS) {
-            NSLog(@"read mem failed! %p %x, %d %s", base, size, kr, mach_error_string(kr));
-            if(kr==KERN_NO_SPACE) do {
-                if(this->task==mach_task_self()) {
-                    mach_port_t object_name;
-                    mach_vm_size_t region_size=size;
-                    mach_vm_address_t region_base = base;
-                    
-                    vm_region_extended_info info={0};
-                    mach_msg_type_number_t info_cnt = VM_REGION_EXTENDED_INFO_COUNT;
-                    vm_region_flavor_t flavor = VM_REGION_EXTENDED_INFO;
-                    
-                    kern_return_t kr = mach_vm_region(this->task, &region_base, &region_size,
-                                                          flavor, (vm_region_info_t)&info, &info_cnt, &object_name);
-                    if(kr==KERN_SUCCESS && info.user_tag==VM_MEMORY_MALLOC_NANO) {
-                        *remapped = false;
-                        buffer = base;
-                        break;
-                    }
+        do {
+            
+            if(this->task==mach_task_self())
+            {
+                mach_port_t object_name;
+                mach_vm_size_t region_size=size;
+                mach_vm_address_t region_base = base;
+                
+                vm_region_extended_info info={0};
+                mach_msg_type_number_t info_cnt = VM_REGION_EXTENDED_INFO_COUNT;
+                vm_region_flavor_t flavor = VM_REGION_EXTENDED_INFO;
+                
+                kern_return_t kr = mach_vm_region(this->task, &region_base, &region_size,
+                                                      flavor, (vm_region_info_t)&info, &info_cnt, &object_name);
+                if(kr==KERN_SUCCESS && info.user_tag==VM_MEMORY_MALLOC_NANO) {
+                    *remapped = false;
+                    buffer = base;
+                    break;
                 }
-                
-                throw bad_alloc();
-                
-            } while(0);
-        } else {
-            *remapped = true;
-        }
+            }
+            
+            kern_return_t kr = vm_remap(mach_task_self(), &buffer, size, 0, VM_FLAGS_ANYWHERE,
+                                        this->task, base, false, &cur_prot, &max_prot, VM_INHERIT_NONE);
+            
+            if(kr!=KERN_SUCCESS) {
+                NSLog(@"read mem failed! %p %x, %d %s", base, size, kr, mach_error_string(kr));
+                if(kr==KERN_NO_SPACE)
+                    throw bad_alloc();
+            } else {
+                *remapped = true;
+            }
+            
+        } while(0);
+        
         NSLog(@"loadRegion[%d] %p=>%p %x,%x,%x", *remapped, base, buffer, size, cur_prot, max_prot);
         return (void*)buffer;
     }

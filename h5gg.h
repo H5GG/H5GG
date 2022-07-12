@@ -52,7 +52,7 @@ JSExportAs(pickScriptFile, -(void)pickScriptFile:(JSValue*)callback withTypes:(J
 -(JSValue*)getProcList:(JSValue*)filter;
 -(BOOL)setTargetProc:(pid_t)pid;
 
-JSExportAs(loadPlugin, -(NSObject*)loadPlugin:(JSValue*)className path:(NSString*)dylib);
+JSExportAs(loadPlugin, -(NSObject*)loadPlugin:(NSString*)className path:(NSString*)dylib);
 
 JSExportAs(makeTweak, -(NSString*)makeTweak:(NSString*)icon with:(NSString*)html);
 
@@ -342,7 +342,7 @@ JSExportAs(makeTweak, -(NSString*)makeTweak:(NSString*)icon with:(NSString*)html
 
 -(int)parseSearchValue:(void*)valuebuf from:(NSString*)value byType:(NSString*)type
 {
-    NSString *pattern = @"^([^~]+)~([^~]+)$";
+    NSString *pattern = @"^([^~～]+)[~～]([^~～]+)$";
     NSRegularExpression *regex = [[NSRegularExpression alloc] initWithPattern:pattern options:0 error:nil];
     NSTextCheckingResult *result = [regex firstMatchInString:value options:0 range:NSMakeRange(0, value.length)];
     NSLog(@"firstMatchInString rangeCount=%d %@", [result numberOfRanges], result);
@@ -378,7 +378,7 @@ JSExportAs(makeTweak, -(NSString*)makeTweak:(NSString*)icon with:(NSString*)html
     return jjtype;
 }
 
--(void)searchNumber:(NSString*)value param2:(NSString*)type param3:(NSString*)memoryFrom    param4:(NSString*)memoryTo
+-(void)searchNumber:(NSString*)value param2:(NSString*)type param3:(NSString*)memoryFrom param4:(NSString*)memoryTo
 {
     NSLog(@"searchNumber=%@:%@ [%@:%@]", type, value, memoryFrom, memoryTo);
     
@@ -466,7 +466,7 @@ JSExportAs(makeTweak, -(NSString*)makeTweak:(NSString*)icon with:(NSString*)html
     }
     
     if(self.engine->getResultsCount()==0) {
-        [floatH5 alert:@"临近搜索错误: 当前列表为空, 请清除后再重新开始搜索"];
+        [floatH5 alert:@"邻近搜索错误: 当前列表为空, 请清除后再重新开始搜索"];
         return;
     }
     
@@ -551,7 +551,7 @@ JSExportAs(makeTweak, -(NSString*)makeTweak:(NSString*)icon with:(NSString*)html
 -(NSArray*)getRangesList:(JSValue*)filter
 {
     if(self.targetpid!=getpid())
-        return getRangesList2(self.targetport, [filter isUndefined] ? nil:[filter toString]);
+        return getRangesList2(self.targetpid, self.targetport, [filter isUndefined] ? nil:[filter toString]);
     
     NSMutableArray* results = [[NSMutableArray alloc] init];
         
@@ -567,11 +567,22 @@ JSExportAs(makeTweak, -(NSString*)makeTweak:(NSString*)icon with:(NSString*)html
             || (i==0 && [[filter toString] isEqual:@"0"])
             || [[filter toString] isEqual:[NSString stringWithUTF8String:basename((char*)name) ]]
         ){
+            
+            uint64_t end = 0;
+            
+            struct proc_regionwithpathinfo rwpi={0};
+            int len=proc_pidinfo(getpid(), PROC_PIDREGIONPATHINFO, (uint64_t)baseaddr, &rwpi, PROC_PIDREGIONPATHINFO_SIZE);
+            
+            if(rwpi.prp_vip.vip_vi.vi_stat.vst_dev && rwpi.prp_vip.vip_vi.vi_stat.vst_ino)
+            {
+                uint64_t size = getMachoVMSize(self.targetport,(uint64_t)baseaddr);
+                if(size) end = (uint64_t)baseaddr+size;
+            }
+            
             [results addObject:@{
                 @"name" : [NSString stringWithUTF8String:name],
                 @"start" : [NSString stringWithFormat:@"0x%llX", baseaddr],
-                @"end" : [NSString stringWithFormat:@"0x%llX",
-                          (uint64_t)baseaddr+getMachoVMSize(self.targetport,(uint64_t)baseaddr) ],
+                @"end" : [NSString stringWithFormat:@"0x%llX", end],
                 //@"type" : @"rwxp",
             }];
             
@@ -670,31 +681,33 @@ NSString* makeDYLIB(NSString* iconfile, NSString* htmlfile);
     return result;
 }
 
--(NSObject*)loadPlugin:(JSValue*)clazz path:(NSString*)dylib
+-(NSObject*)loadPlugin:(NSString*)className path:(NSString*)dylib
 {
     if(![dylib hasPrefix:@"/"])
         dylib = [NSBundle.mainBundle.bundlePath stringByAppendingPathComponent:dylib];
     
-    if(access(dylib.UTF8String, F_OK) != 0)
+    if(access(dylib.UTF8String, F_OK) != 0) {
+        NSLog(@"loadPlugin cannot find file!");
         return nil;
+    }
         
     chmod(dylib.UTF8String, 0755);
     
-    if(!dlopen(dylib.UTF8String, RTLD_NOW))
+    if(!dlopen(dylib.UTF8String, RTLD_NOW)) {
+        NSLog(@"loadPlugin dlerror:%s", dlerror());
         return nil;
-    
-    static NSObject* nullObject = [NSObject new];
-    if(clazz.isNull) return nullObject;
+    }
     
     static NSMutableDictionary* cache = [[NSMutableDictionary alloc] init];
-    
-    NSString* className = [clazz toString];
     
     NSObject* pluginObject = [cache objectForKey:className];
     if(pluginObject) return pluginObject;
     
     Class pluginClass = NSClassFromString(className);
-    if(!pluginClass) return nil;
+    if(!pluginClass) {
+        NSLog(@"loadPlugin cannot find NSClass!");
+        return nil;
+    }
     
     pluginObject = [pluginClass new];
     

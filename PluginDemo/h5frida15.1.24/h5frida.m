@@ -2,6 +2,8 @@
 #import <Foundation/Foundation.h>
 #import <JavaScriptCore/JavaScriptCore.h>
 #import <UIKit/UIKit.h>
+#include <sys/stat.h>
+#include <dlfcn.h>
 #include "version.h"
 #include "frida-core-15.1.24.h"
 
@@ -12,6 +14,7 @@
 //frida
 -(double)pluginVersion;
 -(NSString*)coreVersion;
+-(BOOL)loadGadget:(NSString*)dylib;
 -(NSObject*)attach:(int)pid;
 -(NSArray*)enumerate_processes;
 -(NSDictionary*)get_frontmost_application;
@@ -172,6 +175,22 @@ static void on_message (FridaScript * script, const gchar * message, GBytes * da
         devices = NULL;
     }
     return self;
+}
+
+-(BOOL)loadGadget:(NSString*)dylib
+{
+    if(![dylib hasPrefix:@"/"])
+        dylib = [NSBundle.mainBundle.bundlePath stringByAppendingPathComponent:dylib];
+    
+    if(access(dylib.UTF8String, F_OK) != 0)
+        return NO;
+        
+    chmod(dylib.UTF8String, 0755);
+    
+    if(!dlopen(dylib.UTF8String, RTLD_NOW))
+        return NO;
+    
+    return YES;
 }
 
 -(double)pluginVersion {

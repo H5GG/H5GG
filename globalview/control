@@ -2,7 +2,7 @@ Package: com.shadow.h5ggapp
 Name: H5GG跨进程悬浮版
 Depends: mobilesubstrate
 Architecture: iphoneos-arm
-Description: H5GG跨进程悬浮版(该版本不支持iPad分屏浮动, 如有需要可使用H5GG跨进程普通版)
+Description: H5GG跨进程悬浮版(该版本不支持iPad的原生分屏浮动, 如有需要可使用H5GG跨进程普通版)
 Maintainer: Shadow-
 Author: Shadow-
 Section: System

@@ -99,37 +99,62 @@ size_t getMachoVMSize(task_port_t task, mach_vm_address_t addr)
     if(kr != KERN_SUCCESS)
         return 0;
     
-    size_t sz = sizeof(header); // Size of the header
-    sz += header.sizeofcmds;    // Size of the load commands
-    
     mach_vm_size_t lcsize=header.sizeofcmds;
     void* buf = malloc(lcsize);
     
     kr = mach_vm_read_overwrite(task, addr+hdrsize, lcsize, (mach_vm_address_t)buf, &lcsize);
     if(kr == KERN_SUCCESS)
     {
+        uint64_t vm_start = -1;
+        uint64_t vm_end = 0;
+        uint64_t header_vaddr = -1;
+        
         struct load_command* lc = (struct load_command*)buf;
         for (uint32_t i = 0; i < header.ncmds; i++) {
-            if (lc->cmd == LC_SEGMENT_64) {
-                struct segment_command_64 * sc = (struct segment_command_64 *) lc;
-                if(!(sc->vmaddr==0 && sc->vmsize==0x100000000 && sc->fileoff==0 && sc->filesize==0 && sc->flags==0 && sc->initprot==0 && sc->maxprot==0)) //skip __PAGEZERO
-                sz += ((struct segment_command_64 *) lc)->vmsize; // Size of segments
+            if (lc->cmd == LC_SEGMENT_64)
+            {
+                struct segment_command_64 * seg = (struct segment_command_64 *) lc;
+                
+                //printf("segment: %s file=%x:%x vm=%p:%p\n", seg->segname, seg->fileoff, seg->filesize, seg->vmaddr, seg->vmsize);
+                
+                if(seg->fileoff==0 && seg->filesize>0)
+                {
+                    if(header_vaddr != -1) {
+                        NSLog(@"multi header mapping! %s", seg->segname);
+                        vm_end=0;
+                        break;
+                    }
+                    
+                    header_vaddr = seg->vmaddr;
+                }
+                
+                if(seg->vmaddr < vm_start)
+                    vm_start = seg->vmaddr;
+                    
+                if(seg->vmsize && vm_end<(seg->vmaddr+seg->vmsize))
+                    vm_end = seg->vmaddr+seg->vmsize;
             }
             lc = (struct load_command *) ((char *)lc + lc->cmdsize);
         }
+        
+        if(vm_end && header_vaddr != -1)
+            vm_end -= header_vaddr;
+        
+        return vm_end;
     }
     free(buf);
-    return sz;
+    return 0;
 }
 
-NSArray* getRangesList2(task_port_t task, NSString* filter)
+
+NSArray* getRangesList2(pid_t pid, task_port_t task, NSString* filter)
 {
     NSMutableArray* results = [[NSMutableArray alloc] init];
     
     task_dyld_info_data_t task_dyld_info;
     mach_msg_type_number_t count = TASK_DYLD_INFO_COUNT;
     kern_return_t kr = task_info(task, TASK_DYLD_INFO, (task_info_t)&task_dyld_info, &count);
-    NSLog(@"getmodules TASK_DYLD_INFO=%p", task_dyld_info.all_image_info_addr);
+    NSLog(@"getmodules TASK_DYLD_INFO=%p %x %d", task_dyld_info.all_image_info_addr, task_dyld_info.all_image_info_size, task_dyld_info.all_image_info_format);
     
     if(kr!=KERN_SUCCESS)
         return results;
@@ -180,11 +205,21 @@ NSArray* getRangesList2(task_port_t task, NSString* filter)
             || (i==0 && [filter isEqual:@"0"])
             || [filter isEqual:[NSString stringWithUTF8String:basename((char*)pathbuffer) ]]
         ){
+            uint64_t end = 0;
+            
+            struct proc_regionwithpathinfo rwpi={0};
+            int len=proc_pidinfo(getpid(), PROC_PIDREGIONPATHINFO, addr, &rwpi, PROC_PIDREGIONPATHINFO_SIZE);
+            
+            if(rwpi.prp_vip.vip_vi.vi_stat.vst_dev && rwpi.prp_vip.vip_vi.vi_stat.vst_ino)
+            {
+                uint64_t size = getMachoVMSize(pid,(uint64_t)addr);
+                if(size) end = (uint64_t)addr+size;
+            }
+            
             [results addObject:@{
                 @"name" : [NSString stringWithUTF8String:pathbuffer],
                 @"start" : [NSString stringWithFormat:@"0x%llX", addr],
-                @"end" : [NSString stringWithFormat:@"0x%llX",
-                          (uint64_t)addr+getMachoVMSize(task, (uint64_t)addr) ],
+                @"end" : [NSString stringWithFormat:@"0x%llX", end],
                 //@"type" : @"rwxp",
             }];
             

@@ -16,6 +16,7 @@
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #pragma GCC diagnostic ignored "-Wformat"
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#pragma GCC diagnostic ignored "-Wmissing-braces"
 
 
 bool g_dylib_runmode = false;
@@ -126,7 +127,7 @@ extern "C" __attribute__ ((visibility ("default"))) void SetGlobalView(char* dyl
     NSLog(@"SetGlobalView=task_for_pid=%d %p %d %s!", sbpid, ret, _target_task, mach_error_string(ret));
     if(ret!=KERN_SUCCESS) return;
     
-    NSArray* modules = getRangesList2(_target_task, [NSString stringWithUTF8String:basename(dylib)]);
+    NSArray* modules = getRangesList2(sbpid, _target_task, [NSString stringWithUTF8String:basename(dylib)]);
     NSLog(@"SetGlobalView=modules=%@", modules);
     if(modules.count!=1) return;
     

@@ -1,14 +1,15 @@
 h5gg.require(7.5); //设定最低需求的H5GG版本号
 
-//将frida-gadget的dylib和config两个文件放到.app目录中, 免越狱不支持Interceptor功能
-var frida_gadget = h5gg.loadPlugin(null, "frida-gadget-15.1.24.dylib");
-if(!frida_gadget) throw "加载frida-gadget守护模块失败";
-
 //将h5frida-15.1.24.dylib放到.app目录中
 var h5frida=h5gg.loadPlugin("h5frida","h5frida-15.1.24.dylib");
 if(!h5frida) throw "加载h5frida插件失败";
 
 alert("h5frida插件版本="+h5frida.pluginVersion() + "\nfrida引擎版本="+h5frida.coreVersion());
+
+//将frida-gadget的dylib和config两个文件放到.app目录中, 免越狱不支持Interceptor功能
+if(!h5frida.loadGadget("frida-gadget-15.1.24.dylib"))
+    throw "加载frida-gadget守护模块失败";
+
 
 var procs = h5frida.enumerate_processes();
 if(!procs || !procs.length) throw "frida无法获取进程列表";

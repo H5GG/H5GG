@@ -1,4 +1,4 @@
-h5gg.require(7.5); //设定最低需求的H5GG版本号
+h5gg.require(7.6); //设定最低需求的H5GG版本号
 
 //获取h5gg当前选择的进程号
 var pid = $("#procname").attr('pid');

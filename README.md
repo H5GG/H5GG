@@ -16,11 +16,19 @@ supported 4 modes to run:
 
 2. [tweak(deb) auto load for all app in jailbroken devices](/packages/)
 
-3. [standalone APP for jailbroken devices(support iPad SlideOver+SplitView)](/appstand/packages/)
+3. [standalone APP for jailbroken devices(support iPad's SlideOver+SplitView)](/appstand/packages/)
 
-4. [Floating On Screen for jailbroken devices(not support iPad SlideOver+SplitView), this has tested on ios11+](/globalview/packages/)
+4. [Floating On Screen for jailbroken devices(not support iPad's SlideOver+SplitView), this has tested on ios11+](/globalview/packages/)
 
-it's completely free & open source!
+support dylib plugin for javascript ([Demo](/PluginDemo/CustomAlert/)).  
+
+[h5frida](/PluginDemo/h5frida15.1.24):
+1: support invoke any C/C++/Objective-C function (jailbroken/non-jailbreak)
+2: support hook any Objective-C method (jailbroken/non-jailbreak)
+3: support hook any module's C/C++ function/instrument (only jailbroken)
+4: support inline-hook app's C/C++ function/instrument  (jailbroken/non-jailbreak)
+
+it's all completely free & open source!
  
 ![text](/pictures/h5gg1.png)
 
