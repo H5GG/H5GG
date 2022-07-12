@@ -20,7 +20,7 @@ supported 4 modes to run:
 
 4. [Floating On Screen for jailbroken devices(not support iPad's SlideOver+SplitView), this has tested on ios11+](/globalview/packages/)
 
-support dylib plugin for javascript ([Demo](/PluginDemo/CustomAlert/)).  
+support dylib plugin for javascript ([Demo](/PluginDemo/customAlert)).  
 
 [h5gg-plugin=>h5frida](/PluginDemo/h5frida15.1.24):
 
