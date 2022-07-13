@@ -105,7 +105,6 @@ size_t getMachoVMSize(task_port_t task, mach_vm_address_t addr)
     kr = mach_vm_read_overwrite(task, addr+hdrsize, lcsize, (mach_vm_address_t)buf, &lcsize);
     if(kr == KERN_SUCCESS)
     {
-        uint64_t vm_start = -1;
         uint64_t vm_end = 0;
         uint64_t header_vaddr = -1;
         
@@ -127,9 +126,6 @@ size_t getMachoVMSize(task_port_t task, mach_vm_address_t addr)
                     
                     header_vaddr = seg->vmaddr;
                 }
-                
-                if(seg->vmaddr < vm_start)
-                    vm_start = seg->vmaddr;
                     
                 if(seg->vmsize && vm_end<(seg->vmaddr+seg->vmsize))
                     vm_end = seg->vmaddr+seg->vmsize;

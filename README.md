@@ -30,7 +30,7 @@ support dylib plugin for javascript ([Demo](/PluginDemo/customAlert)).
 
 3: support hook any module's C/C++ function/instrument (only jailbroken)
 
-4: support inline-hook app's C/C++ function/instrument  (jailbroken/non-jailbreak)
+4: support **inline-hook** app's C/C++ function/instrument  (jailbroken/**non-jailbreak**)
 
 
 it's all completely free & open source!
