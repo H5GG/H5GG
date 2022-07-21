@@ -110,10 +110,8 @@ void* rva2data(struct mach_header_64* header, uint64_t rva)
 }
 
 
-NSMutableData* load_macho_data(char* machoPath)
+NSMutableData* load_macho_data(NSString* path)
 {
-    NSString* path = [NSBundle.mainBundle.bundlePath stringByAppendingPathComponent:[NSString stringWithUTF8String:machoPath]];
-    
     NSMutableData* macho = [NSMutableData dataWithContentsOfFile:path];
     
     UInt32 magic = *(uint32_t*)macho.mutableBytes;
@@ -381,46 +379,27 @@ NSMutableData* add_hook_section(NSMutableData* macho)
 }
 
 
-NSMutableDictionary* gStaticInlineHookMachO = [[NSMutableDictionary alloc] init];
-
 extern "C"
 __attribute__((visibility("default")))
-BOOL StaticInlineHookPatchCommit()
+NSString* StaticInlineHookPatch(char* machoPath, uint64_t vaddr)
 {
-    for(NSString* fpath in gStaticInlineHookMachO) {
-        NSMutableData* macho = gStaticInlineHookMachO[fpath];
-        
-        NSString* savePath = [NSString stringWithFormat:@"%@/Documents/static-inline-hook/%@", NSHomeDirectory(), fpath];
-        [NSFileManager.defaultManager createDirectoryAtPath:[NSString stringWithUTF8String:dirname((char*)savePath.UTF8String)] withIntermediateDirectories:YES attributes:nil error:nil];
-        
-        if(![macho writeToFile:savePath atomically:NO]) {
-            NSLog(@"StaticInlineHookPatchCommit error: %@", fpath);
-            [gStaticInlineHookMachO removeAllObjects];
-            return NO;
-        }
-        
-        NSLog(@"StaticInlineHookPatchCommit %@", fpath);
-    }
+    static NSMutableDictionary* gStaticInlineHookMachO = [[NSMutableDictionary alloc] init];
     
-    [gStaticInlineHookMachO removeAllObjects];
-    return YES;
-}
+    NSString* path = [NSBundle.mainBundle.bundlePath stringByAppendingPathComponent:[NSString stringWithUTF8String:machoPath]];
+        
+    NSString* newPath = gStaticInlineHookMachO[path];
+    
+    NSMutableData* macho=nil;
 
-extern "C"
-__attribute__((visibility("default")))
-BOOL StaticInlineHookPatch(char* machoPath, uint64_t vaddr)
-{
-    NSString* fpath = [NSString stringWithUTF8String:machoPath];
-    NSMutableData* macho = gStaticInlineHookMachO[fpath];
-    
-    if(!macho) {
-        macho = load_macho_data(machoPath);
-        if(!macho) {
-            NSLog(@"cannot load macho: %s", machoPath);
-            return NO;
-        }
+    if(newPath) {
+        macho = load_macho_data(newPath);
+        if(!macho) return [NSString stringWithFormat:@"找不到文件 Documents/static-inline-hook/%s", machoPath];
+    } else {
+        macho = load_macho_data(path);
+        if(!macho) return [NSString stringWithFormat:@"无法读取文件 .app/%s", machoPath];
     }
     
+    uint32_t cryptid = 0;
     struct mach_header_64* header = NULL;
     struct segment_command_64* text_seg = NULL;
     struct segment_command_64* data_seg = NULL;
@@ -439,6 +418,10 @@ BOOL StaticInlineHookPatch(char* machoPath, uint64_t vaddr)
                 if(strcmp(seg->segname,"__HOOK_DATA")==0)
                     data_seg = seg;
             }
+            if(lc->cmd == LC_ENCRYPTION_INFO_64) {
+                struct encryption_info_command_64* info = (struct encryption_info_command_64*)lc;
+                if(cryptid==0) cryptid = info->cryptid;
+            }
             lc = (struct load_command *) ((char *)lc + lc->cmdsize);
         }
         
@@ -449,14 +432,16 @@ BOOL StaticInlineHookPatch(char* machoPath, uint64_t vaddr)
         
         macho = add_hook_section(macho);
         if(!macho) {
-            NSLog(@"add_hook_section error!");
-            return NO;
+            return @"add_hook_section error!";
         }
     }
     
+    if(cryptid != 0) {
+        return @"该app程序未砸壳!";
+    }
+    
     if(!text_seg || !data_seg) {
-        NSLog(@"cannot parse macho file!");
-        return NO;
+        return @"无法解析该文件";
     }
     
     uint64_t funcRVA = vaddr;
@@ -464,8 +449,7 @@ BOOL StaticInlineHookPatch(char* machoPath, uint64_t vaddr)
     //*(uint32_t*)funcData = 0x58000020; //ldr x0, #4 test
     
     if(!funcData) {
-        NSLog(@"invalid vaddr %x", funcRVA);
-        return NO;
+        return @"无效的HOOK地址";
     }
     
     uint64_t targetRVA = va2rva(header, text_seg->vmaddr);
@@ -483,8 +467,10 @@ BOOL StaticInlineHookPatch(char* machoPath, uint64_t vaddr)
     {
         if(hookBlock[i].hook_vaddr==funcRVA)
         {
-            NSLog(@"already pathched for %llX", funcRVA);
-            return false;
+            if(newPath)
+                return @"该HOOK地址已修补, 请将APP的Documents/static-inline-hook目录中的修补文件替换到ipa中的.app目录并重新签名安装!";
+            
+            return @"该HOOK地址已修补!";
         }
         
         if(hookBlock[i].hook_vaddr==0)
@@ -513,20 +499,24 @@ BOOL StaticInlineHookPatch(char* machoPath, uint64_t vaddr)
     }
     
     if(!hookBlockRVA) {
-        NSLog(@"hookBlock full!");
-        return NO;
+        return @"HOOK数量已超过最大数量!";
     }
     
     printf("func: %p=>%p target: %p=>%p\n", funcRVA, funcData, targetRVA, targetData);
     
     if(!dobby_static_inline_hook(hookBlock, hookBlockRVA, funcRVA, funcData, targetRVA, targetData, InstrumentBridgeRVA))
     {
-        NSLog(@"static inline hook error!");
-        return NO;
+        return @"无法修补该HOOK地址!";
     }
     
-    gStaticInlineHookMachO[fpath] = macho;
-    return YES;
+    NSString* savePath = [NSString stringWithFormat:@"%@/Documents/static-inline-hook/%s", NSHomeDirectory(), machoPath];
+    [NSFileManager.defaultManager createDirectoryAtPath:[NSString stringWithUTF8String:dirname((char*)savePath.UTF8String)] withIntermediateDirectories:YES attributes:nil error:nil];
+    
+    if(![macho writeToFile:savePath atomically:NO])
+        return @"无法写入文件!";
+    
+    gStaticInlineHookMachO[path] = savePath;
+    return @"未签名该HOOK地址, 修补文件将生成在APP的Documents/static-inline-hook目录中, 请将该目录中所有文件替换到ipa中的.app目录并重新签名安装!";
 }
 
 

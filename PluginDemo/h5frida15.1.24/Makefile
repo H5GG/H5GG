@@ -23,3 +23,8 @@ include $(THEOS_MAKE_PATH)/tweak.mk
 
 clean::
 	rm -rf ./packages/*
+
+after-package::
+	rm -rf ./packages/*
+	cp ./.theos/obj/debug/h5frida.dylib ./h5frida-15.1.24.dylib
+	

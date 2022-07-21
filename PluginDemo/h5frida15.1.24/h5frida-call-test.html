@@ -67,7 +67,7 @@ rpc.exports.Cxx_getDirFiles = function(path)
 
 <script>
 
-h5gg.require(7.6); //设定最低需求的H5GG版本号
+h5gg.require(7.7); //设定最低需求的H5GG版本号
 
 //将h5frida-15.1.24.dylib放到.app目录中
 var h5frida=h5gg.loadPlugin("h5frida", "h5frida-15.1.24.dylib");
@@ -75,7 +75,7 @@ if(!h5frida) throw "加载h5frida插件失败";
 
 //优先调用集成的frida核心, 将frida-gadget的dylib和config两个文件放到.app目录中
 if(!h5frida.loadGadget("frida-gadget-15.1.24.dylib"))
-    throw "加载frida-gadget守护模块失败, 请先安装frida核心免越狱dylib动态库";
+    throw "加载frida-gadget守护模块失败, 请将frida-gadget的dylib和config两个文件放到h5gg.app目录中";
     
 alert("h5frida插件版本="+h5frida.pluginVersion() + "\nfrida引擎版本="+h5frida.coreVersion());
 /*

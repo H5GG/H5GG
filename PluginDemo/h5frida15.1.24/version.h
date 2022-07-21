@@ -1,5 +1,5 @@
 
-#define H5FRIDA_PLUGIN_VERSION  1.4
+#define H5FRIDA_PLUGIN_VERSION  1.5
 
 #define FRIDA_CORE_VERSION  "15.1.24"
 
@@ -16,6 +16,10 @@ h5frida-v1.3:
 h5frida-v1.4:
  1: frida-gadget修改为由h5frida加载
  2: inline-hook支持免越狱拦截app的模块任意地址函数/指令
+ 
+h5grida-v1.5:
+ 1: 优化免越狱inline-hook流程
+ 2: 免越狱inline-hook增加砸壳判断
  
 */
 

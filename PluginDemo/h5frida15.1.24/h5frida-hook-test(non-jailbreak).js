@@ -1,4 +1,4 @@
-h5gg.require(7.6); //设定最低需求的H5GG版本号
+h5gg.require(7.7); //设定最低需求的H5GG版本号
 
 //将h5frida-15.1.24.dylib放到.app目录中
 var h5frida=h5gg.loadPlugin("h5frida","h5frida-15.1.24.dylib");

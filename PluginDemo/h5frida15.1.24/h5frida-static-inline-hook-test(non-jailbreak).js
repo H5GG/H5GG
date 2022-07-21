@@ -1,4 +1,4 @@
-h5gg.require(7.6); //设定最低需求的H5GG版本号
+h5gg.require(7.7); //设定最低需求的H5GG版本号
 
 //将h5frida-15.1.24.dylib放到.app目录中
 var h5frida=h5gg.loadPlugin("h5frida","h5frida-15.1.24.dylib");
@@ -108,30 +108,11 @@ function frida_script()
         var SIHModule = Module.load(app_path+"/StaticInlineHook.dylib");
         
         var StaticInlineHookPatchExport = new NativeFunction(SIHModule.getExportByName("StaticInlineHookPatch"),
-                                                  "bool", ["pointer", "uint"]);
-        var StaticInlineHookPatchCommitExport = new NativeFunction(SIHModule.getExportByName("StaticInlineHookPatchCommit"),
-                                                  "bool", []);
+                                                  "pointer", ["pointer", "uint"]);
         var StaticInlineHookFunctionExport = new NativeFunction(SIHModule.getExportByName("StaticInlineHookFunction"),
                                                   "pointer", ["pointer", "uint", "pointer"]);
         var StaticInlineHookInstrumentExport = new NativeFunction(SIHModule.getExportByName("StaticInlineHookInstrument"),
                                                   "bool", ["pointer", "uint", "pointer"]);
-        
-        global.StaticInlineHookPatchCount = 0;
-        global.StaticInlineHookFailedCount = 0;
-        
-        global.StaticInlineHookCommit = function()
-        {
-            if(global.StaticInlineHookPatchCount > 0) {
-                global.StaticInlineHookPatchCount = 0;
-                if(!StaticInlineHookPatchCommitExport())
-                    return false;
-            }
-            if(global.StaticInlineHookFailedCount) {
-                global.StaticInlineHookFailedCount = 0;
-                return false;
-            }
-            return true;
-        }
         
         global.StaticInlineHookFunction = function(fpath, vaddr, returnType, argTypes, callback) {
             
@@ -142,13 +123,8 @@ function frida_script()
             
             if(!oldFunctionAddr || oldFunctionAddr.isNull())
             {
-                global.StaticInlineHookFailedCount++;
-                if(StaticInlineHookPatchExport(Memory.allocUtf8String(fpath), vaddr)) {
-                    global.StaticInlineHookPatchCount++;
-                    console.log(fpath+":0x"+vaddr.toString(16)+"未签名该HOOK地址, 修补文件将生成在APP的Documents/static-inline-hook目录中, 请将该目录中所有文件替换到ipa中的.app目录并重新签名安装!");
-                } else {
-                    console.log(fpath+":0x"+vaddr.toString(16)+"未签名该HOOK地址, 修补文件失败!");
-                }
+                var patchResult = StaticInlineHookPatchExport(Memory.allocUtf8String(fpath), vaddr);
+                console.log(fpath+":0x"+vaddr.toString(16)+"该地址HOOK失败!\n" + ObjC.Object(patchResult).toString());
                 return null;
             }
             
@@ -185,13 +161,8 @@ function frida_script()
             
             if(!StaticInlineHookInstrumentExport(Memory.allocUtf8String(fpath), vaddr, callback.NativeCallback))
             {
-                global.StaticInlineHookFailedCount++;
-                if(StaticInlineHookPatchExport(Memory.allocUtf8String(fpath), vaddr)) {
-                    global.StaticInlineHookPatchCount++;
-                    console.log(fpath+":0x"+vaddr.toString(16)+"未签名该HOOK地址, 修补文件将生成在APP的Documents/static-inline-hook目录中, 请将该目录中所有文件替换到ipa中的.app目录并重新签名安装!");
-                } else {
-                    console.log(fpath+":0x"+vaddr.toString(16)+"未签名该HOOK地址, 修补文件失败!");
-                }
+                var patchResult = StaticInlineHookPatchExport(Memory.allocUtf8String(fpath), vaddr);
+                console.log(fpath+":0x"+vaddr.toString(16)+"该地址HOOK失败!\n" + ObjC.Object(patchResult).toString());
                 return false;
             }
 
@@ -221,7 +192,7 @@ function frida_script()
         );
         
         //inline hook拦截hookme.dylib中的addInt函数最后一条指令
-        StaticInlineHookInstrument("hookme.dylib", //要HOOK的模块在.app中的相对路径
+        var hook2 = StaticInlineHookInstrument("hookme.dylib", //要HOOK的模块在.app中的相对路径
                  0x00007E50, //要HOOK的指令偏移地址
                  function(context)
                  {
@@ -240,7 +211,7 @@ function frida_script()
         );
         
         //inline hook拦截hookme.dylib中的addFloat函数第一条指令
-        StaticInlineHookInstrument("hookme.dylib", //要HOOK的模块在.app中的相对路径
+        var hook3 = StaticInlineHookInstrument("hookme.dylib", //要HOOK的模块在.app中的相对路径
                  0x00007E54, //要HOOK的指令偏移地址
                  function(context)
                  {
@@ -257,7 +228,7 @@ function frida_script()
         );
         
         //inline hook拦截hookme.dylib中的addDouble函数最后一条指令
-        StaticInlineHookInstrument("hookme.dylib", //要HOOK的模块在.app中的相对路径
+        var hook4 = StaticInlineHookInstrument("hookme.dylib", //要HOOK的模块在.app中的相对路径
                  0x00007EA0, //要HOOK的指令偏移地址
                  function(context)
                  {
@@ -269,8 +240,8 @@ function frida_script()
                  }
         );
         
-        //确认全部HOOK并返回是否成功
-        return global.StaticInlineHookCommit();
+        //返回是否全部HOOK成功
+        return addInt && hook2 && hook3 && hook4;
     };
 
     //执行到这里之后script.load()才会返回

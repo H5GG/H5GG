@@ -91,8 +91,16 @@ pid_t pid_for_name(const char* name)
     return 0;
 }
 
-size_t getMachoVMSize(task_port_t task, mach_vm_address_t addr)
+size_t getMachoVMSize(pid_t pid, task_port_t task, mach_vm_address_t addr)
 {
+    struct proc_regionwithpathinfo rwpi={0};
+    int len=proc_pidinfo(pid, PROC_PIDREGIONPATHINFO, addr, &rwpi, PROC_PIDREGIONPATHINFO_SIZE);
+    
+    if(!rwpi.prp_vip.vip_vi.vi_stat.vst_dev && !rwpi.prp_vip.vip_vi.vi_stat.vst_ino)
+    {
+        return 0;
+    }
+    
     struct mach_header_64 header;
     mach_vm_size_t hdrsize = sizeof(header);
     kern_return_t kr = mach_vm_read_overwrite(task, addr, hdrsize, (mach_vm_address_t)&header, &hdrsize);
@@ -201,16 +209,9 @@ NSArray* getRangesList2(pid_t pid, task_port_t task, NSString* filter)
             || (i==0 && [filter isEqual:@"0"])
             || [filter isEqual:[NSString stringWithUTF8String:basename((char*)pathbuffer) ]]
         ){
-            uint64_t end = 0;
             
-            struct proc_regionwithpathinfo rwpi={0};
-            int len=proc_pidinfo(getpid(), PROC_PIDREGIONPATHINFO, addr, &rwpi, PROC_PIDREGIONPATHINFO_SIZE);
-            
-            if(rwpi.prp_vip.vip_vi.vi_stat.vst_dev && rwpi.prp_vip.vip_vi.vi_stat.vst_ino)
-            {
-                uint64_t size = getMachoVMSize(pid,(uint64_t)addr);
-                if(size) end = (uint64_t)addr+size;
-            }
+            uint64_t size = getMachoVMSize(pid, task, (uint64_t)addr);
+            uint64_t end = size ? ((uint64_t)addr+size) : 0;
             
             [results addObject:@{
                 @"name" : [NSString stringWithUTF8String:pathbuffer],

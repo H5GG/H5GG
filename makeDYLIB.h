@@ -40,16 +40,22 @@ NSString* makeDYLIB(NSString* iconfile, NSString* htmlurl)
         return @"制作失败\n\nH5文件超过2MB";
     
     NSData *pattern = [[NSString stringWithUTF8String:(char*)gH5ICON_STUB_FILEData] dataUsingEncoding:NSUTF8StringEncoding];
+    if(!pattern)
+        return @"制作失败\n\n当前已经是定制版本, 请使用原版H5GG制作插件";
+        
     NSRange range = [dylib rangeOfData:pattern options:0 range:NSMakeRange(0, dylib.length)];
     if(range.location == NSNotFound)
-        return @"制作失败\n\n当前已经是定制版本";
+        return @"制作失败\n\n当前已经是定制版本, 请使用原版H5GG制作插件";
     
     [dylib replaceBytesInRange:NSMakeRange(range.location, icon.length) withBytes:icon.bytes];
     
     NSData *pattern2 = [[NSString stringWithUTF8String:(char*)gH5MENU_STUB_FILEData] dataUsingEncoding:NSUTF8StringEncoding];
+    if(!pattern2)
+        return @"制作失败\n\n当前已经是定制版本, 请使用原版H5GG制作插件";
+    
     NSRange range2 = [dylib rangeOfData:pattern2 options:0 range:NSMakeRange(0, dylib.length)];
     if(range2.location == NSNotFound)
-        return @"制作失败\n\n当前已经是定制版本";
+        return @"制作失败\n\n当前已经是定制版本, 请使用原版H5GG制作插件";
     
     [dylib replaceBytesInRange:NSMakeRange(range2.location, html.length) withBytes:html.bytes];
     

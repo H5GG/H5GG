@@ -1,0 +1,11 @@
+#!/bin/sh
+
+echo "*****************************"
+echo "*****************************"
+echo "如果安装本插件后未自动注销, 请检查是否已安装越狱基板, 如未安装越狱基板请先卸载本插件, 安装越狱基板之后再重新安装本插件!"
+echo "*****************************"
+echo "*****************************"
+echo "If your phone did not auto respring after installing this plugin, please check whether the MobileSubstrate dependency package is installed. If not, please uninstall this plugin first, and then reinstall the plugin after installing the dependency package!"
+echo "*****************************"
+echo "*****************************"
+

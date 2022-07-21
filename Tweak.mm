@@ -543,6 +543,13 @@ void initload()
     
     if(g_standalone_runmode) {
         showFloatWindow(true); //直接加载悬浮按钮和悬浮窗口
+        
+        if(NSBundle.mainBundle.infoDictionary[@"UIRequiresFullScreen"])
+        {
+            if(!PGVSharedData->enable)
+                [TopShow alert:@"悬浮模块加载失败" message:@"请检查你的越狱基板状态, 可能被其他插件禁用或干扰!"];
+        }
+        
     } else {
         //三方app中第一次点击图标时再加载H5菜单,防止部分APP不兼容H5导致闪退卡死
          initFloatButton(^(void) {

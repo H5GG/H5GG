@@ -1,7 +1,8 @@
-h5gg.require(7.6); //设定最低需求的H5GG版本号
+h5gg.require(7.7); //设定最低需求的H5GG版本号
 
 //获取h5gg当前选择的进程号
 var pid = $("#procname").attr('pid');
+if(!pid) throw "无法获取h5gg选择的进程, 请使用h5gg跨进程版测试";
 
 //越狱:安装frida核心deb, 支持Interceptor进行inline hook功能
 

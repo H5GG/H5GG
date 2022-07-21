@@ -22,15 +22,15 @@ supported 4 modes to run:
 
 support dylib plugin for javascript ([Demo](/PluginDemo/customAlert)).  
 
-[h5gg-plugin=>h5frida](/PluginDemo/h5frida15.1.24):
+[h5gg-plugin: h5frida](/PluginDemo/h5frida15.1.24):
 
-1: support invoke any C/C++/Objective-C function (jailbroken/non-jailbreak)
+1: support invoke any C/C++/Objective-C function (without jailbroken)
 
-2: support hook any Objective-C method (jailbroken/non-jailbreak)
+2: support hook any Objective-C method (without jailbroken)
 
-3: support hook any module's C/C++ function/instrument (only jailbroken)
+3: support hook any module's C/C++ function/instrument (jailbroken only)
 
-4: support **inline-hook** app's C/C++ function/instrument  (jailbroken/**non-jailbreak**)
+4: **support inline-hook app's C/C++ function/instrument (without jailbroken)**
 
 
 it's all completely free & open source!

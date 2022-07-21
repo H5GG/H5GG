@@ -568,16 +568,8 @@ JSExportAs(makeTweak, -(NSString*)makeTweak:(NSString*)icon with:(NSString*)html
             || [[filter toString] isEqual:[NSString stringWithUTF8String:basename((char*)name) ]]
         ){
             
-            uint64_t end = 0;
-            
-            struct proc_regionwithpathinfo rwpi={0};
-            int len=proc_pidinfo(getpid(), PROC_PIDREGIONPATHINFO, (uint64_t)baseaddr, &rwpi, PROC_PIDREGIONPATHINFO_SIZE);
-            
-            if(rwpi.prp_vip.vip_vi.vi_stat.vst_dev && rwpi.prp_vip.vip_vi.vi_stat.vst_ino)
-            {
-                uint64_t size = getMachoVMSize(self.targetport,(uint64_t)baseaddr);
-                if(size) end = (uint64_t)baseaddr+size;
-            }
+            uint64_t size = getMachoVMSize(self.targetpid, self.targetport, (uint64_t)baseaddr);
+            uint64_t end = size ? ((uint64_t)baseaddr+size) : 0;
             
             [results addObject:@{
                 @"name" : [NSString stringWithUTF8String:name],

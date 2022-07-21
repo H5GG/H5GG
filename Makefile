@@ -24,5 +24,4 @@ include $(THEOS_MAKE_PATH)/tweak.mk
 
 clean::
 	rm -rf ./packages/*
-	rm -rf ./layout
 
