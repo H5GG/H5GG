@@ -333,7 +333,7 @@ void toggleGlobalView()
         }
         else
         {
-            alertloading = [UIAlertController alertControllerWithTitle:@"正在启动" message:@"" preferredStyle:UIAlertControllerStyleAlert];
+            alertloading = [UIAlertController alertControllerWithTitle:@"正在启动\nLoading" message:@"" preferredStyle:UIAlertControllerStyleAlert];
             [alertloading addAction:[UIAlertAction actionWithTitle:@". . ." style:UIAlertActionStyleCancel handler:^(UIAlertAction *action) {
                 alertloading = nil;
                 if(timer2) {

@@ -87,7 +87,7 @@
     [self present:^(TopShow* controller) {
         UIAlertController *alert = [UIAlertController alertControllerWithTitle:title message:message preferredStyle:UIAlertControllerStyleAlert];
 
-        [alert addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+        [alert addAction:[UIAlertAction actionWithTitle:Localized(@"确定") style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
             [controller dismiss];
         }]];
         
@@ -129,6 +129,7 @@
             callback(filePickerCallback.pickedfile);
         };
         
+        //https://www.jianshu.com/p/d6fe1e7af9b6
         //UIDocumentMenuViewController需要iCloud权限, UIDocumentPickerViewController这个似乎不用
         UIDocumentPickerViewController* documentPicker = [[UIDocumentPickerViewController alloc] initWithDocumentTypes:types inMode:UIDocumentPickerModeImport]; //UIDocumentPickerModeOpen部分APP不回调
         NSLog(@"modalPresentationStyle=%d", documentPicker.modalPresentationStyle);

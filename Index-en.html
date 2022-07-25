@@ -43,7 +43,7 @@ input {
 }
 
 button {
-    height: 30px;
+    height: 28px;
     color: #3393EF;
     background-color: #84848450;
     display: inline-block;
@@ -53,7 +53,7 @@ button {
     outline: none;
     border: none;
     border-radius: 5px;
-    padding: 0 6px;
+    padding: 0 2px;
     margin: 2px;
 }
 
@@ -72,7 +72,7 @@ input[type=radio]  {
     vertical-align:middle;
     border:1px solid #686868F0;
     border-radius:50%;
-    margin:6px 4px;
+    margin:6px 2px;
 }
 input[type=radio]:checked {
     border:5px solid #2F7DCDF0;
@@ -443,7 +443,7 @@ document.addEventListener("DOMContentLoaded", function(){
                         }
                         
                         if(!alive) {
-                            alert("目标进程已结束\n\n请点击标题栏选择新的目标");
+                            alert("The target process has ended\n\nPlease click on the title bar to select a new target");
                             $("#procname").removeAttr('pid');
                             $("#procname").text('');
                         }
@@ -476,10 +476,10 @@ document.addEventListener("DOMContentLoaded", function(){
         if(typeof h5gg!='undefined')
             datavalue = h5gg.getValue(address, h5ggType(datatype));
         
-        showPopView("修改", function(type, value){
+        showPopView("Edit", function(type, value){
             
             if(!h5gg.setValue(address, value, h5ggType(type))) {
-                alert("修改失败,可能地址已失效!");
+                alert("The modification failed, the address may be invalid!");
             }
             
             onClickRefreshResults();
@@ -499,7 +499,7 @@ function refreshProcList(procs)
         btn.click(function()
         {
             if(!h5gg.setTargetProc($(this).attr('pid'))) {
-                alert("无法选定该目标");
+                alert("Cannot Select Target!");
                 return;
             }
             
@@ -524,13 +524,13 @@ function refreshLocalSrcipts()
     setTimeout(function(){
         
         if(jsfiles.length==0) {
-            $("table#localjslist tbody").append("<tr><td colspan=2>正在搜索App的Documents数据目录...<br/>正在搜索App的.app程序目录...<br/>没有找到任何(*.js)或(*.html)文件!</td></td>");
+            $("table#localjslist tbody").append("<tr><td colspan=2>Searching App's Documents Directory...<br/>Searching .app Bundle Directory...<br/>No (*.js) or (*.html) files found!</td></td>");
         }
         
-        $("table#localjslist tbody").append('<tr><td style="border-right-style:none; color:blue">从文件管理器中选择</td><td style="border-left-style:none;width:45px"><button onclick="h5gg.pickScriptFile(onClickLoadScript)">浏览</button></td></tr>');
+        $("table#localjslist tbody").append('<tr><td style="border-right-style:none; color:blue">Browser on File App</td><td style="border-left-style:none;width:45px"><button onclick="h5gg.pickScriptFile(onClickLoadScript)">Load</button></td></tr>');
         
         for(var i=0; i<jsfiles.length; i++) {
-            var row = '<tr><td style="border-right-style:none;font-weight:bold;color:green">'+jsfiles[i].name+'</td><td style="border-left-style:none;width:45px"><button onclick="onClickLoadScript(\''+jsfiles[i].path+'\')">加载</button></td></tr>';
+            var row = '<tr><td style="border-right-style:none;font-weight:bold;color:green">'+jsfiles[i].name+'</td><td style="border-left-style:none;width:45px"><button onclick="onClickLoadScript(\''+jsfiles[i].path+'\')">Load</button></td></tr>';
             $("table#localjslist tbody").append(row);
         }
     }, 300);
@@ -559,7 +559,7 @@ function onClickLoadScript(url, type)
         url = new URL(url);
         url.searchParams.append("_", Math.random());
     }catch(e){
-        alert("无效的脚本URL");
+        alert("invliad URL!");
         return;
     }
     
@@ -576,13 +576,13 @@ function onClickLoadScript(url, type)
     script.type = "text/javascript";
     
     script.onload = function () {
-      alert("JS脚本执行完毕");
+      alert("JS Run Complete!");
         $("#popup_progress").hide();
         $("#maskview_script").hide();
     };
     
     script.onerror = function () {
-        alert("加载失败! 文件不存在或网络异常");
+        alert("Load Error!\nURL Invalid or Network Exception!");
         $("#popup_progress").hide();
         $("#maskview_script").hide();
     };
@@ -682,7 +682,7 @@ function onClickRefreshResults(clean)
    }
 
     var count = h5gg.getResultsCount();
-    $("#results_count").text("共找到"+count+"条结果");
+    $("#results_count").text("Results Count: "+count);
     $("#results_count").show();
     
     var currentCount = Number($("table#resultList").attr("currentCount"));
@@ -725,19 +725,19 @@ function onClickEditAll()
         return;
     }*/
     
-    showPopView("修改全部", function(type, value){
+    showPopView("EditAll", function(type, value){
 
         var count = h5gg.editAll(value, h5ggType(type));
         
         onClickRefreshResults();
         
-        alert("成功修改"+count+"个数据");
+        alert("Success to modify count: "+count);
     });
 }
 
 function onClickSearchNumber()
 {
-    showPopView("搜索数值", function(type, value) {
+    showPopView("Search Number", function(type, value) {
         
         h5gg.setFloatTolerance($("#float_tolerance").val());
         
@@ -757,7 +757,7 @@ function onClickSearchNearby()
         return;
     }*/
     
-    showPopView("搜索附近数值", function(type, value){
+    showPopView("Nearby Search", function(type, value){
         
         h5gg.setFloatTolerance($("#float_tolerance").val());
         
@@ -770,10 +770,10 @@ function onClickSearchNearby()
     
 function onClickMakeTweak()
 {
-    alert("制作自己专属的dylib\n\n第一步: 选择悬浮按钮图标文件");
+    alert("Make your custom dylib\n\nStep 1: select the floating button icon file");
     h5gg.pickScriptFile(function(icon){
         
-        alert("第二步: 选择需要自动加载的html文件");
+        alert("Step 2: Select the html file that needs to be automatically loaded");
         
         h5gg.pickScriptFile(function(html) {
             
@@ -792,7 +792,7 @@ function onClickMakeTweak()
 <div id="titleBar" style="background-color:#D1D1D1; padding:5px; margin:0px; height:12px">
 &nbsp;<font style="color:green">H5</font> <font style="color:red">GG</font>&nbsp;v<span id="version"></span>
 <span id="crossproc" style="display:none">
-<font style="color:blue">&nbsp;跨进程&nbsp;</font><font id="procname">procname</font>
+<font style="color:blue">&nbsp;CrossProc&nbsp;</font><font id="procname">procname</font>
 </span>
     
 <div id="closeMenu" style="float:right; font-size:16px; line-height:14px; font-family: Arial, sans-serif;" onclick="setWindowVisible(false)">&nbsp;X&nbsp;</div>
@@ -800,30 +800,30 @@ function onClickMakeTweak()
 <!--用一个表格来布局左右两栏-->
 <table id="bodyView" width="100%" style="table-layout:fixed;height: calc(100% - 22px) ;">
 <tr>
-<td style="vertical-align:top;width:130px;border-right:solid 2px #D1D1D1;">
+<td style="vertical-align:top;width:135px;border-right:solid 2px #D1D1D1;">
 <div>
-搜索下限:<input id="range_min" style="width:80px;padding-left:0" value="0x00000000" />
+MemStart:<input id="range_min" style="width:77px;padding-left:0" value="0x00000000" />
 <br/>
-搜索上限:<input id="range_max" style="width:80px;padding-left:0"  value="0x200000000" />
+MemEnd:<input id="range_max" style="width:80px;padding-left:0"  value="0x200000000" />
 <br/>
-<label><input type=radio name="numtype" value="signed" checked />有符号</label>
-<label><input type=radio name="numtype" value="unsigned" />无符号</label>
+<label><input type=radio name="numtype" value="signed" checked />Signed</label>
+<label><input type=radio name="numtype" value="unsigned" />UnSigned</label>
 <br/>
-<button onclick="onClickSearchNumber()">搜索数值</button>
-<button onclick="onClickSearchNearby()">邻近搜索</button>
+<button onclick="onClickSearchNumber()">Search</button>
+<button onclick="onClickSearchNearby()">NearbySearch</button>
 <br/>
-<button onclick="onClickClearResults()">清除</button>
-<button onclick="onClickEditAll()">全改</button>
-<button onclick="onClickRefreshResults()">刷新</button>
+<button onclick="onClickClearResults()">Clear</button>
+<button onclick="onClickEditAll()">EditAll</button>
+<button onclick="onClickRefreshResults()">Refresh</button>
 <br/>
-<button onclick="onShowLoadScript(true)">加载脚本</button>
-<button onclick="onClickMakeTweak()">制作插件</button>
+<button onclick="onShowLoadScript(true)">&nbsp;Scripts&nbsp;</button>
+<button onclick="onClickMakeTweak()">&nbsp;MakeTweak&nbsp;</button>
 <br/>
-邻近范围:<input id="nearby_range" style="width:78px"  value="0x100"/>
+NearbyRange:<input id="nearby_range" style="width:55px"  value="0x100"/>
 <br/>
-浮点误差:<input id="float_tolerance" style="width:78px" value="0.0"/>
+FloatTolerance:<input id="float_tolerance" style="width:50px" value="0.0"/>
 <br/>
-<p id="results_count" style="display:none">共找到<span>0</span>条结果</p>
+<p id="results_count" style="display:none">Results Count:<span>0</span></p>
 </div>
 </td>
 <td style="vertical-align:top;">
@@ -859,7 +859,7 @@ function onClickMakeTweak()
 <div class="popup_container">
     
 <div id="popup_search_edit">
-<B id="titleBar">搜索数值</B>
+<B id="titleBar">Search Number</B>
 <br/><br/>
 <center>
 <table id="datatype" class="datatype">
@@ -869,19 +869,19 @@ function onClickMakeTweak()
 </table>
 </center>
 <br/>
-<input type="text" id="datavalue" style="width:100%; border:none" placeholder="数值" />
+<input type="text" id="datavalue" style="width:100%; border:none" placeholder="Number" />
 <hr/><br/>
-<button id="cancel">取消</button>
+<button id="cancel">Cancel</button>
 &nbsp;&nbsp;&nbsp;
-<button id="action">搜索数值</button>
+<button id="action">Search</button>
 </div>
 
 
 <!--居中的加载脚本窗口,默认隐藏-->
 <div id="popup_loadscripts" class="popup_view3">
 <center>
-<div class="menubox current" menu="localjs" onclick="refreshLocalSrcipts()">本地加载 ⟳</div>
-<div class="menubox" menu="netjs">网络加载</div>
+<div class="menubox current" menu="localjs" onclick="refreshLocalSrcipts()">Local ⟳</div>
+<div class="menubox" menu="netjs">Network</div>
 <div style="float:right; font-size:16px; font-family: Arial, sans-serif;" onclick="onShowLoadScript(false)">&nbsp;X&nbsp;</div>
 </center>
 <hr/>
@@ -902,11 +902,11 @@ function onClickMakeTweak()
 </div>
 <div id="netjs" class="menuview">
 <br/><br/>
-<input id="netjsurl" style="width:100%" placeholder="请输入http/https开头的js/html文件网址链接" />
+<input id="netjsurl" style="width:100%" placeholder="URL start with http/https" />
 <br/><br/><br/>
 <hr/>
-<button onclick="onClickLoadScript($('#netjsurl').val(), 'js')">加载JS脚本</button>
-<button onclick="onClickLoadScript($('#netjsurl').val(), 'h5');">加载H5页面</button>
+<button onclick="onClickLoadScript($('#netjsurl').val(), 'js')">Load JS</button>
+<button onclick="onClickLoadScript($('#netjsurl').val(), 'h5');">Load HTML</button>
 </div>
 
 <!--运行脚本灰色遮罩层(执行脚本时用)-->
@@ -917,13 +917,13 @@ function onClickMakeTweak()
 <!--居中的提示框, 默认隐藏-->
 <div id="popup_progress">
 <center>
-    执行中...
+    Running...
 </center>
 </div>
 
 <div id="popup_proclist">
 <center>
-选择目标
+Select Target
 <hr/>
 <div id="proctable" class="scrollbar" style="min-height:50px; max-height:170px">
 <button>Process1</button>

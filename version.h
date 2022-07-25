@@ -1,1 +1,1 @@
-#define H5GG_VERSION 7.7
+#define H5GG_VERSION 7.8

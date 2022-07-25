@@ -6,6 +6,10 @@ provide memory apis likely (Android)GameGuardian's Lua APIs.
 
 support load scripts(*.js or *.html file)
 
+support dylib plugin for javascript api ([demo](/PluginDemo/customAlert)).  
+
+support [auto search pointer and offsets](/HtmlDemo/AutoSearchOffset.js)
+
 and you can customize UI by using HTML+CSS.
 
 and you can make your own tweak(dylib) by click one button, then just select your icon and .html file, so easy!
@@ -20,20 +24,19 @@ supported 4 modes to run:
 
 4. [Floating On Screen for jailbroken devices(not support iPad's SlideOver+SplitView), this has tested on ios11+](/globalview/packages/)
 
-support dylib plugin for javascript ([Demo](/PluginDemo/customAlert)).  
 
-[h5gg-plugin: h5frida](/PluginDemo/h5frida15.1.24):
+h5gg-official-plugin: [h5frida](/PluginDemo/h5frida15.1.24):
 
 1: support invoke any C/C++/Objective-C function (without jailbroken)
 
-2: support hook any Objective-C method (without jailbroken)
+2: support hook any module's Objective-C method (without jailbroken)
 
-3: support hook any module's C/C++ function/instrument (jailbroken only)
+3: support hook any module's C/C++ exprot function (without jailbroken)
 
-4: **support inline-hook app's C/C++ function/instrument (without jailbroken)**
+4: support hook any module's C/C++ internal function/instrument (jailbroken only)
 
+5: **support inline-hook app-module's C/C++ function/instrument (without jailbroken)**
 
-it's all completely free & open source!
  
 ![text](/pictures/h5gg1.png)
 
@@ -105,9 +108,9 @@ Notice:
 
 1: The address parameter supports automatic identification in decimal or hexadecimal format starting with 0x, other parameters must be in string format
 
-2: Floating point types are divided into: F32, F64, signed numbers: I8, I16, I32, I64, unsigned numbers: U8, U16, U32, U64
+2: float number types: F32, F64, signed number types: I8, I16, I32, I64, unsigned number types: U8, U16, U32, U64
 
-3: If there are many search results, do not get all the data at one time with getResults, it is easy to cause memory explosion, flashback and crash, and should be obtained in sections
+3: If there are many search results, do not get all the data at one time with getResults, it maybe crash for using too mach memory, and should be obtained in sections
 
 4: The address and value of the search result are all string types. If you want to do digital operations, please use Number(x) to convert them into numeric types before you can perform operations.
 
@@ -115,15 +118,13 @@ Notice:
     
 5: The numeric type can be converted into a hexadecimal string format with x.toString(16), but x must be a numeric type to convert successfully
 
-6: The numerical value of the search supports the range format, such as "50～100", such as "2.3～7.8", both numerical search and adjacent (joint) search are supported
+6: The numerical value of the search supports the range format, such as "50～100", such as "2.3～7.8", both searchNumber and searchNearby search are supported
 
-5: The default size of the floating window is 370 points wide and 370 points high. You can set the position, size and draggable area through the js interface on the H5 page.
+5: The default size of the floating window is 370 points wide and 370 points high. You can set the position, size and draggable area through the js api on the H5 page.
 
+it's all completely free & open source!
 
 Welcome to join development and submit fixes! 
-
-
-changlog is in the header of Index.html
 
 
 

@@ -5,6 +5,8 @@
 #import <pthread.h>
 #include <dlfcn.h>
 
+#include "Localized.h"
+
 //忽略一些警告
 #pragma GCC diagnostic ignored "-Warc-retain-cycles"
 
@@ -51,6 +53,7 @@ GVData* PGVSharedData = &StaticGVSharedData;
 INCBIN(Icon, "icon.png");
 //嵌入菜单H5文件
 INCTXT(Menu, "Index.html");
+INCTXT(MenuEn, "Index-en.html");
 
 INCTXT(H5GG_JQUERY_FILE, "jquery.min.js");
 
@@ -75,46 +78,27 @@ void onScreenLayoutChange(CGSize size)
     } waitUntilDone:NO];
 }
 
+#define NotificationChange CFSTR("com.apple.springboard.lockstate") //锁屏或下滑通知界面
+#define NotificationLocked CFSTR("com.apple.springboard.lockcomplete") //锁屏或下滑通知界面
+#define NotificationBlankedScreen CFSTR("com.apple.springboard.hasBlankedScreen") //黑屏
 
-#import <notify.h>
-static bool getScreenLocked()
+static void screenLockStateChanged(CFNotificationCenterRef center,void* observer,CFStringRef name, const void*object, CFDictionaryRef userInfo)
 {
-    uint64_t locked=0;
-    __block int token = 0;
-    int i = notify_register_dispatch("com.apple.springboard.lockstate",&token,dispatch_get_main_queue(),^(int t){
-        NSLog(@"GlobalView=state=%d:%d",token,(int)t);
-    });
-
-    notify_get_state(token, &locked);
-
-    notify_cancel(token);
-
-    //NSLog(@"GlobalView=lock=%d",(int)locked);
-
-    return locked==1;
-}
-
-#define NotificationLock CFSTR("com.apple.springboard.lockcomplete")
-#define NotificationChange CFSTR("com.apple.springboard.lockstate")
-#define NotificationPwdUI CFSTR("com.apple.springboard.hasBlankedScreen")
-
-static void screenLockStateChanged(CFNotificationCenterRef center,void* observer,CFStringRef name,const void*object,CFDictionaryRef userInfo)
-{
+    NSLog(@"SetGlobalView=lock state changed. %@ %@", name, userInfo);
     NSString* lockstate = (__bridge NSString*)name;
-    if ([lockstate isEqualToString:(__bridge  NSString*)NotificationLock]) {
+    if ([lockstate isEqualToString:(__bridge  NSString*)NotificationBlankedScreen]) {
         NSLog(@"SetGlobalView=locked.");
         if(PGVSharedData->viewHosted) {
             NSLog(@"SetGlobalView=locked.exit");
             exit(0);
         }
-    } else {
-        NSLog(@"SetGlobalView=lock state changed.");
     }
 }
 
 UIWindow* appWindow = nil;
 
-extern "C" __attribute__ ((visibility ("default"))) void SetGlobalView(char* dylib, UInt64 GVDataOffset)
+extern "C" __attribute__ ((visibility ("default")))
+void SetGlobalView(char* dylib, UInt64 GVDataOffset)
 {
     NSLog(@"SetGlobalView=%x, %s", GVDataOffset, dylib);
     
@@ -167,19 +151,10 @@ extern "C" __attribute__ ((visibility ("default"))) void SetGlobalView(char* dyl
         memcpy(PGVSharedData->buttonImageData, gIconData, gIconSize);
     }
     
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, screenLockStateChanged, NotificationLock, NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
-
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, screenLockStateChanged, NotificationChange, NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, screenLockStateChanged, NotificationBlankedScreen, NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
 
     dispatch_async(dispatch_get_main_queue(), ^{
         static NSTimer* timer = [NSTimer scheduledTimerWithTimeInterval:0.1 repeats:YES block:^(NSTimer*t){
-            
-            static int lockcount=0;
-            //这里可能比较慢app已经被暂停了, 只能靠notify监测
-            if(lockcount++%5==0 && PGVSharedData->viewHosted && getScreenLocked()) {
-                NSLog(@"SetGlobalView=locked=exit");
-                exit(0);
-            }
             
             if(PGVSharedData->enable && PGVSharedData->customButtonAction && PGVSharedData->floatBtnClick)
             {
@@ -387,7 +362,7 @@ FloatMenu* initFloatMenu(UIWindow* win)
         [floatH5 loadRequest:[[NSURLRequest alloc] initWithURL:[NSURL URLWithString:h5file]]];
     } else {
         //第三优先级: 从dylib加载H5
-        NSString* h5gghtml = [NSString stringWithUTF8String:gMenuData];
+        NSString* h5gghtml = [getLLCode() isEqualToString:@"zh"] ? [NSString stringWithUTF8String:gMenuData] : [NSString stringWithUTF8String:gMenuEnData];
         NSString* jquery = [NSString stringWithUTF8String:gH5GG_JQUERY_FILEData];
         h5gghtml = [h5gghtml stringByReplacingOccurrencesOfString:@"var h5gg_jquery_stub;" withString:jquery];
         [floatH5 loadHTMLString:h5gghtml baseURL:[NSURL URLWithString:@"Index"]];
@@ -458,11 +433,11 @@ void showFloatWindow(bool show)
             }
             
             [TopShow present:^(TopShow* controller){
-                NSString* tips = g_standalone_runmode ? @"请尝试修复当前APP联网权限" : @"页面可能无法正确加载";
+                NSString* tips = g_standalone_runmode ? Localized(@"请尝试修复当前APP联网权限") : Localized(@"页面可能无法正确加载");
 
-                UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"网络异常" message:tips preferredStyle:UIAlertControllerStyleAlert];
+                UIAlertController *alert = [UIAlertController alertControllerWithTitle:Localized(@"网络异常") message:tips preferredStyle:UIAlertControllerStyleAlert];
 
-                [alert addAction:[UIAlertAction actionWithTitle:@"继续启动" style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
+                [alert addAction:[UIAlertAction actionWithTitle:Localized(@"继续启动") style:UIAlertActionStyleDefault handler:^(UIAlertAction *action) {
                     [controller dismiss];
                     
                     if(floatBtn) {
@@ -547,7 +522,7 @@ void initload()
         if(NSBundle.mainBundle.infoDictionary[@"UIRequiresFullScreen"])
         {
             if(!PGVSharedData->enable)
-                [TopShow alert:@"悬浮模块加载失败" message:@"请检查你的越狱基板状态, 可能被其他插件禁用或干扰!"];
+                [TopShow alert:Localized(@"悬浮模块加载失败") message:Localized(@"请检查你的越狱基板是否安装并启用, 也可能被其他插件禁用或干扰!")];
         }
         
     } else {

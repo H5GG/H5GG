@@ -87,7 +87,7 @@ JSExportAs(makeTweak, -(NSString*)makeTweak:(NSString*)icon with:(NSString*)html
 
 -(BOOL)require:(double)minver {
     if(H5GG_VERSION < minver) {
-        JSContext.currentContext.exception = [JSValue valueWithNewErrorFromMessage:@"当前H5GG版本过低" inContext:[JSContext currentContext]];
+        JSContext.currentContext.exception = [JSValue valueWithNewErrorFromMessage:Localized(@"当前H5GG版本过低") inContext:[JSContext currentContext]];
         return NO;
     }
     return YES;
@@ -155,7 +155,7 @@ JSExportAs(makeTweak, -(NSString*)makeTweak:(NSString*)icon with:(NSString*)html
     float d = strtof([value UTF8String], &pvaluerr);
     
     if(value.length==0 || (pvaluerr && pvaluerr[0]) || d<0) {
-        [floatH5 alert:@"浮点误差格式错误"];
+        [floatH5 alert:Localized(@"浮点误差格式错误")];
         return;
     }
     NSLog(@"SetFloatTolerance=%f", d);
@@ -182,7 +182,7 @@ JSExportAs(makeTweak, -(NSString*)makeTweak:(NSString*)icon with:(NSString*)html
         results = self.engine->getResultsAndTypes(maxCount, skipCount);
 
     } catch(std::bad_alloc) {
-        [floatH5 alert:@"错误:内存不足!"];
+        [floatH5 alert:Localized(@"错误:内存不足!")];
     }
     
     for(map<void*,int8_t>::iterator it = results.begin(); it != results.end(); ++it) {
@@ -287,7 +287,7 @@ JSExportAs(makeTweak, -(NSString*)makeTweak:(NSString*)icon with:(NSString*)html
         NSString* fmt = *(uint64_t*)value&&fabs(*(double*)value) < 1.0 ? @"%g" : @"%f";
         return [NSString stringWithFormat:fmt, *(double*)value];
     } else {
-        [floatH5 alert:@"不支持的数值类型"];
+        [floatH5 alert:Localized(@"不支持的数值类型")];
         return nil;
     }
 }
@@ -328,12 +328,12 @@ JSExportAs(makeTweak, -(NSString*)makeTweak:(NSString*)icon with:(NSString*)html
        *(double*)valuebuf = strtod([value UTF8String], &pvaluerr);
         JJType = JJ_Search_Type_Double;
     } else {
-        [floatH5 alert:@"不支持的数值类型"];
+        [floatH5 alert:Localized(@"不支持的数值类型")];
         return 0;
     }
     
     if(pvaluerr && pvaluerr[0]) {
-        [floatH5 alert:@"数值格式错误或与类型不匹配"];
+        [floatH5 alert:Localized(@"数值格式错误或与类型不匹配")];
         return 0;
     }
     
@@ -383,7 +383,7 @@ JSExportAs(makeTweak, -(NSString*)makeTweak:(NSString*)icon with:(NSString*)html
     NSLog(@"searchNumber=%@:%@ [%@:%@]", type, value, memoryFrom, memoryTo);
     
     if(!([value length] && [type length] && [memoryFrom length] && [memoryTo length])) {
-        [floatH5 alert:@"数值搜索:参数有误"];
+        [floatH5 alert:Localized(@"数值搜索:参数有误")];
         return;
     }
     
@@ -396,7 +396,7 @@ JSExportAs(makeTweak, -(NSString*)makeTweak:(NSString*)icon with:(NSString*)html
     }
     
     if(![memoryFrom hasPrefix:@"0x"] || ![memoryTo hasPrefix:@"0x"]) {
-        [floatH5 alert:@"搜索范围需以0x开头十六进制数"];
+        [floatH5 alert:Localized(@"搜索范围需以0x开头十六进制数")];
         return;
     }
     
@@ -407,12 +407,12 @@ JSExportAs(makeTweak, -(NSString*)makeTweak:(NSString*)icon with:(NSString*)html
     };
     
     if((pvaluerr && pvaluerr[0]) || !range.end) {
-        [floatH5 alert:@"内存搜索范围格式错误"];
+        [floatH5 alert:Localized(@"内存搜索范围格式错误")];
         return;
     }
     
     if(self.firstSearchDone && self.engine->getResultsCount()==0) {
-        [floatH5 alert:@"改善搜索失败: 当前列表为空, 请清除后再重新开始搜索"];
+        [floatH5 alert:Localized(@"改善搜索失败: 当前列表为空, 请清除后再重新开始搜索")];
         return;
     }
     
@@ -423,7 +423,7 @@ JSExportAs(makeTweak, -(NSString*)makeTweak:(NSString*)icon with:(NSString*)html
         self.engine->JJScanMemory(range, valuebuf, jjtype);
         
     } catch(std::bad_alloc) {
-        [floatH5 alert:@"错误:内存不足!"];
+        [floatH5 alert:Localized(@"错误:内存不足!")];
     }
     
     self.firstSearchDone = TRUE;
@@ -435,12 +435,12 @@ JSExportAs(makeTweak, -(NSString*)makeTweak:(NSString*)icon with:(NSString*)html
     NSLog(@"searchNearby=%@:%@ [%@]", type, value, range);
     
     if(!([value length] && [type length] && [range length])) {
-        [floatH5 alert:@"邻近搜索:参数有误"];
+        [floatH5 alert:Localized(@"邻近搜索:参数有误")];
         return;
     }
     
     if(![range hasPrefix:@"0x"]) {
-        [floatH5 alert:@"邻近范围需以0x开头十六进制数"];
+        [floatH5 alert:Localized(@"邻近范围需以0x开头十六进制数")];
         return;
     }
     
@@ -456,17 +456,17 @@ JSExportAs(makeTweak, -(NSString*)makeTweak:(NSString*)icon with:(NSString*)html
     size_t searchRange = strtoul([range UTF8String], &pvaluerr, 16);
     
     if((pvaluerr && pvaluerr[0]) || !searchRange) {
-        [floatH5 alert:@"邻近范围格式错误"];
+        [floatH5 alert:Localized(@"邻近范围格式错误")];
         return;
     }
     
     if(searchRange<2 || searchRange>4096) {
-        [floatH5 alert:@"邻近范围只能在2~4096之间"];
+        [floatH5 alert:Localized(@"邻近范围只能在2~4096之间")];
         return;
     }
     
     if(self.engine->getResultsCount()==0) {
-        [floatH5 alert:@"邻近搜索错误: 当前列表为空, 请清除后再重新开始搜索"];
+        [floatH5 alert:Localized(@"邻近搜索错误: 当前列表为空, 请清除后再重新开始搜索")];
         return;
     }
     
@@ -475,7 +475,7 @@ JSExportAs(makeTweak, -(NSString*)makeTweak:(NSString*)icon with:(NSString*)html
         self.engine->JJNearBySearch(searchRange, valuebuf, jjtype);
         
     } catch(std::bad_alloc) {
-        [floatH5 alert:@"错误:内存不足!"];
+        [floatH5 alert:Localized(@"错误:内存不足!")];
     }
 
     self.lastSearchType = type;
@@ -496,7 +496,7 @@ JSExportAs(makeTweak, -(NSString*)makeTweak:(NSString*)icon with:(NSString*)html
     UInt64 addr = strtoul([address UTF8String], &pvaluerr, [address hasPrefix:@"0x"] ? 16 : 10);
     
     if((pvaluerr && pvaluerr[0]) || !addr) {
-        [floatH5 alert:@"读取失败:地址格式有误!"];
+        [floatH5 alert:Localized(@"读取失败:地址格式有误!")];
         return @"";
     }
     
@@ -523,7 +523,7 @@ JSExportAs(makeTweak, -(NSString*)makeTweak:(NSString*)icon with:(NSString*)html
     UInt64 addr = strtoul([address UTF8String], &pvaluerr, [address hasPrefix:@"0x"] ? 16 : 10);
     
     if((pvaluerr && pvaluerr[0]) || !addr) {
-        [floatH5 alert:@"修改失败:地址格式有误!"];
+        [floatH5 alert:Localized(@"修改失败:地址格式有误!")];
         return FALSE;
     }
     
@@ -541,7 +541,7 @@ JSExportAs(makeTweak, -(NSString*)makeTweak:(NSString*)icon with:(NSString*)html
     }
     
     if(self.engine->getResultsCount()==0) {
-        [floatH5 alert:@"修改全部: 结果列表为空!"];
+        [floatH5 alert:Localized(@"修改全部: 结果列表为空!")];
         return 0;
     }
     
@@ -667,7 +667,7 @@ NSString* makeDYLIB(NSString* iconfile, NSString* htmlfile);
     uint32_t normalstate = CS_VALID|CS_HARD|CS_KILL;
     if((g_csops_flags&normalstate) == normalstate)
     {
-        result = [result stringByAppendingString:@"\n\n你的设备未越狱, 你也可以将:\n悬浮按钮图标文件 H5Icon.png\n悬浮菜单H5文件  H5Menu.html\n打包进ipa中的.app目录中即可自动加载!"];
+        result = [result stringByAppendingString:Localized(@"\n\n你的设备未越狱, 你也可以将:\n悬浮按钮图标文件 H5Icon.png\n悬浮菜单H5文件  H5Menu.html\n打包进ipa中的.app目录中即可自动加载!")];
     }
     
     return result;

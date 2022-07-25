@@ -318,7 +318,7 @@ objc_method_pointer g_orig_didCreateJavaScriptContext=NULL;
             NSLog(@"checkHtmlFile %d %d", CR_count, CRLF_count);
             
             if(CR_count>0 && CR_count!=CRLF_count) {
-                [TopShow alert:@"提示" message:@"该页面为CR换行符格式, 请修改为LF或CRLF换行符格式, 否则JS错误提示无法显示准确的行数!"];
+                [TopShow alert:Localized(@"提示") message:Localized(@"该页面为CR换行符格式, 请修改为LF或CRLF换行符格式, 否则JS错误提示无法显示准确的行数!")];
             }
         }
     }
@@ -347,7 +347,7 @@ objc_method_pointer g_orig_didCreateJavaScriptContext=NULL;
     NSLog(@"webView %@ didFailLoadWithError %@", webView, error);
     NSString* scheme = [[error.userInfo[NSURLErrorFailingURLErrorKey] scheme] lowercaseString];
     if([scheme isEqualToString:@"file"] || [scheme isEqualToString:@"http"] || [scheme isEqualToString:@"https"])
-        [TopShow alert:@"H5加载失败" message:[NSString stringWithFormat:@"%@",error]];
+        [TopShow alert:Localized(@"H5加载失败") message:[NSString stringWithFormat:@"%@",error]];
 }
 
 -(void)webViewDidStartLoad:(UIWebView *)webView {
@@ -368,7 +368,7 @@ objc_method_pointer g_orig_didCreateJavaScriptContext=NULL;
     NSLog(@"webViewDidFinishLoad=%@", webView);
     
     if(!self.jscontext) { //如果页面中没有js的话....
-        [TopShow alert:@"JS模块异常" message:@"请检查检查是否重复安装!"];
+        [TopShow alert:Localized(@"JS模块异常") message:Localized(@"请检查检查是否重复安装!")];
         return;
     }
     
@@ -376,7 +376,7 @@ objc_method_pointer g_orig_didCreateJavaScriptContext=NULL;
     NSLog(@"FastClick=%@", self.jscontext[@"FastClick"]);
     
     if(![self.jscontext[@"FastClick"] isUndefined]) {
-        [self alert:@"发现FastClick模块!\n\n请将其从html中移除, 否则界面可能卡死!"];
+        [self alert:Localized(@"发现FastClick模块!\n\n请将其从html中移除, 否则界面可能卡死!")];
     }
 }
 
