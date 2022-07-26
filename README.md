@@ -15,7 +15,8 @@ and you can customize UI by using HTML+CSS.
 and you can make your own tweak(dylib) by click one button, then just select your icon and .html file, so easy!
 
 
-##H5GG supported 4 modes to run:
+
+## H5GG supported 4 modes to run:
 
 1. [inject H5GG.dylib to ipa for non-jailbreak devices](/packages/)
 
@@ -27,7 +28,8 @@ and you can make your own tweak(dylib) by click one button, then just select you
 
 
 
-##h5gg-official-plugin [h5frida](/PluginDemo/h5frida15.1.24):
+
+## h5gg-official-plugin [h5frida](/PluginDemo/h5frida15.1.24):
 
 1: support invoke any C/C++/Objective-C function (without jailbroken)
 
@@ -39,6 +41,9 @@ and you can make your own tweak(dylib) by click one button, then just select you
 
 5: **support inline-hook app-module's C/C++ function/instrument (without jailbroken)**
 
+
+
+## screenshots:
  
 ![text](/pictures/h5gg1.png)
 
@@ -46,10 +51,11 @@ and you can make your own tweak(dylib) by click one button, then just select you
 
 ![text](/pictures/h5gg3.png)
 
-![text](/pictures/h5gg4.png)
+![text](/pictures/h5gg4.PNG)
 
 
-##[H5GG JavaScript Engine Document](/h5gg-js-doc-en.js)
+
+## [H5GG JavaScript Engine Document](/h5gg-js-doc-en.js)
 
 it's all completely free & open source! Welcome to join development and submit bugs! 
 
