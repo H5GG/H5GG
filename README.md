@@ -1,5 +1,7 @@
 # H5GG
 
+# Discord: [https://discord.gg/H5GG](https://discord.gg/H5GG)
+
 an iOS cheat engine for JavaScript APIs & Html5 UI.
 
 provide memory apis likely (Android)GameGuardian's Lua APIs.
@@ -58,6 +60,4 @@ and you can make your own tweak(dylib) by click one button, then just select you
 ## [H5GG JavaScript Engine Document](/h5gg-js-doc-en.js)
 
 it's all completely free & open source! Welcome to join development and submit bugs! 
-
-
 
