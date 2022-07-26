@@ -197,7 +197,7 @@ NSArray* getRangesList2(pid_t pid, task_port_t task, NSString* filter)
         
         NSLog(@"getmodules image[%d] %p %p", i, addr, path);
         
-        char pathbuffer[PATH_MAX];
+        char pathbuffer[PATH_MAX]={0};
         
         mach_vm_size_t size3;
         if (mach_vm_read_overwrite(task, path, MAXPATHLEN, (mach_vm_address_t)pathbuffer, &size3) != KERN_SUCCESS)

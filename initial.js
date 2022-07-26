@@ -11,6 +11,6 @@ window.onerror=h5gg_js_error_handler=function(message, url, line, column, error)
     if(navigator.language.indexOf("zh-")==0)
         alert('JS错误 在'+fname+'第'+line+'行第'+column+"列:\n\n"+message);
     else
-        alert('JSError in:'+fname+' line:'+line+' column:'+column+":\n\n"+message);
+        alert('JSError in:'+fname+' line:'+line+' column:'+column+"\n\n"+message);
 };
 
