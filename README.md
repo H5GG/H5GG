@@ -10,9 +10,9 @@ support load scripts(*.js or *.html file) from loacl or web dynamically.
 
 support load dylib plugin for javascript api ([demo](/PluginDemo/customAlert)).  
 
-support [auto search pointer chains of a value/data](/examples-JavaScript/AutoSearchOffset.js)
+support [auto search pointer chains of a value/data](/examples-JavaScript/AutoSearchPointerChains.js)
 
-and you can customize UI by using [HTML+CSS](/examples-Html5/) without computer.
+and you can customize UI by using [HTML+CSS](/examples-HTML5/) without computer.
 
 and you can make your own tweak(dylib) by click one button, then just select your icon and .html file, so easy!
 
@@ -59,8 +59,6 @@ and you can make your own tweak(dylib) by click one button, then just select you
 
 
 
-## [H5GG JavaScript Engine Document](/h5gg-js-doc-en.js)
-
 ## Design Html Menu UI in EasyHtml on iPhone/iPad
 
 ![text](/pictures/easyhtml.png)
@@ -75,3 +73,5 @@ and you can make your own tweak(dylib) by click one button, then just select you
 
 it's all completely free & open source! Welcome to join development and submit bugs! 
 
+
+## [H5GG JavaScript Engine Document](/h5gg-js-doc-en.js)
