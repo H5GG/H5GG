@@ -569,8 +569,10 @@ NSString* StaticInlineHookPatch(char* machoPath, uint64_t vaddr, char* patch)
         return @"无法修补该地址!\ncan not patch the offset";
     }
     
-    hookBlock->patch_size = patch_size;
-    hookBlock->patch_hash = calc_patch_hash(vaddr, patch);
+    if(patch && patch[0]) {
+        hookBlock->patch_size = patch_size;
+        hookBlock->patch_hash = calc_patch_hash(vaddr, patch);
+    }
     
     NSString* savePath = [NSString stringWithFormat:@"%@/Documents/static-inline-hook/%s", NSHomeDirectory(), machoPath];
     [NSFileManager.defaultManager createDirectoryAtPath:[NSString stringWithUTF8String:dirname((char*)savePath.UTF8String)] withIntermediateDirectories:YES attributes:nil error:nil];

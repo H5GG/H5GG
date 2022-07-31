@@ -1,5 +1,5 @@
 
-#define H5FRIDA_PLUGIN_VERSION  1.6
+#define H5FRIDA_PLUGIN_VERSION  1.7
 
 #define FRIDA_CORE_VERSION  "15.1.24"
 
@@ -25,5 +25,7 @@ h5frida-v1.6:
  1: 修复目标进程断开后可能无法再次附加的BUG
  2: 新增免越狱动态修改基址的功能, 可动态开关
  
+h5frida-v1.7:
+ 1: 修复免越狱inline-hook崩溃问题
 */
 
