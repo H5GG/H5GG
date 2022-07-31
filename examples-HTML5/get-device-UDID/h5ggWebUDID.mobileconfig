@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+    <dict>
+        <key>PayloadContent</key>
+        <dict>
+            <key>URL</key>
+            <string>http://127.0.0.1:58181/udid</string>
+            <key>DeviceAttributes</key>
+            <array>
+                <string>UDID</string>
+            </array>
+        </dict>
+        <key>PayloadOrganization</key>
+        <string>H5GG - PassengerKing</string>
+        <key>PayloadDisplayName</key>
+        <string>H5GG 免越狱获取 udid 插件</string>
+        <key>PayloadVersion</key>
+        <integer>1</integer>
+        <key>PayloadUUID</key>
+        <string>FF925575-978F-4939-8A75-23BAC78A6F35</string>
+        <key>PayloadIdentifier</key>
+        <string>com.passengerk.h5gg.webudid</string>
+        <key>PayloadDescription</key>
+        <string>仅用作学习研究，禁止用作商业/非法用途！学习交流群：770375541。</string>
+        <key>PayloadType</key>
+        <string>Profile Service</string>
+    </dict>
+</plist>

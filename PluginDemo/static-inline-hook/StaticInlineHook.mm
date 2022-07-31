@@ -378,10 +378,36 @@ NSMutableData* add_hook_section(NSMutableData* macho)
     return macho;
 }
 
+bool hex2bytes(char* bytes, unsigned char* buffer)
+{
+    size_t len=strlen(bytes);
+    for(int i=0; i<len; i++) {
+        char _byte = bytes[i];
+        if(_byte>='0' && _byte<='9')
+            _byte -= '0';
+        else if(_byte>='a' && _byte<='f')
+            _byte -= 'a'-10;
+        else if(_byte>='A' && _byte<='F')
+            _byte -= 'A'-10;
+        else
+            return false;
+        
+        buffer[i/2] &= (i+1)%2 ? 0x0F : 0xF0;
+        buffer[i/2] |= _byte << (((i+1)%2)*4);
+        
+    }
+    return true;
+}
+
+uint64_t calc_patch_hash(uint64_t vaddr, char* patch)
+{
+    return [[[NSString stringWithUTF8String:patch] lowercaseString] hash] ^ vaddr;
+}
+
 
 extern "C"
 __attribute__((visibility("default")))
-NSString* StaticInlineHookPatch(char* machoPath, uint64_t vaddr)
+NSString* StaticInlineHookPatch(char* machoPath, uint64_t vaddr, char* patch)
 {
     static NSMutableDictionary* gStaticInlineHookMachO = [[NSMutableDictionary alloc] init];
     
@@ -393,10 +419,10 @@ NSString* StaticInlineHookPatch(char* machoPath, uint64_t vaddr)
 
     if(newPath) {
         macho = load_macho_data(newPath);
-        if(!macho) return [NSString stringWithFormat:@"找不到文件 Documents/static-inline-hook/%s", machoPath];
+        if(!macho) return [NSString stringWithFormat:@"找不到文件(can't find file):\n Documents/static-inline-hook/%s", machoPath];
     } else {
         macho = load_macho_data(path);
-        if(!macho) return [NSString stringWithFormat:@"无法读取文件 .app/%s", machoPath];
+        if(!macho) return [NSString stringWithFormat:@"无法读取文件(can't read file):\n.app/%s", machoPath];
     }
     
     uint32_t cryptid = 0;
@@ -437,20 +463,44 @@ NSString* StaticInlineHookPatch(char* machoPath, uint64_t vaddr)
     }
     
     if(cryptid != 0) {
-        return @"该app程序未砸壳!";
+        return @"该app程序未砸壳!\nthis app is not decrypted!";
     }
     
     if(!text_seg || !data_seg) {
-        return @"无法解析该文件";
+        return @"无法解析machO文件!\ncan not parse machO file!";
     }
     
-    uint64_t funcRVA = vaddr;
+    uint64_t funcRVA = vaddr & ~(4-1);
     void *funcData = rva2data(header, funcRVA);
     //*(uint32_t*)funcData = 0x58000020; //ldr x0, #4 test
     
     if(!funcData) {
-        return @"无效的HOOK地址";
+        return @"无效的地址!\nInvalid offset!";
     }
+    
+    
+    void* patch_bytes=NULL; uint64_t patch_size=0;
+    
+    if(patch && patch[0]) {
+        uint64_t patch_end = vaddr + (strlen(patch)+1)/2;
+        uint64_t code_end = (patch_end+4-1) & ~(4-1);
+        
+        patch_size = code_end - funcRVA;
+        
+        NSLog(@"codepath %p %s : %p~%p~%p %x", vaddr, patch, funcRVA, patch_end, code_end, patch_size);
+        
+        NSMutableData* patchBytes = [[NSMutableData alloc] initWithLength:patch_size];
+        patch_bytes = patchBytes.mutableBytes;
+        
+        memcpy(patch_bytes, funcData, patch_size);
+        
+        if(!hex2bytes(patch, (uint8_t*)patch_bytes+vaddr%4))
+            return @"修补字节码格式有误!\nThe bytes to patch are incorrect!";
+
+    } else if(vaddr % 4) {
+        return @"地址未对齐!\nThe offset is not aligned!";
+    }
+    
     
     uint64_t targetRVA = va2rva(header, text_seg->vmaddr);
     void* targetData = rva2data(header, targetRVA);
@@ -467,10 +517,19 @@ NSString* StaticInlineHookPatch(char* machoPath, uint64_t vaddr)
     {
         if(hookBlock[i].hook_vaddr==funcRVA)
         {
-            if(newPath)
-                return @"该HOOK地址已修补, 请将APP的Documents/static-inline-hook目录中的修补文件替换到ipa中的.app目录并重新签名安装!";
+            if(patch && patch[0] && hookBlock[i].patch_hash!=calc_patch_hash(vaddr, patch))
+                return @"修补字节发生变化, 请恢复为原始文件再试!\nThe bytes to patch have changed, please revert to original file and try again";
             
-            return @"该HOOK地址已修补!";
+            if(newPath)
+                return @"该地址已修补, 请将APP的Documents/static-inline-hook目录中的修补文件替换到ipa中的.app目录并重新签名安装!\nThe offset is already patched! Please replace the patched file in the APP's Documents/static-inline-hook directory to the .app directory in the ipa and re-sign and reinstall!";
+            
+            return @"该HOOK地址已修补!\nThe offset to hook is already patched!";
+        }
+        
+        if( funcRVA>hookBlock[i].hook_vaddr &&
+           ( funcRVA < (hookBlock[i].hook_vaddr+hookBlock[i].hook_size) || funcRVA < (hookBlock[i].hook_vaddr+hookBlock[i].patch_size) )
+          ) {
+            return @"该地址已被占用!\nThe offset is occupied!";
         }
         
         if(hookBlock[i].hook_vaddr==0)
@@ -499,24 +558,28 @@ NSString* StaticInlineHookPatch(char* machoPath, uint64_t vaddr)
     }
     
     if(!hookBlockRVA) {
-        return @"HOOK数量已超过最大数量!";
+        return @"超过最大可用数量!\nHOOK count full!";
     }
     
     printf("func: %p=>%p target: %p=>%p\n", funcRVA, funcData, targetRVA, targetData);
     
-    if(!dobby_static_inline_hook(hookBlock, hookBlockRVA, funcRVA, funcData, targetRVA, targetData, InstrumentBridgeRVA))
+    if(!dobby_static_inline_hook(hookBlock, hookBlockRVA, funcRVA, funcData, targetRVA, targetData,
+                                 InstrumentBridgeRVA, patch_bytes, patch_size))
     {
-        return @"无法修补该HOOK地址!";
+        return @"无法修补该地址!\ncan not patch the offset";
     }
+    
+    hookBlock->patch_size = patch_size;
+    hookBlock->patch_hash = calc_patch_hash(vaddr, patch);
     
     NSString* savePath = [NSString stringWithFormat:@"%@/Documents/static-inline-hook/%s", NSHomeDirectory(), machoPath];
     [NSFileManager.defaultManager createDirectoryAtPath:[NSString stringWithUTF8String:dirname((char*)savePath.UTF8String)] withIntermediateDirectories:YES attributes:nil error:nil];
     
     if(![macho writeToFile:savePath atomically:NO])
-        return @"无法写入文件!";
+        return @"无法写入文件!\ncan not write to file!";
     
     gStaticInlineHookMachO[path] = savePath;
-    return @"未签名该HOOK地址, 修补文件将生成在APP的Documents/static-inline-hook目录中, 请将该目录中所有文件替换到ipa中的.app目录并重新签名安装!";
+    return @"未签名该地址, 修补文件将生成在APP的Documents/static-inline-hook目录中, 请将该目录中所有文件替换到ipa中的.app目录并重新签名安装!\nThe offset has not been patched, the patched file will be generated in the Documents/static-inline-hook directory of the APP, please replace all the files in this directory to the .app directory in the ipa and re-sign and reinstall!";
 }
 
 
@@ -612,6 +675,58 @@ BOOL StaticInlineHookInstrument(char* machoPath, uint64_t vaddr, void(*callback)
     
     hookBlock->instrument_handler = (void*)callback;
     hookBlock->target_replace = (void*)((uint64_t)base + hookBlock->instrument_vaddr);
+    
+    return YES;
+}
+
+extern "C"
+__attribute__((visibility("default")))
+BOOL ActiveCodePatch(char* machoPath, uint64_t vaddr, char* patch)
+{
+    void* base = find_module_by_path(machoPath);
+    if(!base) {
+        NSLog(@"cannot find module!");
+        return NO;
+    }
+    
+    StaticInlineHookBlock* hookBlock = find_hook_block(base, vaddr&~3);
+    if(!hookBlock) {
+        NSLog(@"cannot find hook block!");
+        return NO;
+    }
+    
+    if(hookBlock->patch_hash != calc_patch_hash(vaddr, patch)) {
+        NSLog(@"code patch bytes changed!");
+        return NO;
+    }
+    
+    hookBlock->target_replace = (void*)((uint64_t)base + hookBlock->patched_vaddr);
+    
+    return YES;
+}
+
+extern "C"
+__attribute__((visibility("default")))
+BOOL DeactiveCodePatch(char* machoPath, uint64_t vaddr, char* patch)
+{
+    void* base = find_module_by_path(machoPath);
+    if(!base) {
+        NSLog(@"cannot find module!");
+        return NO;
+    }
+    
+    StaticInlineHookBlock* hookBlock = find_hook_block(base, vaddr&~3);
+    if(!hookBlock) {
+        NSLog(@"cannot find hook block!");
+        return NO;
+    }
+    
+    if(hookBlock->patch_hash != calc_patch_hash(vaddr, patch)) {
+        NSLog(@"code patch bytes changed!");
+        return NO;
+    }
+    
+    hookBlock->target_replace = NULL;
     
     return YES;
 }

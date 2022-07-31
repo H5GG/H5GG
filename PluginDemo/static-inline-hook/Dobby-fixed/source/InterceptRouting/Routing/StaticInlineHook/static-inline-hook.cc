@@ -15,7 +15,8 @@ int dobby_create_instrument_bridge(void *targetData) {
 }
 
 bool dobby_static_inline_hook(StaticInlineHookBlock *hookBlock, StaticInlineHookBlock *hookBlockRVA, uint64_t funcRVA,
-                              void *funcData, uint64_t targetRVA, void *targetData, uint64_t InstrumentBridgeRVA) {
+                              void *funcData, uint64_t targetRVA, void *targetData, uint64_t InstrumentBridgeRVA,
+                              void *patchBytes, int patchSize) {
 
   hookBlock->code_vaddr = targetRVA;
 
@@ -42,9 +43,10 @@ bool dobby_static_inline_hook(StaticInlineHookBlock *hookBlock, StaticInlineHook
 
   hookBlock->original_vaddr = (uint64_t)origin_vaddr;
 
+  hookBlock->code_size += origin_code->getSize();
+
   targetRVA += origin_code->getSize();
   *(uint64_t *)&targetData += origin_code->getSize();
-  hookBlock->code_size += origin_code->getSize();
 
   CodeBufferBase *InstrumentTrampoline = ClosureTrampoline::CreateClosureTrampolineStatic(
       (void *)targetRVA, &hookBlockRVA->instrument_handler, (void *)InstrumentBridgeRVA, origin_vaddr);
@@ -53,6 +55,19 @@ bool dobby_static_inline_hook(StaticInlineHookBlock *hookBlock, StaticInlineHook
 
   hookBlock->instrument_vaddr = targetRVA;
   hookBlock->code_size += InstrumentTrampoline->getSize();
+
+  targetRVA += InstrumentTrampoline->getSize();
+  *(uint64_t *)&targetData += InstrumentTrampoline->getSize();
+
+  if (patchBytes && patchSize) {
+    AssemblyCodeChunk *patch_origin = AssemblyCodeBuilder::FinalizeFromAddress(funcRVA, patchSize);
+    AssemblyCodeChunk *patch_relocated = AssemblyCodeBuilder::FinalizeFromAddress(targetRVA, 0);
+    CodeBufferBase *patch_code = GenRelocateCodeAndBranchStatic(patchBytes, patch_origin, patch_relocated);
+    memcpy(targetData, patch_code->getRawBuffer(), patch_code->getSize());
+
+    hookBlock->patched_vaddr = targetRVA;
+    hookBlock->code_size += patch_code->getSize();
+  }
 
   //last, copy trampoline code
   memcpy(funcData, trampoline_buffer->getRawBuffer(), trampoline_buffer->getSize());

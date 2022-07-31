@@ -26,5 +26,5 @@ clean::
 
 after-package::
 	rm -rf ./packages/*
-	cp ./.theos/obj/debug/h5frida.dylib ./h5frida-15.1.24.dylib
+	cp ./.theos/obj/debug/h5frida.dylib ../../examples-h5frida/h5frida-15.1.24.dylib
 	

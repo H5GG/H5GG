@@ -81,12 +81,13 @@ void onScreenLayoutChange(CGSize size)
 #define NotificationChange CFSTR("com.apple.springboard.lockstate") //锁屏或下滑通知界面
 #define NotificationLocked CFSTR("com.apple.springboard.lockcomplete") //锁屏或下滑通知界面
 #define NotificationBlankedScreen CFSTR("com.apple.springboard.hasBlankedScreen") //黑屏
+#define NotificationDisplayStatus CFSTR("com.apple.iokit.hid.displayStatus")
 
 static void screenLockStateChanged(CFNotificationCenterRef center,void* observer,CFStringRef name, const void*object, CFDictionaryRef userInfo)
 {
     NSLog(@"SetGlobalView=lock state changed. %@ %@", name, userInfo);
     NSString* lockstate = (__bridge NSString*)name;
-    if ([lockstate isEqualToString:(__bridge  NSString*)NotificationBlankedScreen]) {
+    if ([lockstate isEqualToString:(__bridge  NSString*)NotificationDisplayStatus]) {
         NSLog(@"SetGlobalView=locked.");
         if(PGVSharedData->viewHosted) {
             NSLog(@"SetGlobalView=locked.exit");
@@ -106,12 +107,12 @@ void SetGlobalView(char* dylib, UInt64 GVDataOffset)
     NSLog(@"SetGlobalView=sbpid=%d", sbpid);
     if(!sbpid) return;
     
-    task_port_t _target_task=0;
-    kern_return_t ret = task_for_pid(mach_task_self(), sbpid, &_target_task);
-    NSLog(@"SetGlobalView=task_for_pid=%d %p %d %s!", sbpid, ret, _target_task, mach_error_string(ret));
+    task_port_t sbtask=0;
+    kern_return_t ret = task_for_pid(mach_task_self(), sbpid, &sbtask);
+    NSLog(@"SetGlobalView=task_for_pid=%d %p %d %s!", sbpid, ret, sbtask, mach_error_string(ret));
     if(ret!=KERN_SUCCESS) return;
     
-    NSArray* modules = getRangesList2(sbpid, _target_task, [NSString stringWithUTF8String:basename(dylib)]);
+    NSArray* modules = getRangesList2(sbpid, sbtask, [NSString stringWithUTF8String:basename(dylib)]);
     NSLog(@"SetGlobalView=modules=%@", modules);
     if(modules.count!=1) return;
     
@@ -123,7 +124,8 @@ void SetGlobalView(char* dylib, UInt64 GVDataOffset)
     UInt64 address = modulebase + GVDataOffset;
     
     UInt64 mapbase = (uint64_t)address & ~PAGE_MASK;
-    size_t mapsize = (address+sizeof(GVData)-mapbase) | PAGE_MASK;
+    size_t mapsize = address + sizeof(GVData) - mapbase;
+    mapsize = (mapsize+PAGE_MASK) & ~PAGE_MASK;
     
     NSLog(@"SetGlobalView=%p,%p,%x", address, mapbase, mapsize);
     
@@ -131,7 +133,7 @@ void SetGlobalView(char* dylib, UInt64 GVDataOffset)
     vm_prot_t max_prot=0;
     vm_address_t buffer=0;
     kern_return_t kr = vm_remap(mach_task_self(), &buffer, mapsize, 0, VM_FLAGS_ANYWHERE,
-                                _target_task, mapbase, false, &cur_prot, &max_prot, VM_INHERIT_NONE);
+                                sbtask, mapbase, false, &cur_prot, &max_prot, VM_INHERIT_NONE);
     
     NSLog(@"SetGlobalView=readmem=%p, %d %s", buffer, kr, mach_error_string(kr));
     if(kr!=KERN_SUCCESS) return;
@@ -151,7 +153,7 @@ void SetGlobalView(char* dylib, UInt64 GVDataOffset)
         memcpy(PGVSharedData->buttonImageData, gIconData, gIconSize);
     }
     
-    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, screenLockStateChanged, NotificationBlankedScreen, NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, screenLockStateChanged, NotificationDisplayStatus, NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
 
     dispatch_async(dispatch_get_main_queue(), ^{
         static NSTimer* timer = [NSTimer scheduledTimerWithTimeInterval:0.1 repeats:YES block:^(NSTimer*t){

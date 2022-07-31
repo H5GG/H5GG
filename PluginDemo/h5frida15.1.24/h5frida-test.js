@@ -1,18 +1,21 @@
-h5gg.require(7.5); //设定最低需求的H5GG版本号
+h5gg.require(7.5); //设定最低需求的H5GG版本号//min version support for H5GG
 
 //将h5frida-15.1.24.dylib放到.app目录中
+//put h5frida-15.1.24.dylib into .app folder
 var h5frida=h5gg.loadPlugin("h5frida","h5frida-15.1.24.dylib");
-if(!h5frida) throw "加载h5frida插件失败";
+if(!h5frida) throw "加载h5frida插件失败\n\nFailed to load h5frida plugin";
 
-alert("h5frida插件版本="+h5frida.pluginVersion() + "\nfrida引擎版本="+h5frida.coreVersion());
+alert("h5frida插件版本="+h5frida.pluginVersion() + "\nfrida引擎版本="+h5frida.coreVersion()+"\n\n"
+      +"frida plugin version="+h5frida.pluginVersion() + "\nfrida core version="+h5frida.coreVersion());
 
 //将frida-gadget的dylib和config两个文件放到.app目录中, 免越狱不支持Interceptor功能
+//put the dylib and config files of frida-gadget in the .app folder
 if(!h5frida.loadGadget("frida-gadget-15.1.24.dylib"))
-    throw "加载frida-gadget守护模块失败";
+    throw "加载frida-gadget守护模块失败\n\nFailed to load frida-gadget daemon module";
 
 
 var procs = h5frida.enumerate_processes();
-if(!procs || !procs.length) throw "frida无法获取进程列表";
+if(!procs || !procs.length) throw "frida无法获取进程列表\n\nfrida can't get process list";
 
 var pid = 0;
 for(var i=0;i<procs.length;i++) {
@@ -20,14 +23,14 @@ for(var i=0;i<procs.length;i++) {
         pid = procs[i].pid;
 }
 
-if(!pid) throw "frida无法找到进程";
+if(!pid) throw "frida无法找到目标进程\n\nfrida cannot find the target process";
 
 var session = h5frida.attach(pid);
-if(!session) throw "frida附加进程失败";
+if(!session) throw "frida附加进程失败\n\nfrida attach process failed";
 
 //监听frida目标进程连接状态, 比如异常退出
 session.on("detached", function(reason) {
-    alert("frida目标进程会话已终止: "+reason);
+    alert("frida目标进程会话已终止: "+reason+"\n\nfrida target process session terminated:"+reason);
 });
 
 var frida_script_code = "("+frida_script.toString()+")()"; //将frida脚本转换成字符串
@@ -38,14 +41,18 @@ if(!script) throw "frida注入脚本失败";
 //启动脚本前先设置frida脚本消息接收函数
 script.on('message', function(msg) {
     if(msg.type=='error')
-        alert("frida脚本错误:\n"+JSON.stringify(msg));
+    {
+        script.unload(); //如果脚本发生错误就停止frida脚本
+        alert("frida脚本错误(script error):\n"+JSON.stringify(msg));
+    }
+    
     if(msg.type=='send')
-        alert("frida脚本消息:\n"+JSON.stringify(msg.payload));
+        alert("frida脚本消息(srcipt msg):\n"+JSON.stringify(msg.payload));
     if(msg.type=='log')
-        alert("frida脚本日志:\n"+msg.payload);
+        alert("frida脚本日志(script log):\n"+msg.payload);
 });
 
-if(!script.load()) throw "启动脚本失败"; //启动脚本
+if(!script.load()) throw "启动脚本失败\n\nstartup script failed"; //启动脚本
 
 //给frida脚本的recv发送消息
 script.post({
@@ -61,7 +68,7 @@ script.post({
 });
 
 //获取frida脚本中的rpc.exports导出函数列表
-alert("frida脚本导出函数列表:\n" + script.list_exports());
+alert("frida脚本导出函数列表:\nlist of frida script export functions:\n" + script.list_exports());
 
 //调用frida脚本中的导出函数并获取返回值
 var result = script.call("getinfo");

@@ -1,0 +1,333 @@
+<html>
+<head>
+<title>H5 Menu(Dark)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<style>
+html {
+    zoom:1.2;
+}
+
+body {
+    width: 100%;
+    height: 100%;
+}
+
+* {
+    color: #E8E8E8;
+    font-size: 12px;
+    font-family: Arial, sans-serif;
+    
+    /* DebugMode:delete next line to show dashed border */
+    /*
+    border: 1px dashed gray;/**/
+    
+}
+
+*:not(input,checkbox,textarea) {
+    /*禁止文本选择*/
+   -webkit-touch-callout: none;
+   -webkit-user-select: none;
+   user-select: none; /* Non-prefixed version, currently */
+   outline: none;
+   -webkit-tap-highlight-color: transparent;
+}
+
+input {
+    background-color: rgba(0,0,0,0);
+    height: 30px;
+}
+
+button {
+    height: 30px;
+    background-color: #E8E8E850;
+    display: inline-block;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    outline: none;
+    border: none;
+    border-radius: 5px;
+}
+
+button:active {
+     transform: translateY(2px);
+}
+
+input[type=radio]  {
+    width:20px;
+    height:20px;
+    margin-right:6px;
+    border:none;
+    outline-style:none;
+    -webkit-appearance:none;
+    vertical-align:middle;
+    border:1px solid #DDDDDDF0;
+    border-radius:50%;
+}
+input[type=radio]:checked {
+    border:6px solid #2F7DCDF0;
+    background:#FFFFFF;
+}
+    
+input[type=checkbox]{
+ visibility: hidden;
+ vertical-align:middle; margin-bottom:2px;
+ cursor: pointer;
+ position: relative;
+ width: 24px;
+ height: 24px;
+}
+input[type=checkbox]::after{
+ position: absolute;
+ top: 0;
+ margin-top:2px;
+ width: 14px; height: 14px;
+ border: 1px solid #EEEEEE;
+ border-radius: 3px;
+ background-color: rgba(0,0,0,0);
+ display: inline-block;
+ visibility: visible;
+ text-align: center;
+ content: ' ';
+}
+input[type=checkbox]:checked::after{
+ content: "✓";
+ border-color: #4498F7;
+ background-color: #4498F7;
+ font-size: 12px;
+ font-weight: bold;
+}
+
+input[type=range] {
+  -webkit-appearance: none;
+}
+input[type=range]:focus {
+  outline: none;
+}
+input[type=range]::-webkit-slider-runnable-track {
+  height: 15px;
+  cursor: pointer;
+  animate: 0.2s;
+  background: #D1D1D130;
+  border-radius: 1.3px;
+  border: 0.2px solid #010101;
+}
+input[type=range]::-webkit-slider-thumb {
+  border: 1px solid #000000;
+  height: 18px;
+  width: 16px;
+  border-radius: 3px;
+  background: #FFFFFFE0;
+  cursor: pointer;
+  -webkit-appearance: none;
+  margin-top: -2px;
+}
+input[type=range]:focus::-webkit-slider-runnable-track {
+  background: #367ebd;
+}
+
+    
+/* 滚动条整体部分 */
+.scrollbar {
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.scrollbar::-webkit-scrollbar {
+    width: 5px; /* 纵向滚动条宽度 */
+    height: 5px;/* 横向滚动条高度 */
+    background-color: #F5F5F5; /* 滚动条整体背景，一般被覆盖着 */
+}
+/* 滚动条的轨道（里面装有Thumb） */
+.scrollbar::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3); /* 滚动条轨道阴影 */
+    /*border-radius: 10px; /* 滚动条轨道圆角 */
+    background-color: #F5F5F5; /* 滚动条轨道背景 */
+}
+/* 滚动条里面的滑块 */
+.scrollbar::-webkit-scrollbar-thumb {
+    border-radius: 15px; /* 滚动条滑块圆角 */
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,.3); /* 滚动条滑块阴影 */
+    background-color: #B8B8B8; /* 滚动条滑块颜色 */
+}
+    
+.menubox {
+        width: 60px;
+        height: 30px;
+        line-height: 30px; /*height和line-height设置一样即可文字垂直居中*/
+        text-align:center;
+}
+.menubox.current {
+    background-color: #494949;
+}
+
+.menuview {
+    display:none;
+}
+
+.menuview.current {
+    display:block;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    height: 100%;
+}
+
+</style>
+
+
+<script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+<script>
+    
+if(typeof $ == 'undefined') alert("网络连接失败, 请重新启动!");
+
+$(document).ready(function(){
+    //alert();
+    //绑定菜单点击切换子页面
+    $("div.menubox").click(function(){
+        $("div.menubox").removeClass("current");
+        $("div.menuview").removeClass("current");
+        $(this).addClass("current");
+        
+        var menuid = $(this).attr("menu");
+        $("div#"+menuid).addClass("current");
+    });
+    
+    /*禁止文本Option和拖动*/
+    document.body.onselectstart = document.body.ondrag =function(){
+        return false;
+    }
+    
+    $("input").blur(function(){
+        window.scroll(0,0); //文本框等输入完毕后页面自动滚动到顶部
+    });
+    
+    //激活webkit的button:active
+    document.body.addEventListener('touchstart', function () {});
+
+    if(typeof h5gg!='undefined') {
+        //设置标题栏区域可拖动悬浮窗
+        setWindowDrag(0, 0, 400, 80);
+        //设置尺寸和位置
+        setWindowRect(60,60,300,300);
+    }
+});
+
+function login()
+{
+    if(!$("#username").val()) {
+        alert("please input your account");
+        return;
+    }
+    
+    if(!$("#password").val()) {
+        alert("please input your password");
+        return;
+    }
+    
+    alert("test login\n\nusername:"+$("#username").val() + "\n" + "password:"+$("#password").val());
+}
+    
+function buttonclick(input)
+{
+    alert("button clicked = "+input.innerText);
+}
+    
+function checkboxclick(input)
+{
+    alert("checkbox clicked = "+input.parentElement.innerText+" = "+input.checked);
+}
+   
+function rangechange(input)
+{
+    alert("slider chagne = "+input.value);
+}
+    
+function radioclick(input)
+{
+    alert("radio clicked: group = "+input.name+" = "+input.parentElement.innerText+" = "+input.value);
+}
+</script>
+
+</head>
+
+<body bgcolor="#202C3E" style="margin:0;">
+<!--标题栏-->
+<div id="titleBar" style="background-color:#122220; padding:5px; margin:0px;">
+&nbsp;H5 Menu(DarkStyle)
+</div>
+<!--用一个表格来布局左右两栏-->
+<table id="bodyView" width="100%" style="table-layout:fixed;height: calc(100% - 30px) ;">
+    
+<tr>
+    
+<td width="30%" style="vertical-align:top">
+    
+<div>
+    <div class="menubox current" menu="menu1">Menu 1</div>
+    <div class="menubox" menu="menu2">Menu 2</div>
+    <div class="menubox" menu="menu3">Menu 3</div>
+    <div class="menubox" menu="menu4">Menu 4</div>
+    <div class="menubox" menu="menu5">Menu 5</div>
+</div>
+</td>
+<td style="vertical-align:top" class="scrollbar">
+<div id="menu1" class="menuview current">
+<p>CheckBox</p>
+    <label><input type="checkbox" checked="checked" onclick="checkboxclick(this)" />Option1</label>
+    <label><input type="checkbox"  onclick="checkboxclick(this)" />Option2</label>
+    <p>
+    <label><input type="checkbox"  onclick="checkboxclick(this)" />Option3</label>
+    <label><input type="checkbox" onclick="checkboxclick(this)" />Option4</label>
+    <p>
+</div>
+
+<div id="menu2" class="menuview">
+<p>Button</p>
+    <button onclick="buttonclick(this)">Button1</button>
+    <button onclick="buttonclick(this)">Button2</button>
+    <p>
+    <button onclick="buttonclick(this)">Button3</button>
+    <button onclick="buttonclick(this)">Button4</button>
+</div>
+
+<div id="menu3" class="menuview">
+    <p>Slider1</p>
+  <input type="range" min="0" max="100" style="width:100%" onchange="rangechange(this)" />
+    <p>Slider2</p>
+  <input type="range" min="10" max="20"  onchange="rangechange(this)" />
+</div>
+
+<div id="menu4" class="menuview">
+    <p>RadioGroup(page can swipe)</p>
+  <label><input name="radio-group1" type="radio" value="1" checked onclick="radioclick(this)" />Option1</label>
+  <p><label><input name="radio-group1" type="radio" value="2"  onclick="radioclick(this)" />Option2</label>
+  <p><label><input name="radio-group1" type="radio" value="3"  onclick="radioclick(this)" />Option3</label>
+  <p>RadioGroup2</p>
+  <label><input name="radio-group2" type="radio" checked="checked"  onclick="radioclick(this)" />Option1</label>
+  <p><label><input name="radio-group2" type="radio"  onclick="radioclick(this)" />Option2</label>
+  <p><label><input name="radio-group2" type="radio"  onclick="radioclick(this)" />Option3</label>
+  <p>RadioGroup3</p>
+  <label><input name="radio-group3" type="radio" checked="checked"  onclick="radioclick(this)" />Option1</label>
+  <p><label><input name="radio-group3" type="radio"  onclick="radioclick(this)" />Option2</label>
+  <p><label><input name="radio-group3" type="radio"  onclick="radioclick(this)" />Option3</label>
+  <p><label><input name="radio-group3" type="radio"  onclick="radioclick(this)" />Option4</label>
+  <p><label><input name="radio-group3" type="radio"  onclick="radioclick(this)" />Option5</label>
+</div>
+
+<div id="menu5" class="menuview">
+<p>Input</p>
+<p><label>Username: <input id="username" name="username" type="text" placeholder="input your username" /></label>
+<p>Password: <input id="password" name="password" type="password" placeholder="input your password" />
+<p align="center"><button onclick="login()">Login</button>
+</div>
+
+</td>
+
+</tr>
+
+</table>
+
+</body>
+</html>
+

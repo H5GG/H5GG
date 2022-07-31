@@ -1,0 +1,399 @@
+<!-- 会用用，不会用垃圾吧倒 -->
+
+<!DOCTYPE html>
+<html>
+<header>
+	<title>h5imgui</title>
+	<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<link rel="stylesheet" href="https://unpkg.com/element-ui@2.15.7/lib/theme-chalk/index.css">
+	<script src="https://cdn.jsdelivr.net/npm/vue@2.6/dist/vue.min.js"></script>
+	<script src="https://unpkg.com/element-ui@2.15.7/lib/index.js"></script>
+
+	<style>
+		* {
+			padding: 0;
+			margin: 0;
+		}
+
+		.ayimgui {
+			position: fixed;
+			width: 360px;
+			height: 320px;
+			top: calc(50% - 180px);
+			left: calc(50% - 180px);
+			z-index: 999;
+			background-color: #F0F0F0;
+			/* border-radius: 8px; */
+			overflow: hidden;
+			-webkit-user-select: none;
+			-moz-user-select: none;
+			-ms-user-select: none;
+			user-select: none;
+		}
+
+		.onlyTitle {
+			height: 21px !important;
+		}
+
+		.ayimgui .aytitle {
+			padding: 0 5px;
+			font-size: 16px;
+			background-color: #d1d1d1;
+		}
+
+		.ayimgui .aytitle .titleClose {
+			position: absolute;
+			top: 3px;
+			right: 6px;
+			color: #000;
+		}
+
+		.ayimgui .aytitle .titleClose:hover {
+			color: #409EFF;
+		}
+
+		.ayimgui .aybody {
+			padding: 15px;
+			height: calc(100% - 21px - 15px - 15px);
+			/*减去标题高度，减去上线padding高度*/
+			overflow: auto;
+			font-size: 14px;
+		}
+
+
+		.aytext {
+			width: 100%;
+			margin-bottom: 10px;
+			display: flex;
+			flex-direction: column;
+			justify-content: space-around;
+			color: #000;
+		}
+
+		.el-checkbox {
+			margin: 0px;
+		}
+
+		.el-checkbox__label {
+			color: #000;
+		}
+
+		.el-checkbox__input.is-checked+.el-checkbox__label {
+			color: #409EFF;
+		}
+
+		.el-checkbox__inner {
+			background-color: rgb(254, 254, 254);
+			border: none;
+		}
+
+
+		.el-radio {
+			margin: 8px 0;
+		}
+
+		.el-radio__label {
+			color: #000;
+		}
+
+		.el-radio__input.is-checked+.el-radio__label {
+			color: #409EFF;
+		}
+
+		.el-radio__inner {
+			background-color: rgb(254, 254, 254);
+			border: none;
+		}
+
+		.el-radio__input.is-checked .el-radio__inner {
+			background-color: rgb(254, 254, 254);
+		}
+
+		.el-radio__inner::after {
+			width: 10px;
+			height: 10px;
+			background-color: rgb(58, 138, 247);
+		}
+
+		.onlySelect {
+			background-color: rgb(254, 254, 254);
+			border: none;
+		}
+
+		.onlySelect .el-select-dropdown__item {
+			color: #000;
+
+		}
+
+		.onlySelect .el-select-dropdown__item.hover,
+		.el-select-dropdown__item:hover:hover {
+			background-color: transparent;
+		}
+
+		.onlySelect .popper__arrow {
+			border-bottom-color: rgb(254, 254, 254) !important;
+		}
+
+		.onlySelect.el-popper[x-placement^=bottom] .popper__arrow::after {
+			border-bottom-color: rgb(8254, 254, 254) !important;
+		}
+
+		.el-select {
+			width: 100%;
+		}
+
+		.el-select .el-input {
+			background-color: rgb(254, 254, 254);
+		}
+
+		.el-select .el-input__suffix {
+			background-color: rgb(160, 196, 243);
+			color: #000;
+			right: 0;
+		}
+
+		.el-select .el-select__caret {
+			color: #000;
+		}
+
+		.el-select .el-input__inner {
+			background-color: transparent;
+			border: none;
+			color: #000;
+		}
+
+		.el-select .el-input .el-select__caret {
+			color: #000;
+		}
+
+		/* 解决ios下拉需要点两次 */
+		.el-scrollbar .el-scrollbar__bar {
+			opacity: 1 !important;
+		}
+
+		.el-button {
+			font-size: 14px;
+			padding: 5px 10px;
+			line-height: 14px;
+			color: #000;
+			background-color: #B8D1F2;
+		}
+
+		.el-button:hover {
+			opacity: .7;
+			color: #000;
+			background-color: #B8D1F2;
+		}
+
+		.el-button:focus,
+		.el-button:hover {
+			color: #000;
+			background-color: #B8D1F2;
+		}
+
+		.aycollapse {
+			width: 100%;
+			font-size: 14px;
+			background-color: rgb(177, 206, 240);
+			color: #000;
+		}
+
+		.aytab {
+			width: 100%;
+			height: 20px;
+			display: flex;
+			border-bottom: 2px solid rgb(200, 217, 233);
+		}
+
+		.aytab span {
+			padding: 0 5px;
+			height: 100%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background-color: rgb(189, 199, 208);
+			color: #000;
+			font-size: 14px;
+			font-weight: 500;
+			margin-left: 10px;
+			border-radius: 6px 6px 0 0;
+			cursor: pointer;
+		}
+
+
+		.el-input input {
+			background-color: rgb(254, 254, 254);
+			border: none;
+			border-radius: 0px;
+		}
+	</style>
+</header>
+
+<body>
+	<div id="app">
+		<div :class="!ifshow?'onlyTitle ayimgui':'ayimgui'" ref="menuMain">
+			<div class="aytitle" @touchstart="titleTouchStart" @touchmove="titleTouchMove">
+				<i :class="ifshow?'el-icon-caret-bottom':'el-icon-caret-top'" @click="ifshow = !ifshow"></i>
+				<span class="title-age" style="margin-left:5px;">Holle World!</span>
+				<i class="titleClose el-icon el-icon-close" @click="closeimgui"></i>
+			</div>
+			<div class="aybody">
+				<div class="aytab">
+					<span @click="changeTab('one')"
+						:style="{background:tabValue==='one'?'#B1CEF0':'#BDC7D0'}">one</span>
+					<span @click="changeTab('two')"
+						:style="{background:tabValue==='two'?'#B1CEF0':'#BDC7D0'}">two</span>
+				</div>
+
+				<div v-show="tabValue==='one'">
+					<div class="aytext">
+						<p>This is some useful text.</p>
+						<p>This is some useful text.</p>
+					</div>
+
+					<el-checkbox v-model="checked">option</el-checkbox>
+
+					<br>
+
+					<el-radio v-model="radio" label="1">option</el-radio>
+					<el-radio v-model="radio" label="2">option</el-radio>
+
+					<br>
+
+					<el-select v-model="activeSelect" size="mini" style="width:70%" popper-class="onlySelect"
+						placeholder="">
+						<el-option v-for="item in selectOption" :key="item.value" :label="item.label"
+							:value="item.value">
+						</el-option>
+					</el-select>
+					<span>Combo</span>
+
+					<br>
+					<br>
+
+					<el-input size="mini" v-model="input" style="width:70%" placeholder="input data please"></el-input>
+					<span>Input</span>
+
+					<br>
+					<br>
+
+					<el-button>button</el-button>
+
+					<br>
+					<br>
+
+					<div class="aycollapse" @click="showOption = !showOption" style="cursor:pointer">
+						<i :class="showOption?'el-icon-caret-bottom':'el-icon-caret-right'"></i>
+						<span>Window options</span>
+					</div>
+					<el-collapse-transition>
+						<div v-show="showOption">This is some useful text.This is some useful text.This is some
+							useful text.This is some useful text.This is some useful text.This is some useful text.This
+							is
+							some useful text.This is some useful text.This is some useful text.</div>
+					</el-collapse-transition>
+				</div>
+
+				<div v-show="tabValue === 'two'">
+					<div class="aytext">
+						<p>tow page</p>
+						<p>This is some useful text.</p>
+					</div>
+
+					<el-checkbox v-model="checked">option</el-checkbox>
+				</div>
+			</div>
+		</div>
+	</div>
+	<script>
+		var app = new Vue({
+			el: "#app",
+			data() {
+				return {
+					ifshow: true,
+					checked: false,
+					radio: '1',
+					activeSelect: '',
+					selectOption: [{
+						value: 'Option1',//实际内容
+						label: 'golden'//显示文案
+					}, {
+						value: 'Option2',
+						label: 'eggs'
+					}],
+					input: "",
+					showOption: false,
+					tabValue: "one",
+				}
+			},
+			mounted() {
+				this.setRect(360, 320);
+
+				//竖屏
+				var sWidth = window.screen.width; //屏幕宽
+				var sHeight = window.screen.height; //屏幕高
+
+				//全屏显示
+				if (window.screen.availWidth > window.screen.availHeight) {
+					//横屏，宽高置换
+					sWidth = window.screen.height; //屏幕宽
+					sHeight = window.screen.width; //屏幕高
+				}
+				setWindowRect(0, 0, sWidth, sHeight);
+
+				setButtonAction(function () {
+					var menu = document.querySelector("#app");
+					if (menu.style.display == 'none') {
+						menu.style.display = 'block';
+						//显示菜单之后, 设置触控不可穿透悬浮窗口
+						setWindowTouch(true);
+					} else {
+						menu.style.display = 'none';
+						//隐藏菜单之后, 设置触控穿透悬浮窗口
+						setWindowTouch(false);
+					}
+				});
+			},
+			methods: {
+				setRect(w, h, x = -1, y = -1) {
+					var boxW = w;
+					var boxH = h;
+
+					var ayMenu = this.$refs.menuMain;
+					ayMenu.style.width = `${boxW}px`;
+					ayMenu.style.height = `${boxH}px`;
+					if (x == -1) ayMenu.style.left = `calc(50% - ${boxW / 2}px)`;
+					if (y == -1) ayMenu.style.top = `calc(50% - ${boxH / 2}px)`;
+				},
+				titleTouchStart(event) {
+					this.touchStartX = parseInt(event.touches[0].clientX);
+					this.touchStartY = parseInt(event.touches[0].clientY);
+
+					var ayMenu = this.$refs.menuMain;
+					this.menuLastX = ayMenu.offsetLeft;
+					this.menuLastY = ayMenu.offsetTop;
+				},
+				titleTouchMove(event) {
+					event.preventDefault();
+					var distanceX = event.touches[0].clientX - this.touchStartX;
+					var distanceY = event.touches[0].clientY - this.touchStartY;
+
+					var ayMenu = this.$refs.menuMain;
+					ayMenu.style.left = this.menuLastX + distanceX + "px";
+					ayMenu.style.top = this.menuLastY + distanceY + "px";
+				},
+				//切换导航栏
+				changeTab(v) {
+					this.tabValue = v;
+				},
+				closeimgui() {
+					var menu = document.querySelector("#app");
+					menu.style.display = 'none';
+				}
+			}
+		});
+	</script>
+</body>
+
+</html>

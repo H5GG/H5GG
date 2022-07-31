@@ -443,7 +443,7 @@ document.addEventListener("DOMContentLoaded", function(){
                         }
                         
                         if(!alive) {
-                            alert("The target process has ended\n\nPlease click on the title bar to select a new target");
+                            alert("Target process terminated\n\nPlease click on the title bar to select a new target");
                             $("#procname").removeAttr('pid');
                             $("#procname").text('');
                         }
@@ -770,10 +770,10 @@ function onClickSearchNearby()
     
 function onClickMakeTweak()
 {
-    alert("Make your custom dylib\n\nStep 1: select the floating button icon file");
+    alert("Make your custom dylib\n\nStep 1: Select a picture file for float button");
     h5gg.pickScriptFile(function(icon){
         
-        alert("Step 2: Select the html file that needs to be automatically loaded");
+        alert("Step 2: Select a html file that needs to load automatically");
         
         h5gg.pickScriptFile(function(html) {
             

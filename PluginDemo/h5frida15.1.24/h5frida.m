@@ -206,7 +206,7 @@ static void on_message (FridaScript * script, const gchar * message, GBytes * da
     if(pid==-1) pid=getpid();
     
     h5fridaSession* cache = [self.sessions objectForKey:[NSNumber numberWithInt:pid]];
-    if(cache && cache.session) return cache;
+    if(cache && cache.session && ![cache is_detached]) return cache;
     
     GError * error = NULL;
     FridaSession* session = frida_device_attach_sync (self.local_device, pid, (FridaSessionOptions*)FRIDA_REALM_NATIVE, NULL, &error);
