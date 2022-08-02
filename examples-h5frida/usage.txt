@@ -13,3 +13,6 @@ copy all files which in frida-server(non-jailbreak) into .app folder of ipa
 
 ----frida-js-api-document:
 https://frida.re/docs/javascript-api/
+
+
+----The new version of h5frida may not be compatible with the old version, if you need to upgrade, please replace all the files with the new version, and carefully check the js sample code of the new version.
