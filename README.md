@@ -53,7 +53,7 @@ and you can make your own tweak(dylib) by click one button, then just select you
 
 <figure class="half">
 ![text](/pictures/h5gg1.png)![text](/pictures/h5gg1.png)
-<figure class="half">
+</figure>
 
 ![text](/pictures/h5gg2.png)
 
