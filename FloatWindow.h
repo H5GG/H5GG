@@ -49,7 +49,8 @@
 @end
 
 @interface FloatController : UIViewController
-@property UIWindow* followWindow;
+//@property UIWindow* followWindow;
+@property UIInterfaceOrientationMask followOrientationMask;
 @property void (^onResizeCallback)(CGSize size);
 @end
 
@@ -58,7 +59,8 @@
 -(instancetype)init {
     self = [super init];
     if(self) {
-        self.followWindow = UIApplication.sharedApplication.keyWindow;
+        //self.followWindow = UIApplication.sharedApplication.keyWindow;
+        self.followOrientationMask = UIApplication.sharedApplication.keyWindow.rootViewController.supportedInterfaceOrientations;
     }
     return self;
 }
@@ -72,11 +74,9 @@
     if(PGVSharedData->enable && PGVSharedData->viewHosted && PGVSharedData->followCurrentOrientation)
         should = YES;
     else
-        should = self.followWindow.rootViewController.shouldAutorotate;
+        should = YES; //self.followWindow.rootViewController.shouldAutorotate;
 
-    NSLog(@"FloatWindow shouldAutorotate=%d : %d,%d", should,
-          [[UIDevice currentDevice] orientation],
-          [UIApplication sharedApplication].statusBarOrientation);
+    dumpKeyWindow("FloatWindow shouldAutorotate");
 
     return should;
 }
@@ -86,12 +86,12 @@
     UIInterfaceOrientationMask mask;
     if(PGVSharedData->enable && PGVSharedData->viewHosted && PGVSharedData->followCurrentOrientation)
         mask = (UIInterfaceOrientationMask)(1<<PGVSharedData->curOrientation);
-    else
-        mask = self.followWindow.rootViewController.supportedInterfaceOrientations;
-
-    NSLog(@"FloatWindow supportedInterfaceOrientations=%d : %d,%d", mask,
-          [[UIDevice currentDevice] orientation],
-          [UIApplication sharedApplication].statusBarOrientation);
+    else {
+        uint64_t mask2 = 1<<UIApplication.sharedApplication.statusBarOrientation;
+        mask = self.followOrientationMask | mask2;
+    }
+    
+    dumpKeyWindow("FloatWindow supportedOrientations");
 
     return mask;
 }
@@ -102,11 +102,9 @@
     if(PGVSharedData->enable && PGVSharedData->viewHosted && PGVSharedData->followCurrentOrientation)
         prefedrred = (UIInterfaceOrientation)PGVSharedData->curOrientation;
     else
-        prefedrred = self.followWindow.rootViewController.preferredInterfaceOrientationForPresentation;
+        prefedrred = UIApplication.sharedApplication.statusBarOrientation; //self.followWindow.rootViewController.preferredInterfaceOrientationForPresentation;
 
-    NSLog(@"FloatWindow preferredInterfaceOrientationForPresentation=%d : %d,%d", prefedrred,
-          [[UIDevice currentDevice] orientation],
-          [UIApplication sharedApplication].statusBarOrientation);
+    dumpKeyWindow("FloatWindow preferredOrientation");
 
     return prefedrred;
 }
@@ -153,16 +151,20 @@
 
 -(void)setHidden:(BOOL)hidden
 {
+    NSLog(@"FloatWindow setHidden=%d", hidden);
+    
     if(hidden==NO)
     {
-        UIWindow* keyWindow = UIApplication.sharedApplication.keyWindow;
-        NSLog(@"FloatWindow follow=%@", keyWindow);
-        ((FloatController*)self.rootViewController).followWindow = keyWindow;
+//        UIWindow* keyWindow = UIApplication.sharedApplication.keyWindow;
+//        NSLog(@"FloatWindow follow=%@", keyWindow);
+//        ((FloatController*)self.rootViewController).followWindow = keyWindow;
+        
+        ((FloatController*)self.rootViewController).followOrientationMask = UIApplication.sharedApplication.keyWindow.rootViewController.supportedInterfaceOrientations;
+        
+        dumpKeyWindow("FloatWindow show");
     }
     
     [super setHidden:hidden];
-    
-    NSLog(@"FloatWindow setHidden=%d", hidden);
 
     if(hidden==NO)
     {

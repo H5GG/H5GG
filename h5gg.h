@@ -652,13 +652,7 @@ extern "C" int csops(pid_t pid, unsigned int  ops, void * useraddr, size_t users
 NSString* makeDYLIB(NSString* iconfile, NSString* htmlfile);
 
 -(NSString*)makeTweak:(NSString*)icon with:(NSString*)html
-{
-//    struct statfs buf;
-//    statfs("/", &buf);
-//    NSLog(@"%s", buf.f_mntfromname);
-//    const char* prefix = "com.apple.os.update-";
-//    if(strstr(buf.f_mntfromname, prefix))
-    
+{    
     NSString* result = makeDYLIB(icon, html);
     
     uint32_t g_csops_flags = 0;

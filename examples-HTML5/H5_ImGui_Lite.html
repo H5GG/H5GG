@@ -330,17 +330,27 @@
 			mounted() {
 				this.setRect(360, 320);
 
-				//竖屏
-				var sWidth = window.screen.width; //屏幕宽
-				var sHeight = window.screen.height; //屏幕高
-
-				//全屏显示
-				if (window.screen.availWidth > window.screen.availHeight) {
-					//横屏，宽高置换
-					sWidth = window.screen.height; //屏幕宽
-					sHeight = window.screen.width; //屏幕高
+				//设置不可拖动
+				setWindowDrag(0, 0, 0, 0);
+    
+				var layout = function()
+				{
+					//window.orientation是设备握持方向, 不是屏幕显示方向
+					if(window.lastorientation==window.orientation) return;
+					window.lastorientation=window.orientation;
+				
+					//window.screen中的宽高不会随着屏幕旋转更新(只会在初始化的时候固定)
+					if(Math.abs(window.orientation)==90) {
+						//横屏模式
+						setWindowRect(0,0,window.screen.height,window.screen.width);
+					} else {
+						//竖屏模式
+						setWindowRect(0,0,window.screen.width,window.screen.height);
+					}
 				}
-				setWindowRect(0, 0, sWidth, sHeight);
+	
+				layout(); //设置旋转屏幕时自动调整布局和画布
+				window.addEventListener("orientationchange", layout, false);
 
 				setButtonAction(function () {
 					var menu = document.querySelector("#app");

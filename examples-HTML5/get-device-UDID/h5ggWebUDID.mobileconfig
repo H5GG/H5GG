@@ -14,7 +14,7 @@
         <key>PayloadOrganization</key>
         <string>H5GG - PassengerKing</string>
         <key>PayloadDisplayName</key>
-        <string>H5GG 免越狱获取 udid 插件</string>
+        <string>H5GG Get UDID</string>
         <key>PayloadVersion</key>
         <integer>1</integer>
         <key>PayloadUUID</key>
@@ -22,7 +22,7 @@
         <key>PayloadIdentifier</key>
         <string>com.passengerk.h5gg.webudid</string>
         <key>PayloadDescription</key>
-        <string>仅用作学习研究，禁止用作商业/非法用途！学习交流群：770375541。</string>
+        <string>GetUDID</string>
         <key>PayloadType</key>
         <string>Profile Service</string>
     </dict>

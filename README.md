@@ -1,8 +1,6 @@
 # H5GG
 
-**Discord: [https://discord.gg/H5GG](https://discord.gg/H5GG)**
-
-**Forum: [https://iosgods.com/](https://iosgods.com/forum/17-tools/)**
+**Discuss in [https://discord.gg/H5GG](https://discord.gg/H5GG) or [https://iosgods.com/](https://iosgods.com/forum/595-h5gg-igamegod/)**
 
 an iOS Cheat Engine for JavaScript APIs & Html5 UI.
 
@@ -61,14 +59,15 @@ and you can make your own tweak(dylib) by click one button, then just select you
 
 
 
-## Design Html Menu UI in EasyHtml on iPhone/iPad
+## Design Html Menu UI in EasyHtml on iPhone/iPad 
+(**install EasyHtml from AppStore!**)
 
 ![text](/pictures/easyhtml.png)
 
-**install EasyHtml from AppStore!**
 
 
 ## [Debug the js/html of H5GG running on ios through macOS safari](https://www.lifewire.com/activate-the-debug-console-in-safari-445798):
+the host app need get-task-allow entitlement (jailbroken or sign by Developer Certificate, not sign by Distribution Certificate)
 
 ![text](/pictures/macos.png)
 

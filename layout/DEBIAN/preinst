@@ -5,7 +5,7 @@ echo "*****************************"
 echo "如果本插件安装后没有效果, 请检查是否已安装越狱基板, 如未安装越狱基板请先卸载本插件, 安装越狱基板之后再重新安装本插件!"
 echo "*****************************"
 echo "*****************************"
-echo "If this plugin does not work after installing it, please check whether the MobileSubstrate dependency package is installed. If not, please uninstall this plugin first, and then reinstall the plugin after installing the dependency package!"
+echo "If this tweak does not work after installing it, please check whether the MobileSubstrate dependency package is installed. If not, please uninstall this tweak first, and then reinstall this tweak after installing the MobileSubstrate dependency package!"
 echo "*****************************"
 echo "*****************************"
 

@@ -597,8 +597,8 @@ function showPopView(name, action, type, value)
 {
     $("#maskview").show();
     $("#popup_search_edit").show();
-    $("#popup_search_edit").find("B#titleBar").text(name);
-    $("#popup_search_edit").find("button#action").text(name);
+    $("#popup_search_edit").find("B#titleBar").html(name);
+    $("#popup_search_edit").find("button#action").html(name);
     
     if(type) {
         $("table#datatype td").each(function(){
@@ -870,7 +870,7 @@ function onClickMakeTweak()
 </center>
 <br/>
 <input type="text" id="datavalue" style="width:100%; border:none" placeholder="数值" />
-<hr/><br/>
+<hr/>
 <button id="cancel">取消</button>
 &nbsp;&nbsp;&nbsp;
 <button id="action">搜索数值</button>

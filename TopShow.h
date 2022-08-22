@@ -16,7 +16,8 @@
 #pragma GCC diagnostic ignored "-Wnullability-completeness"
 
 @interface TopShow : UIViewController <UIDocumentPickerDelegate>
-@property UIWindow* lastKeyWindow;
+//@property UIWindow* lastKeyWindow;
+@property UIInterfaceOrientationMask followOrientationMask;
 @property UIWindow* alertWindow;
 @property NSString* pickedfile;
 @property void(^pickedfile_notify)();
@@ -29,30 +30,40 @@
 //主要是supportedInterfaceOrientations返回的支持方向集合, 如果原window不支持竖屏, 新window旋转为横屏, 则原window会卡死
 
 - (BOOL)shouldAutorotate {
-    BOOL should = self.lastKeyWindow.rootViewController.shouldAutorotate;
-    NSLog(@"TopShow shouldAutorotate=%d", should);
+    BOOL should = YES; //self.lastKeyWindow.rootViewController.shouldAutorotate;
+    
+    dumpKeyWindow("TopShow shouldAutorotate");
+    
     return should;
 }
 - (UIInterfaceOrientationMask)supportedInterfaceOrientations {
-    UIInterfaceOrientationMask mask = self.lastKeyWindow.rootViewController.supportedInterfaceOrientations;
-    NSLog(@"TopShow supportedInterfaceOrientations=%d", mask);
+    UIInterfaceOrientationMask mask = (UIInterfaceOrientationMask)(1<<UIApplication.sharedApplication.statusBarOrientation); //self.lastKeyWindow.rootViewController.supportedInterfaceOrientations;
+    
+    uint64_t mask2 = 1<<UIApplication.sharedApplication.statusBarOrientation;
+    mask = self.followOrientationMask | mask2;
+    
+    dumpKeyWindow("TopShow supportedOrientations");
+    
     return mask;
 }
 
 -(UIInterfaceOrientation) preferredInterfaceOrientationForPresentation {
-    UIInterfaceOrientation preferred = self.lastKeyWindow.rootViewController.preferredInterfaceOrientationForPresentation;
-    NSLog(@"TopShow preferredInterfaceOrientationForPresentation=%d : %d,%d", preferred,
-          [[UIDevice currentDevice] orientation], [UIApplication sharedApplication].statusBarOrientation);
+    UIInterfaceOrientation preferred = UIApplication.sharedApplication.statusBarOrientation; //self.lastKeyWindow.rootViewController.preferredInterfaceOrientationForPresentation;
+    
+    dumpKeyWindow("TopShow preferredOrientation");
     
     return preferred;
 }
 
 +(void)present:(UIViewController*(^)(TopShow* controller))alert {
     void (^submit)() = ^(){
+        
+        dumpKeyWindow("TopShow present");
+        
         TopShow* rootVC = [TopShow new];
         
-        rootVC.lastKeyWindow = [UIApplication sharedApplication].keyWindow;
-        NSLog(@"TopShow follow keyWindow=%@", rootVC.lastKeyWindow);
+        rootVC.followOrientationMask = UIApplication.sharedApplication.keyWindow.rootViewController.supportedInterfaceOrientations;
+        
         
         rootVC.alertWindow = makeWindow(NSStringFromClass(UIWindow.class));
     
@@ -78,7 +89,7 @@
     NSLog(@"TopShow dismiss on %d", [NSThread isMainThread]);
     
     [self.alertWindow setHidden:YES];
-    self.lastKeyWindow = nil;
+    //self.lastKeyWindow = nil;
     self.alertWindow = nil;
 }
 

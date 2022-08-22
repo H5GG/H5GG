@@ -1,8 +1,23 @@
-h5gg.require(7.7);
+h5gg.require(7.8);
 
 var sleep = (timeountMS) => new Promise((resolve) => {
     setTimeout(resolve, timeountMS);
   });
+
+var localizedString = {
+    "自动搜索指针链" : "AutoSearchPointerChains",
+    "请输入要搜索的数据地址(0x开头十六进制)" : "Please enter the data address to be searched (hex starting with 0x)",
+    "请输入最大搜索偏移(0x开头十六进制)" : "Please enter the max search offset (hex starting with 0x)",
+    "请输入最大搜索层数" : "Please enter the max search level",
+    "当开始搜索之后, 建议将设备放入冰箱以防止过热降频, 可以加快搜索." : "After starting the search, it is recommended to put the device in the refrigerator to prevent overheating and frequency reduction, which can speed up the search.",
+    "无效的数据地址, 无法读取该地址" : "Invalid data address, the address cannot be read!",
+};
+
+function Localized(str) {
+    if(navigator.language.indexOf("zh-")==0)
+        return str;
+    return localizedString[str];
+}
 
 //***********************************************************
 (async () => {
@@ -10,13 +25,18 @@ var sleep = (timeountMS) => new Promise((resolve) => {
 await sleep(200);
 
 var minOffset = 0;
-var dataAddress = Number(prompt("请输入要搜索的数据地址(0x开头十六进制)\n\nPlease enter the data address to be searched (hexadecimal starting with 0x)"));
+    
+var versionInfo = "(v7)";
+
+var dataAddress = Number(prompt(Localized("请输入要搜索的数据地址(0x开头十六进制)")));
 if(!dataAddress) return alert("输入的参数有误\n\nIncorrect parameter entered");
-if(h5gg.getValue(dataAddress, "I8")=="") return alert("无效的数据地址, 无法读取该地址\n\nInvalid data address, the address cannot be read");
-var maxOffset = Number(prompt("请输入最大搜索偏移(0x开头十六进制)\n\nPlease enter the maximum search offset (hexadecimal starting with 0x)"));
+if(h5gg.getValue(dataAddress, "I8")=="") return alert(Localized("无效的数据地址, 无法读取该地址"));
+var maxOffset = Number(prompt(Localized("请输入最大搜索偏移(0x开头十六进制)")));
 if(!maxOffset) return alert("输入的参数有误\n\nIncorrect parameter entered");
-var maxLevel = Number(prompt("请输入最大搜索层数\n\nPlease enter a maximum search level"));
+var maxLevel = Number(prompt(Localized("请输入最大搜索层数")));
 if(!maxLevel) return alert("输入的参数有误\n\nIncorrect parameter entered");
+
+alert(Localized("当开始搜索之后, 建议将设备放入冰箱以防止过热降频, 可以加快搜索."));
     
 /*/////////////////////////////////////////////////////////////
 
@@ -53,14 +73,13 @@ function showlog(msg)
     var html = msg;
 
     if(!window.stopAutoSearchOffset) {
-        html += "<br/><button onclick='window.stopAutoSearchOffset=true;'>停止Stop</button>";
         if(window.pauseAutoSearchOffset)
-            html += "<button onclick='window.pauseAutoSearchOffset=false;'>继续Continue</button>";
+            html += "<br/><button onclick='window.stopAutoSearchOffset=true;'>停止Stop</button><button onclick='window.pauseAutoSearchOffset=false;'>继续Continue</button>";
         else
-            html += "<button onclick='window.pauseAutoSearchOffset=true;'>暂停Pause</button>";
+            html += "<br/><button ontouchstart='window.stopAutoSearchOffset=true;'>停止Stop</button><button ontouchstart='window.pauseAutoSearchOffset=true;'>长按暂停Pause(LongPress)</button>";
     }
 
-    html += "<br/><br/>已找到"+FoundChains.length+"条偏移链(Found "+FoundChains.length+" chian(s)).";
+    html += "<br/><br/>已找到"+FoundChains.length+"条指针链(Found "+FoundChains.length+" chian(s)).";
  
     if(FoundChains.length>0) {
         for(var n=FoundChains.length; n>0; n--) {
@@ -91,6 +110,9 @@ function checkInModule(address, chain)
     }
 }
 
+showlog(Localized("自动搜索指针链")+" "+versionInfo+"<br/>");
+await sleep(200);
+
 var gLevelResults = [ { addr:dataAddress, chain:[] } ];
 
 for(var level=0; level<maxLevel; level++)
@@ -98,7 +120,7 @@ for(var level=0; level<maxLevel; level++)
     var LevelResults = gLevelResults;
     gLevelResults = [];
 
-    showlog("开始搜索第"+(level+1)+"层...");
+    showlog("开始搜索第"+(level+1)+"层...<br/>search...level="+(level+1));
 
     for(var i=0; i<LevelResults.length; i++)
     {
@@ -117,11 +139,18 @@ for(var level=0; level<maxLevel; level++)
         var info = "搜索第"+(level+1)+"层第"+(i+1)+"/"+LevelResults.length+"个指针=>"+gLevelResults.length+"+"+count;
         info += "<br/>searching...level="+(level+1)+",index="+(i+1)+"/"+LevelResults.length+"=>"+gLevelResults.length+"+"+count;
         showlog(info);
+        
+        var paused = window.pauseAutoSearchOffset;
 
         while(true)
         {
-            if(!window.pauseAutoSearchOffset || window.stopAutoSearchOffset)
+            if(!window.pauseAutoSearchOffset || window.stopAutoSearchOffset) {
+                if(paused && !window.pauseAutoSearchOffset) {
+                    showlog("继续搜索Continue Search...");
+                    await sleep(200);
+                }
                 break;
+            }
             await sleep(100);
         }
         
@@ -130,12 +159,15 @@ for(var level=0; level<maxLevel; level++)
         var results = h5gg.getResults(count);
 
         results.map(function(obj) {
-            var offset = Number(dataAddress) - Number(obj.value);
+            var p = Number(obj.value);
+            if(p<start || p>end) return; //filter h5gg itself data and invalid data
+            if(level>0 && (p%8)>0) return; //filter unaligned pointer
+            var offset = Number(dataAddress) - p;
             offset = '0x'+offset.toString(16);
             var chain2 = [offset, ...chain];
             checkInModule(obj.address, chain2);
             gLevelResults.push({addr:obj.address, chain:chain2});
-            // obj.value='0x'+Number(obj.value).toString(16);
+            // obj.value='0x'+p.toString(16);
             // return obj;
         });
 

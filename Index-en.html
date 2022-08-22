@@ -476,7 +476,7 @@ document.addEventListener("DOMContentLoaded", function(){
         if(typeof h5gg!='undefined')
             datavalue = h5gg.getValue(address, h5ggType(datatype));
         
-        showPopView("Edit", function(type, value){
+        showPopView("&nbsp;&nbsp;Edit&nbsp;&nbsp;", function(type, value){
             
             if(!h5gg.setValue(address, value, h5ggType(type))) {
                 alert("The modification failed, the address may be invalid!");
@@ -597,8 +597,8 @@ function showPopView(name, action, type, value)
 {
     $("#maskview").show();
     $("#popup_search_edit").show();
-    $("#popup_search_edit").find("B#titleBar").text(name);
-    $("#popup_search_edit").find("button#action").text(name);
+    $("#popup_search_edit").find("B#titleBar").html(name);
+    $("#popup_search_edit").find("button#action").html(name);
     
     if(type) {
         $("table#datatype td").each(function(){
@@ -802,7 +802,7 @@ function onClickMakeTweak()
 <tr>
 <td style="vertical-align:top;width:135px;border-right:solid 2px #D1D1D1;">
 <div>
-MemStart:<input id="range_min" style="width:77px;padding-left:0" value="0x00000000" />
+MemStart:<input id="range_min" style="width:76px;padding-left:0" value="0x00000000" />
 <br/>
 MemEnd:<input id="range_max" style="width:80px;padding-left:0"  value="0x200000000" />
 <br/>

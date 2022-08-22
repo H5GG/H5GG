@@ -20,6 +20,19 @@
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 #pragma GCC diagnostic ignored "-Wmissing-braces"
 
+void dumpKeyWindow(const char* tag) //only for debug mode
+{
+//    UIWindow* keyWindow = UIApplication.sharedApplication.keyWindow;
+//    NSLog(@"%s:Autorotate=%d, supportedOrientations=%d, deviceOrientation=%d, statusBarOrientation=%d, keyWindow=%@",
+//          tag,
+//          keyWindow.rootViewController.shouldAutorotate,
+//          keyWindow.rootViewController.supportedInterfaceOrientations,
+//          UIDevice.currentDevice.orientation,
+//          UIApplication.sharedApplication.statusBarOrientation,
+//          keyWindow
+//          );
+}
+
 
 bool g_dylib_runmode = false;
 bool g_testapp_runmode = false;
@@ -415,8 +428,8 @@ void showFloatWindowContinue(bool show)
              [floatWindow bringSubviewToFront:floatBtn];
          });
     } else {
-        [UIApplication.sharedApplication.keyWindow addSubview:floatBtn];
-        [floatWindow setHidden:YES];
+        [floatWindow setHidden:YES]; //floatWindow可能已经成为keyWindow, hidden之后系统会指定新的keyWindow
+        [UIApplication.sharedApplication.keyWindow addSubview:floatBtn]; //floatWindow hidden之后再调用否则图标闪烁
         //floatBtn.keepFront = YES;
     }
 }

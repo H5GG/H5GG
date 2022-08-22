@@ -5,7 +5,7 @@ var modules = h5gg.getRangesList("ModuleFileName");
 
 var base = Number(modules[0].start);
 
-var addr = base + _offset_; //your offset
+var addr = base + 0x123456; //add offset
 
 var pointer = h5gg.getValue(addr, "U64");
 
