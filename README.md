@@ -10,7 +10,7 @@ support load scripts(*.js or *.html file) from loacl or web dynamically.
 
 support load dylib plugin for javascript api ([demo](/pluginDemo/customAlert)).  
 
-support [auto search static pointer and offsets of the value](/examples-JavaScript/AutoSearchPointerChains.js)
+support [auto search static pointer and offsets of the value](/examples-JavaScript/AutoSearchPointerChains.js).
 
 and you can customize UI by using [HTML+CSS](/examples-HTML5/) without computer.
 
