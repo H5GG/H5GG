@@ -1,13 +1,14 @@
 
 ----for jailbroken:
-copy h5frida dylib into h5gg.app folder
-install frida-server deb which in frida-server(jailbroken) folder
-
+copy h5frida dylib into h5gg.app folder.
+install frida-server deb which in frida-server(jailbroken) folder.
+  for release, you can merge frida-server.deb and h5gg.deb,
+    or put frida-server.deb into h5gg.deb then add a auto-install command to postinst
 
 
 ----for non-jailbreak:
-copy h5frida dylib into .app folder of ipa
-copy all files which in frida-server(non-jailbreak) into .app folder of ipa
+copy h5frida dylib into .app folder of ipa.
+copy all files which in frida-server(non-jailbreak) into .app folder of ipa.
 
 
 
@@ -15,4 +16,8 @@ copy all files which in frida-server(non-jailbreak) into .app folder of ipa
 https://frida.re/docs/javascript-api/
 
 
-----The new version of h5frida may not be compatible with the old version, if you need to upgrade, please replace all the files with the new version, and carefully check the js sample code of the new version.
+----The new version of h5frida may not be compatible with the old version, 
+    so if you need to upgrade, please replace all the files with the new version, 
+    and carefully check the js sample code of the new version.
+
+    

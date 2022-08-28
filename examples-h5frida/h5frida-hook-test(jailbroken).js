@@ -1,10 +1,11 @@
-h5gg.require(7.8); //设定最低需求的H5GG版本号//min version support for H5GG
+h5gg.require(7.9); //设定最低需求的H5GG版本号//min version support for H5GG
 
 //获取h5gg当前选择的进程号 //Get the currently selected process ID of h5gg
 var pid = $("#procname").attr('pid');
 if(!pid) throw "无法获取h5gg选择的进程, 请使用h5gg跨进程版测试\nUnable to get the process selected by h5gg, please use h5gg cross-process app to test";
 
-//越狱:安装frida核心deb, 支持Interceptor进行inline hook功能 //install frida-server deb for jailbroken
+//install frida-server deb for jailbroken
+//越狱:安装frida核心deb, 支持Interceptor进行inline hook功能
 
 //将h5frida-15.1.24.dylib放到h5ggapp.app目录中 //put h5frida dylib into h5ggapp.app folder
 var h5frida=h5gg.loadPlugin("h5frida","h5frida-15.1.24.dylib");
@@ -32,7 +33,8 @@ while(true) {
     var frontapp = h5frida.get_frontmost_application();
     if(frontapp && frontapp.pid == pid) break;
     
-    alert("请将目标APP切换至前台运行, 再点击确定继续...\nPlease switch the target APP to the foreground to run, and then click OK to continue...");
+    alert("请将目标APP切换至前台运行, 再点击确定继续...\n"
+          + "Please switch the target APP to the foreground to run, and then click OK to continue...");
 }
 
 var session = h5frida.attach(pid);
@@ -43,30 +45,32 @@ session.on("detached", function(reason) {
     alert("frida目标进程会话已终止(frida target process session terminated):\n"+reason);
 });
 
+var frida_script_line = frida_script("getline"); //safari console will auto add 2 line
 var frida_script_code = "("+frida_script.toString()+")()"; //将frida脚本转换成字符串
 var script = session.create_script(frida_script_code); //注入frida的js脚本代码
 
 if(!script) throw "frida注入脚本失败\n\nfrida inject script failed!";
 
-/*启动脚本前先设置frida脚本消息接收函数
-不要在frida脚本里发太多高频消息过来让h5gg弹出alert
-消息太多让alert阻塞在后台内存会爆导致闪退崩溃
- 
+/*启动脚本前先设置frida脚本消息接收函数, 不要在frida脚本里发太多高频消息过来让h5gg弹出alert, 消息太多让alert阻塞在后台内存会爆导致闪退崩溃
  Set the frida script message receiving function before starting the script,
  Don't send too many high-frequency messages in the frida script to let h5gg show alerts,
  because too many messages to alert will block h5frida in the background, and cause out-of-memory and crashes.
  */
 script.on('message', function(msg) {
-    if(msg.type=='error')
-    {
+    if(msg.type=='error') {
         script.unload(); //如果脚本发生错误就停止frida脚本
-        alert("frida脚本错误(script error):\n"+JSON.stringify(msg));
+        try {if(msg.fileName=="/frida_script.js") msg.lineNumber += frida_script_line-1;} catch(e) {}
+        if(Array.isArray(msg.info)) msg.info.map(function(item){ try { if(item.fileName=="/frida_script.js")
+            item.lineNumber += frida_script_line-1;} catch(e) {}; return item;});
+        var errmsg = JSON.stringify(msg,null,1).replace(/\/frida_script\.js\:(\d+)/gm,
+            function(m,c,o,a){return "/frida_script.js:"+(Number(c)+frida_script_line-1);});
+        alert("frida(脚本错误)script error:\n"+errmsg.replaceAll("\\n","\n"));
     }
     
     if(msg.type=='send')
-        alert("frida脚本消息(srcipt msg):\n"+JSON.stringify(msg.payload));
+        alert("frida(脚本消息)srcipt msg:\n"+JSON.stringify(msg.payload,null,1));
     if(msg.type=='log')
-        alert("frida脚本日志(script log):\n"+msg.payload);
+        alert("frida(脚本日志)script log:\n"+msg.payload);
 });
 
 if(!script.load()) throw "frida启动脚本失败\n\nfrida load script failed"; //启动脚本
@@ -112,8 +116,8 @@ setTimeout(function(){
  You cannot use any h5gg functions and variables in frida's js script code, nor can you use the window object
  h5gg and frida can only communicate through console.log and send/recv/post and rpc.exports
  */
-function frida_script()
-{
+function frida_script() { if(arguments.length) return new Error().line; //do not modify this line!!!
+
     //发送frida脚本的日志消息给h5gg
     console.log("frida脚本正在运行...\nfrida script is running...");
 

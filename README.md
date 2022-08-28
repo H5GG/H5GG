@@ -8,9 +8,9 @@ provide memory [APIs](/examples-JavaScript/) likely Android-GG's Lua APIs.
 
 support load scripts(*.js or *.html file) from loacl or web dynamically.
 
-support load dylib plugin for javascript api ([demo](/PluginDemo/customAlert)).  
+support load dylib plugin for javascript api ([demo](/pluginDemo/customAlert)).  
 
-support [auto search pointer chains of a value/data](/examples-JavaScript/AutoSearchPointerChains.js)
+support [auto search static pointer and offsets of the value](/examples-JavaScript/AutoSearchPointerChains.js)
 
 and you can customize UI by using [HTML+CSS](/examples-HTML5/) without computer.
 

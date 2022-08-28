@@ -1,9 +1,0 @@
-Package: com.h5gg.plugin.frida.fishhook
-Name: frida-fishhook
-Depends: 
-Version: 0.0.1
-Architecture: iphoneos-arm
-Description: com.h5gg.plugin.frida.fishhook
-Maintainer: @CrazyMind90
-Author: @CrazyMind90
-Section: Tweaks

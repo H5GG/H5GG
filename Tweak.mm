@@ -590,8 +590,8 @@ static void __attribute__((constructor)) _init_()
     NSString* app_path = [[NSBundle mainBundle] bundlePath];
     NSString* app_package = [[NSBundle mainBundle] bundleIdentifier];
     
-    NSLog(@"H5GGLoad:%d %d hash:%p app_path=%@\nfirst module header=%p slide=%p current=%p\nmodule=%s\n",
-          getuid(), getgid(), [app_package hash], app_path,
+    NSLog(@"H5GGLoad:%d %d %d %d hash:%p app_path=%@\nfirst module header=%p slide=%p current=%p\nmodule=%s\n",
+          getuid(), geteuid(), getgid(), getegid(), [app_package hash], app_path,
           _dyld_get_image_header(0), _dyld_get_image_vmaddr_slide(0),
           di.dli_fbase, di.dli_fname);
     

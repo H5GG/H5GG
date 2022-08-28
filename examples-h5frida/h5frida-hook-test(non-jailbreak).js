@@ -1,32 +1,20 @@
-h5gg.require(7.8); //设定最低需求的H5GG版本号//min version support for H5GG
+h5gg.require(7.9); //设定最低需求的H5GG版本号//min version support for H5GG
 
-//将h5frida-15.1.24.dylib放到.app目录中
-//put h5frida-15.1.24.dylib into .app folder
+//将h5frida-15.1.24.dylib放到.app目录中 //put h5frida-15.1.24.dylib into .app folder of ipa
 var h5frida=h5gg.loadPlugin("h5frida", "h5frida-15.1.24.dylib");
 if(!h5frida) throw "加载h5frida插件失败\n\nFailed to load h5frida plugin";
+
+alert("h5frida插件版本="+h5frida.pluginVersion() + "\nfrida引擎版本="+h5frida.coreVersion()+"\n\n"
+      +"frida plugin version="+h5frida.pluginVersion() + "\nfrida core version="+h5frida.coreVersion());
 
 //优先调用集成的frida核心, 将frida-gadget的dylib和config两个文件放到.app目录中
 if(!h5frida.loadGadget("frida-gadget-15.1.24.dylib"))
     throw "加载frida-gadget守护模块失败\n\nFailed to load frida-gadget daemon module";
     
-alert("h5frida插件版本="+h5frida.pluginVersion()
-          + "\nfrida引擎版本="+h5frida.coreVersion()+"\n\n"
-          +"frida plugin version="+h5frida.pluginVersion()
-          + "\nfrida core version="+h5frida.coreVersion());
-
-/*
- 这里如果frida-gadget刚加载还没初始化完毕可能无法获取到进程列表
- 所以上面加了一个alert弹框延, 给frida-gadget一点初始化时间
- 第二种方式是将frida-gadget注入ipa自动随app自动加载
- 
- Here, if frida-gadget has just been loaded and has not been initialized, the process list may not be obtained. So an alert pop-up delay is added to the above, giving frida-gadget a little initialization timeIt's almost time to get the process list after the above alert pop-up-box is closed. The second way is to inject frida-gadget into ipa to automatically load with the app.
- */
-    
 var procs = h5frida.enumerate_processes();
 if(!procs || !procs.length) throw "frida无法获取进程列表\n\nfrida can't get process list";
 
-var pid = -1;
-//pid=-1, 使用自身进程来调用OC/C/C++函数, 也可以附加到其他APP进程来调用
+var pid = -1; //pid=-1, 使用自身进程来调用OC/C/C++函数, 也可以附加到其他APP进程来调用
 //Use its own process to call OC/C/C++ functions, or attach to other APP processes to call
 
 var found = false;
@@ -47,30 +35,33 @@ session.on("detached", function(reason) {
     alert("frida目标进程会话已终止(frida target process session terminated):\n"+reason);
 });
 
+var frida_script_line = frida_script("getline"); //safari console will auto add 2 line
 var frida_script_code = "("+frida_script.toString()+")()"; //将frida脚本转换成字符串
 var script = session.create_script(frida_script_code); //注入frida的js脚本代码
 
 if(!script) throw "frida注入脚本失败\n\nfrida inject script failed!";
 
-/*启动脚本前先设置frida脚本消息接收函数
-不要在frida脚本里发太多高频消息过来让h5gg弹出alert
-消息太多让alert阻塞在后台内存会爆导致闪退崩溃
- 
+/*启动脚本前先设置frida脚本消息接收函数, 不要在frida脚本里发太多高频消息过来让h5gg弹出alert, 消息太多让alert阻塞在后台内存会爆导致闪退崩溃
  Set the frida script message receiving function before starting the script,
  Don't send too many high-frequency messages in the frida script to let h5gg show alerts,
  because too many messages to alert will block h5frida in the background, and cause out-of-memory and crashes.
  */
+
 script.on('message', function(msg) {
-    if(msg.type=='error')
-    {
+    if(msg.type=='error') {
         script.unload(); //如果脚本发生错误就停止frida脚本
-        alert("frida脚本错误(script error):\n"+JSON.stringify(msg));
+        try {if(msg.fileName=="/frida_script.js") msg.lineNumber += frida_script_line-1;} catch(e) {}
+        if(Array.isArray(msg.info)) msg.info.map(function(item){ try { if(item.fileName=="/frida_script.js")
+            item.lineNumber += frida_script_line-1;} catch(e) {}; return item;});
+        var errmsg = JSON.stringify(msg,null,1).replace(/\/frida_script\.js\:(\d+)/gm,
+            function(m,c,o,a){return "/frida_script.js:"+(Number(c)+frida_script_line-1);});
+        alert("frida(脚本错误)script error:\n"+errmsg.replaceAll("\\n","\n"));
     }
     
     if(msg.type=='send')
-        alert("frida脚本消息(srcipt msg):\n"+JSON.stringify(msg.payload));
+        alert("frida(脚本消息)srcipt msg:\n"+JSON.stringify(msg.payload,null,1));
     if(msg.type=='log')
-        alert("frida脚本日志(script log):\n"+msg.payload);
+        alert("frida(脚本日志)script log:\n"+msg.payload);
 });
 
 if(!script.load()) throw "frida启动脚本失败\n\nfrida load script failed"; //启动脚本
@@ -116,64 +107,16 @@ setTimeout(function(){
  You cannot use any h5gg functions and variables in frida's js script code, nor can you use the window object
  h5gg and frida can only communicate through console.log and send/recv/post and rpc.exports
  */
-function frida_script()
-{
+function frida_script() { if(arguments.length) return new Error().line; //do not modify this line!!!
+
     //发送frida脚本的日志消息给h5gg
     console.log("frida脚本正在运行...\nfrida script is running...");
-    
-    //获取.app路径
-    var app_path = ObjC.classes.NSBundle.mainBundle().bundlePath().toString();
-    //加载fishhook插件, 需要将fishhook.dylib放到.app目录中
-    var fishhookModule = Module.load(app_path+"/fishhook.dylib");
-    //获取fishhook导出函数: fishhook(指定模块地址, 函数名称, 新函数地址) 返回原始函数地址, 模块地址=0代表HOOK所有模块
-    var fishhookExport = fishhookModule.getExportByName("fishhook");
-    //转换成js函数对象
-    var fishhookFunction = new NativeFunction(fishhookExport, "pointer", ["pointer", "pointer", "pointer"]);
-    
-    global.fishhook = function(functionName, returnType, argTypes, callback) {
-        
-        //NativeCallback不能被释放所以存到callback的属性中(务必)
-        callback.NativeCallback = new NativeCallback(callback, returnType, argTypes);
-        
-        var oldFunctionAddr = fishhookFunction(ptr(0), Memory.allocUtf8String(functionName), callback.NativeCallback);
-        
-        if(!oldFunctionAddr || oldFunctionAddr.isNull())
-            throw "fishhookError:"+functionName;
-        
-        if(!global["dlsym_init"])
-        {
-            global["dlsym_init"] = true;
-            global["dlsym_hook"] = {};
-            
-            //拦截动态调用目标函数
-            var dlsym = fishhook("dlsym", "pointer", ["pointer", "pointer"], function(handle, symbol) {
-                var addr = dlsym(handle, symbol);
-                //send(["dlsym", handle, symbol.readUtf8String(), addr, global["dlsym_hook"][addr]]);
-
-                if(global["dlsym_hook"][addr]) {
-                    //send(["dlsym attach", handle, symbol.readUtf8String(), addr, global["dlsym_hook"][addr]]);
-                    addr = global["dlsym_hook"][addr];
-                }
-
-                return addr;
-            });
-        }
-        
-        global["dlsym_hook"][oldFunctionAddr] = callback.NativeCallback;
-        
-        //将原始函数转换成js函数对象
-        return new NativeFunction(oldFunctionAddr, returnType, argTypes);
-    }
-    
-    /*******************************************************/
-    /*******************************************************/
-    /*******************************************************/
     
     //HOOK拦截dylib模块中的C/C++导出函数, 非模块导出函数不能hook
     rpc.exports.hook_API=function()
     {
         //HOOK所有静态引入和后续动态获取的fopen调用
-        var fopen = fishhook("fopen", //要HOOK的C/C++导出函数名称
+        var fopen = h5frida.fishhook("fopen", //要HOOK的C/C++导出函数名称
                  "pointer", //要HOOK的C/C++导出函数返回值类型
                  ["pointer", "pointer"], //要HOOK的C/C++导出函数参数类型列表
                  function(path, mode) //HOOK之后的js处理函数

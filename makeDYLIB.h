@@ -10,6 +10,7 @@
 
 #include "incbin.h"
 #include <sys/stat.h>
+#include <libgen.h>
 
 INCBIN(H5ICON_STUB_FILE, "H5ICON_STUB_FILE");
 INCBIN(H5MENU_STUB_FILE, "H5MENU_STUB_FILE");
@@ -62,7 +63,7 @@ NSString* makeDYLIB(NSString* iconfile, NSString* htmlurl)
     
     NSString* savePath = [NSString stringWithFormat:@"%@/Documents/H5GG.dylib", NSHomeDirectory()];
     
-    if(g_systemapp_runmode || g_standalone_runmode)
+    if(access(dirname((char*)savePath.UTF8String), W_OK)!=0 && (g_systemapp_runmode || g_standalone_runmode))
         savePath = @"/var/tmp/H5GG.dylib"; /* var/mobile/Documents 可能为root所有而写入失败 */
     
     NSError* error=nil;

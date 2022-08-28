@@ -1,9 +1,0 @@
-Package: com.h5gg.plugin.frida.staticinlinehook
-Name: frida-static-inline-hook
-Depends: 
-Version: 0.0.1
-Architecture: iphoneos-arm
-Description: com.h5gg.plugin.frida.staticinlinehook
-Maintainer: @CrazyMind90
-Author: @CrazyMind90
-Section: Tweaks
