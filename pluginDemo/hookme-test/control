@@ -1,0 +1,9 @@
+Package: com.h5gg.plugin.hookme
+Name: hookme
+Depends: 
+Version: 0.0.1
+Architecture: iphoneos-arm
+Description: h5gg.plugin.hookme
+Maintainer: @CrazyMind90
+Author: @CrazyMind90
+Section: Tweaks
