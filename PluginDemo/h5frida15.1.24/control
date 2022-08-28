@@ -1,9 +1,0 @@
-Package: com.h5gg.plugin.h5frida
-Name: h5frida
-Depends: 
-Version: 0.0.1
-Architecture: iphoneos-arm
-Description: h5gg.plugin.h5frida
-Maintainer: @CrazyMind90
-Author: @CrazyMind90
-Section: Tweaks
