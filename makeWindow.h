@@ -14,7 +14,7 @@ UIWindow* makeWindow(NSString* clazz)
 {
     UIWindow* w = nil;
     
-    if (@available(iOS 13.0, *)) {
+    if ([[[UIDevice currentDevice] systemVersion] compare:@"13" options:NSNumericSearch] != NSOrderedAscending) {
         UIWindowScene* theScene=nil;
         for (UIWindowScene* windowScene in [UIApplication sharedApplication].connectedScenes) {
             NSLog(@"windowScene=%@ %@ state=%ld", windowScene, windowScene.windows, (long)windowScene.activationState);
