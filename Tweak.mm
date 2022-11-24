@@ -17,7 +17,6 @@
 #pragma GCC diagnostic ignored "-W#warnings"
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #pragma GCC diagnostic ignored "-Wformat"
-#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 #pragma GCC diagnostic ignored "-Wmissing-braces"
 
 void dumpKeyWindow(const char* tag) //only for debug mode
