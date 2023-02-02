@@ -6,7 +6,7 @@ an iOS Cheat Engine for JavaScript APIs & Html5 UI.
 
 provide memory [APIs](/examples-JavaScript/) likely Android-GG's Lua APIs.
 
-support load scripts(*.js or *.html file) from loacl or web dynamically.
+support load scripts(*.js or *.html file) from loacl or network.
 
 support load dylib plugin for javascript api ([demo](/pluginDemo/customAlert)).  
 
@@ -14,7 +14,7 @@ support [auto search static pointer and offsets of the value](/examples-JavaScri
 
 and you can customize UI by using [HTML+CSS](/examples-HTML5/) without computer.
 
-and you can make your own tweak(dylib) by click one button, then just select your icon and .html file, so easy!
+and you can make your own tweak(dylib) by click one button, so easy!
 
 
 
@@ -76,11 +76,11 @@ the host app need get-task-allow entitlement (jailbroken or sign by Developer Ce
 
 the GlobalView module of Floating APP requires these tweaks and may need to update for new ios version.
 
-[libAPAppView](https://github.com/Baw-Appie/libAPAppView) : libH5GG.A.dylib (com.rpgfarm.libapappview)
++ [libAPAppView](https://github.com/Baw-Appie/libAPAppView) : libH5GG.A.dylib (com.rpgfarm.libapappview)
 
-[BackgrounderAction] : libH5GG.B12.dylib (jp.akusio.backgrounderaction12) for ios11~ios12 
++ BackgrounderAction : libH5GG.B12.dylib (jp.akusio.backgrounderaction12) for ios11~ios12 
 
-[BackgrounderAction2] : libH5GG.B.dylib (jp.akusio.backgrounderaction13) for ios13+
++ BackgrounderAction2 : libH5GG.B.dylib (jp.akusio.backgrounderaction13) for ios13+
 
 
 
