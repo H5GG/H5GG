@@ -1,6 +1,6 @@
 # H5GG
 
-**Discuss in [https://discord.gg/H5GG](https://discord.gg/RRMdMsBS4k) or [https://iosgods.com/](https://iosgods.com/forum/595-h5gg-igamegod/)**
+**Discuss in [https://discord.gg/H5GG](https://discord.gg/FAs4MH7HMc) or [https://iosgods.com/](https://iosgods.com/forum/595-h5gg-igamegod/)**
 
 an iOS Cheat Engine for JavaScript APIs & Html5 UI.
 
@@ -76,12 +76,11 @@ the host app need get-task-allow entitlement (jailbroken or sign by Developer Ce
 
 the GlobalView module of Floating APP requires these tweaks and may need to update for new ios version.
 
-+ [libAPAppView](https://github.com/Baw-Appie/libAPAppView) : libH5GG.A.dylib (com.rpgfarm.libapappview)
-
 + BackgrounderAction : libH5GG.B12.dylib (jp.akusio.backgrounderaction12) for ios11~ios12 
 
 + BackgrounderAction2 : libH5GG.B.dylib (jp.akusio.backgrounderaction13) for ios13+
 
++ [libAPAppView](https://github.com/Baw-Appie/libAPAppView) : libH5GG.A.dylib (com.rpgfarm.libapappview) for ios13+
 
 
 
