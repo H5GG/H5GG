@@ -8,6 +8,7 @@
 #include "Localized.h"
 
 //忽略一些警告
+#pragma GCC diagnostic ignored "-Wunknown-warning-option"
 #pragma GCC diagnostic ignored "-Warc-retain-cycles"
 
 #pragma GCC diagnostic ignored "-Warc-performSelector-leaks"
