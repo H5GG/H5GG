@@ -1,4 +1,5 @@
 
+*.i64
 .DS_Store
 .theos
 /AppDelegate.h
