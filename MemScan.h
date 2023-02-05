@@ -144,55 +144,110 @@ class JJMemoryEngine
         
         register uint64_t p=buffer;
         uint64_t end = buffer + size - len;
-        if(type==JJ_Search_Type_Float) {
-            register float value_up =  *((float*)target+1) + this->float_tolerance;
-            register float value_down = *(float*)target - this->float_tolerance;
-            while(p<=end) {
-                register float v = *(float*)p;
-                if(v>=value_down && v<=value_up) break;
-                p+=len;
-            }
-        } else if(type==JJ_Search_Type_Double) {
-            register double value_up =  *((double*)target+1) + this->float_tolerance;
-            register double value_down = *(double*)target - this->float_tolerance;
-            while(p<=end) {
-                register double v = *(double*)p;
-                if(v>=value_down && v<=value_up) break;
-                p+=len;
-            }
-        } else if(len==1) {
-            register uint8_t value_up =  *((uint8_t*)target+1);
-            register uint8_t value_down = *(uint8_t*)target;
-            while(p<=end) {
-                register uint8_t v = *(uint8_t*)p;
-                if(v>=value_down && v<=value_up) break;
-                p+=len;
-            }
-        } else if(len==2) {
-            register uint16_t value_up =  *((uint16_t*)target+1);
-            register uint16_t value_down = *(uint16_t*)target;
-            while(p<=end) {
-                register uint16_t v = *(uint16_t*)p;
-                if(v>=value_down && v<=value_up) break;
-                p+=len;
-            }
-        } else if(len==4) {
-            register uint32_t value_up =  *((uint32_t*)target+1);
-            register uint32_t value_down = *(uint32_t*)target;
-            while(p<=end) {
-                register uint32_t v = *(uint32_t*)p;
-                if(v>=value_down && v<=value_up) break;
-                p+=len;
-            }
-        } else if(len==8) {
-            register uint64_t value_up =  *((uint64_t*)target+1);
-            register uint64_t value_down = *(uint64_t*)target;
-            while(p<=end) {
-                register uint64_t v = *(uint64_t*)p;
-                if(v>=value_down && v<=value_up) break;
-                p+=len;
-            }
+        
+        switch(type)
+        {
+            case JJ_Search_Type_Float: {
+                register float value_up =  *((float*)target+1) + this->float_tolerance;
+                register float value_down = *(float*)target - this->float_tolerance;
+                while(p<=end) {
+                    register float v = *(float*)p;
+                    if(v>=value_down && v<=value_up) break;
+                    p+=len;
+                }
+            } break;
+                
+            case JJ_Search_Type_Double: {
+                register double value_up =  *((double*)target+1) + this->float_tolerance;
+                register double value_down = *(double*)target - this->float_tolerance;
+                while(p<=end) {
+                    register double v = *(double*)p;
+                    if(v>=value_down && v<=value_up) break;
+                    p+=len;
+                }
+            } break;
+                
+            case JJ_Search_Type_SByte: {
+                register int8_t value_up =  *((int8_t*)target+1);
+                register int8_t value_down = *(int8_t*)target;
+                while(p<=end) {
+                    register int8_t v = *(int8_t*)p;
+                    if(v>=value_down && v<=value_up) break;
+                    p+=len;
+                }
+            } break;
+                
+            case JJ_Search_Type_UByte: {
+                register uint8_t value_up =  *((uint8_t*)target+1);
+                register uint8_t value_down = *(uint8_t*)target;
+                while(p<=end) {
+                    register uint8_t v = *(uint8_t*)p;
+                    if(v>=value_down && v<=value_up) break;
+                    p+=len;
+                }
+            } break;
+                
+            case JJ_Search_Type_SShort: {
+                register int16_t value_up =  *((int16_t*)target+1);
+                register int16_t value_down = *(int16_t*)target;
+                while(p<=end) {
+                    register int16_t v = *(int16_t*)p;
+                    if(v>=value_down && v<=value_up) break;
+                    p+=len;
+                }
+            } break;
+                
+            case JJ_Search_Type_UShort: {
+                register uint16_t value_up =  *((uint16_t*)target+1);
+                register uint16_t value_down = *(uint16_t*)target;
+                while(p<=end) {
+                    register uint16_t v = *(uint16_t*)p;
+                    if(v>=value_down && v<=value_up) break;
+                    p+=len;
+                }
+            } break;
+                
+            case JJ_Search_Type_SInt: {
+                register int32_t value_up =  *((int32_t*)target+1);
+                register int32_t value_down = *(int32_t*)target;
+                while(p<=end) {
+                    register int32_t v = *(int32_t*)p;
+                    if(v>=value_down && v<=value_up) break;
+                    p+=len;
+                }
+            } break;
+                
+            case JJ_Search_Type_UInt: {
+                register uint32_t value_up =  *((uint32_t*)target+1);
+                register uint32_t value_down = *(uint32_t*)target;
+                while(p<=end) {
+                    register uint32_t v = *(uint32_t*)p;
+                    if(v>=value_down && v<=value_up) break;
+                    p+=len;
+                }
+            } break;
+                
+            case JJ_Search_Type_SLong: {
+                register int64_t value_up =  *((int64_t*)target+1);
+                register int64_t value_down = *(int64_t*)target;
+                while(p<=end) {
+                    register int64_t v = *(int64_t*)p;
+                    if(v>=value_down && v<=value_up) break;
+                    p+=len;
+                }
+            } break;
+                
+            case JJ_Search_Type_ULong: {
+                register uint64_t value_up =  *((uint64_t*)target+1);
+                register uint64_t value_down = *(uint64_t*)target;
+                while(p<=end) {
+                    register uint64_t v = *(uint64_t*)p;
+                    if(v>=value_down && v<=value_up) break;
+                    p+=len;
+                }
+            } break;
         }
+        
         return p<=end ? p : 0;
     }
     
