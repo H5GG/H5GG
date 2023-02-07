@@ -1,6 +1,6 @@
 # H5GG
 
-**Discuss in [https://discord.gg/H5GG](https://discord.gg/FAs4MH7HMc) or [https://iosgods.com/](https://iosgods.com/forum/595-h5gg-igamegod/)**
+**Discuss in [Discord](https://discord.gg/FAs4MH7HMc) or [iOSGods](https://iosgods.com/forum/595-h5gg-igamegod/)**
 
 an iOS Cheat Engine for JavaScript APIs & Html5 UI.
 
