@@ -1,12 +1,12 @@
 # H5GG
 
-**Discuss in [https://discord.gg/H5GG](https://discord.gg/H5GG) or [https://iosgods.com/](https://iosgods.com/forum/595-h5gg-igamegod/)**
+**Discuss in [Discord](https://discord.gg/FAs4MH7HMc) or [iOSGods](https://iosgods.com/forum/595-h5gg-igamegod/)**
 
 an iOS Cheat Engine for JavaScript APIs & Html5 UI.
 
 provide memory [APIs](/examples-JavaScript/) likely Android-GG's Lua APIs.
 
-support load scripts(*.js or *.html file) from loacl or web dynamically.
+support load scripts(*.js or *.html file) from loacl or network.
 
 support load dylib plugin for javascript api ([demo](/pluginDemo/customAlert)).  
 
@@ -14,7 +14,7 @@ support [auto search static pointer and offsets of the value](/examples-JavaScri
 
 and you can customize UI by using [HTML+CSS](/examples-HTML5/) without computer.
 
-and you can make your own tweak(dylib) by click one button, then just select your icon and .html file, so easy!
+and you can make your own tweak(dylib) by click one button, so easy!
 
 
 
@@ -24,9 +24,9 @@ and you can make your own tweak(dylib) by click one button, then just select you
 
 2. [tweak(deb) auto load into all app for jailbroken devices](/packages/)
 
-3. [standalone APP for jailbroken devices(support iPad's SlideOver+SplitView)](/appstand/packages/)
+3. [standalone APP for jailbroken devices(compatible with iPad's SlideOver+SplitView)](/appstand/packages/)
 
-4. [Float On Screen for jailbroken devices(not support iPad's SlideOver+SplitView), this has tested on ios11+](/globalview/packages/)
+4. [Float On Screen for jailbroken devices(not compatible with iPad's SlideOver+SplitView), tested on ios11~ios14](/globalview/packages/)
 
 
 
@@ -72,7 +72,20 @@ the host app need get-task-allow entitlement (jailbroken or sign by Developer Ce
 ![text](/pictures/macos.png)
 
 
-it's all completely free & open source! Welcome to join development and submit bugs! 
+## Dependences:
+
+the GlobalView module of Floating APP requires these tweaks and may need to update for new ios version.
+
++ BackgrounderAction : libH5GG.B12.dylib (jp.akusio.backgrounderaction12) for ios11~ios12 
+
++ BackgrounderAction2 : libH5GG.B.dylib (jp.akusio.backgrounderaction13) for ios13+
+
++ [libAPAppView](https://github.com/Baw-Appie/libAPAppView) : libH5GG.A.dylib (com.rpgfarm.libapappview) for ios13+
+
 
 
 ## [H5GG JavaScript Engine Document](/h5gg-js-doc-en.js)
+
+
+it's all completely free & open source! Welcome to join development and submit bugs! 
+
