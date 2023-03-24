@@ -4,6 +4,7 @@
 #import <UIKit/UIKit.h>
 #import <pthread.h>
 #include <dlfcn.h>
+#import "UIImageGIF.h"
 
 #include "Localized.h"
 
@@ -49,13 +50,11 @@ GVData* PGVSharedData = &StaticGVSharedData;
 #include "incbin.h"
 
 #include "makeDYLIB.h"
-
 #include "makeWindow.h"
-
 #include "FloatWindow.h"
-
 //引入悬浮按钮头文件
 #include "FloatButton.h"
+
 //引入悬浮菜单头文件
 #include "FloatMenu.h"
 
@@ -64,10 +63,11 @@ GVData* PGVSharedData = &StaticGVSharedData;
 
 //嵌入图标文件
 INCBIN(Icon, "icon.png");
+
 //嵌入菜单H5文件
 INCTXT(Menu, "Index.html");
-INCTXT(MenuEn, "Index-en.html");
 
+INCTXT(MenuEn, "Index-en.html");
 INCTXT(H5GG_JQUERY_FILE, "jquery.min.js");
 
 //定义悬浮按钮和悬浮菜单全局变量, 防止被自动释放
@@ -266,13 +266,11 @@ FloatMenu* initFloatMenu(UIWindow* win)
     
     //给H5菜单添加一个JS函数setButtonImage用于设置网络图标
     [floatH5 setAction:@"setButtonImage" callback:^(NSString* url) {
-        NSURL* imageUrl = [NSURL URLWithString:url];
-        NSData* data = [NSData dataWithContentsOfURL:imageUrl];
-        NSLog(@"setFloatButton=%@", data);
+        NSLog(@"setFloatButton=%@", url);
         //通过主线程执行下面的代码
         dispatch_async(dispatch_get_main_queue(), ^{
             if(data) {
-                floatBtn.image = [UIImage imageWithData:data];
+                floatBtn.image = [UIImage animatedImageWithAnimatedGIFURL:[NSURL URLWithString:url]];
                 if(data.length<=sizeof(PGVSharedData->buttonImageData)) {
                     PGVSharedData->buttonImageSize = data.length;
                     [data getBytes:PGVSharedData->buttonImageData length:data.length];

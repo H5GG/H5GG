@@ -5,9 +5,10 @@ DEBUG=0
 STRIP=1
 FINALPACKAGE=1
 include $(THEOS)/makefiles/common.mk
+UTILS_SRC = $(wildcard Utils/*.mm) $(wildcard Utils/*.cpp) $(wildcard Utils/*.m)
 TWEAK_NAME = H5GG
 
-H5GG_FILES = Tweak.mm ldid-master/ldid.cpp ldid-master/lookup2.c
+H5GG_FILES = Tweak.mm $(UTILS_SRC) ldid-master/ldid.cpp ldid-master/lookup2.c
 H5GG_CFLAGS = -fobjc-arc -fvisibility=hidden 
 H5GG_CCFLAGS = -fobjc-arc -fvisibility=hidden -std=c++11
 H5GG_LOGOS_DEFAULT_GENERATOR = internal
