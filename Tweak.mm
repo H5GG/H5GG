@@ -4,7 +4,7 @@
 #import <UIKit/UIKit.h>
 #import <pthread.h>
 #include <dlfcn.h>
-#import "UIImageGIF.h"
+#import "Utils/UIImageGIF.h"
 
 #include "Localized.h"
 
@@ -269,15 +269,10 @@ FloatMenu* initFloatMenu(UIWindow* win)
         NSLog(@"setFloatButton=%@", url);
         //通过主线程执行下面的代码
         dispatch_async(dispatch_get_main_queue(), ^{
-            if(data) {
+            if(url) {
                 floatBtn.image = [UIImage animatedImageWithAnimatedGIFURL:[NSURL URLWithString:url]];
-                if(data.length<=sizeof(PGVSharedData->buttonImageData)) {
-                    PGVSharedData->buttonImageSize = data.length;
-                    [data getBytes:PGVSharedData->buttonImageData length:data.length];
-                }
             }
         });
-        return data?YES:NO;
     }];
     
     [floatH5 setAction:@"setButtonAction" callback:^(JSValue* callback) {
