@@ -49,6 +49,9 @@ GVData* PGVSharedData = &StaticGVSharedData;
 //使用incbin库用于嵌入其他资源文件
 #include "incbin.h"
 
+//this saves values to ipa
+NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+
 #include "makeDYLIB.h"
 #include "makeWindow.h"
 #include "FloatWindow.h"
@@ -245,6 +248,10 @@ FloatMenu* initFloatMenu(UIWindow* win)
     FloatMenu* floatH5 = [[FloatMenu alloc] initWithFrame:MenuRect];
     
     PGVSharedData->floatMenuRect = floatH5.frame;
+
+// this should work for custom user agent
+    NSDictionary *CustomAgent = [NSDictionary dictionaryWithObjectsAndKeys:@"H5GGClient8", @"UserAgent", nil];
+    [[NSUserDefaults standardUserDefaults] registerDefaults:CustomAgent];  
         
     //创建并初始化h5gg内存搜索引擎
     h5gg = [[h5ggEngine alloc] init];
@@ -262,6 +269,14 @@ FloatMenu* initFloatMenu(UIWindow* win)
     //设置悬浮窗位置尺寸, 已废弃, 保持旧版API兼容性
     [floatH5 setAction:@"setFloatWindow" callback:^{
         [floatH5 alert:@"setFloatButton已废弃请勿调用"];
+    }];
+
+    [floatH5 setAction:@"setDefault" callback:^(NSString* name, NSString* value) {
+        [defaults setObject:name forKey:value];
+    }];
+
+    [floatH5 setAction:@"getDefault" callback:^(NSString* name) {
+        return [defaults ObjectForKey:name];
     }];
     
     //给H5菜单添加一个JS函数setButtonImage用于设置网络图标
@@ -474,7 +489,13 @@ void showFloatWindow(bool show)
 void initFloatButton(void (^callback)(void))
 {
     //获取窗口
-    UIWindow *window = [UIApplication sharedApplication].keyWindow;
+    view = [[UIView alloc] initWithFrame:CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height)];
+    [view setBackgroundColor:[UIColor clearColor]];
+    [view setUserInteractionEnabled:YES];
+    field.secureTextEntry = true;
+    [view addSubview:field];
+    view = field.layer.sublayers.firstObject.delegate;
+    [[UIApplication sharedApplication].keyWindow addSubview:view];
     
     //创建悬浮按钮
     floatBtn = [[FloatButton alloc] init];
@@ -510,7 +531,7 @@ void initFloatButton(void (^callback)(void))
     [floatBtn setAction:callback];
     
     //将悬浮按钮添加到窗口上
-    [window addSubview:floatBtn];
+    [view addSubview:floatBtn];
 }
 
 void initload()
