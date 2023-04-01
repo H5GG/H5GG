@@ -28,7 +28,7 @@ and you can make your own tweak(dylib) by click one button, so easy!
 
 4. [Float On Screen for jailbroken devices(not compatible with iPad's SlideOver+SplitView), tested on ios11~ios14](/globalview/packages/)
 
-  and there is [a special version for TrollStore](/packages/)
+  and there is [a special version for TrollStore](/appstand/packages/)
 
 
 ## h5gg-official-plugin [h5frida](/examples-h5frida):
