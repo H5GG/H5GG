@@ -7,16 +7,20 @@ if(!h5frida) throw "加载h5frida插件失败\n\nFailed to load h5frida plugin";
 alert("h5frida插件版本="+h5frida.pluginVersion() + "\nfrida引擎版本="+h5frida.coreVersion()+"\n\n"
       +"frida plugin version="+h5frida.pluginVersion() + "\nfrida core version="+h5frida.coreVersion());
 
-function ActiveCodePatch(fpath, vaddr, bytes) {
-    if(!h5frida.ActiveCodePatch(fpath, vaddr, bytes)) {
-        var result = h5frida.ApplyCodePatch(fpath, vaddr, bytes);
-        alert(fpath+":0x"+vaddr.toString(16)+"-修改失败!\n" + fpath+":0x"+vaddr.toString(16)+"-PatchFailed!\n" + result);return false;
+function ActiveCodePatch(fpath, rvaddr, bytes) {
+    if(!h5frida.ActiveCodePatch(fpath, rvaddr, bytes)) {
+        var result = h5frida.ApplyCodePatch(fpath, rvaddr, bytes);
+        alert(fpath+":0x"+rvaddr.toString(16)+"-修改失败!\n" + fpath+":0x"+rvaddr.toString(16)+"-PatchFailed!\n" + result);return false;
     } return true;
 }
-function DeactiveCodePatch(fpath, vaddr, bytes) {
-    return h5frida.DeactiveCodePatch(fpath, vaddr, bytes);
+function DeactiveCodePatch(fpath, rvaddr, bytes) {
+    return h5frida.DeactiveCodePatch(fpath, rvaddr, bytes);
 }
-
+/* 
+rvaddr: relative virtual address
+Generally speaking, for dylib/framework,  rvaddr = [offset in file] = [address in IDA]
+for main executable, rvaddr = offset in file = [address in IDA] - [base address in IDA], the base address is usually 0x100000000.
+*/
 /**************************************************************************************/
 
 //hook前先将目标模块加载起来 //load hookme.test.dylib for testing to hook it
