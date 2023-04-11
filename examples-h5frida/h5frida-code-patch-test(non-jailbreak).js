@@ -17,6 +17,8 @@ function DeactiveCodePatch(fpath, rvaddr, bytes) {
     return h5frida.DeactiveCodePatch(fpath, rvaddr, bytes);
 }
 /* 
+fpath: relative path of the binary in the .app directory
+
 rvaddr: relative virtual address
 Generally speaking, for dylib/framework,  rvaddr = [offset in file] = [address in IDA]
 for main executable, rvaddr = offset in file = [address in IDA] - [base address in IDA], the base address is usually 0x100000000.
