@@ -420,7 +420,7 @@ NSMutableData* add_hook_section(NSMutableData* macho)
        NSLog(@"startsInfo new size=%x", append.length);
        [macho appendData:append];
        linkedit_seg->filesize += append.length;
-       linkedit_seg->vmsize += PAGE_SIZE;
+       linkedit_seg->vmsize += (append.length+PAGE_SIZE-1)&(~(PAGE_SIZE-1));;
    }
     
     NSLog(@"macho file size=%x", macho.length);
