@@ -2,6 +2,7 @@
 #include <mach-o/fat.h>
 #include <mach-o/loader.h>
 #include <mach-o/dyld.h>
+#include <mach-o/fixup-chains.h>
 #include <mach/vm_page_size.h>
 #include <Foundation/Foundation.h>
 
@@ -289,6 +290,8 @@ NSMutableData* add_hook_section(NSMutableData* macho)
     linkedit_seg->fileoff = macho.length+text_seg.filesize+data_seg.filesize;
     linkedit_seg->vmaddr = vm_end+text_seg.vmsize+data_seg.vmsize;
     
+    struct linkedit_data_command *chainedFixups = NULL;
+    
     // fix load_command
     struct load_command *load_cmd = (struct load_command *)((uint64_t)header + sizeof(*header));
     for (int i = 0; i < header->ncmds;
@@ -351,6 +354,7 @@ NSMutableData* add_hook_section(NSMutableData* macho)
           case LC_DYLD_CHAINED_FIXUPS:
           {
             struct linkedit_data_command *tmp = (struct linkedit_data_command *)load_cmd;
+              if(load_cmd->cmd==LC_DYLD_CHAINED_FIXUPS) chainedFixups=tmp; //save it before update dataoff
             if (tmp->dataoff) tmp->dataoff += fixoffset;
             NSLog(@"[-] fix linkedit_data_command done\n");
           } break;
@@ -374,6 +378,50 @@ NSMutableData* add_hook_section(NSMutableData* macho)
     free(datapage);
     
     [macho appendData:linkedit_data];
+    
+    if(chainedFixups)
+   {
+       NSLog(@"chainedFixups %p %x", chainedFixups->dataoff, chainedFixups->datasize);
+       
+       uint32_t offsetInLinkedit   = chainedFixups->dataoff - linkedit_seg->fileoff;
+       uintptr_t linkeditStartAddr = (uint64_t)header + linkedit_seg->fileoff;
+       
+       const dyld_chained_fixups_header* chainsHeader = (dyld_chained_fixups_header*)(linkeditStartAddr + offsetInLinkedit);
+       NSLog(@"chainsHeader offset=%x version=%d starts_offset=%x", offsetInLinkedit, chainsHeader->fixups_version, chainsHeader->starts_offset);
+       
+       const dyld_chained_starts_in_image* startsInfo = (dyld_chained_starts_in_image*)((uint8_t*)chainsHeader + chainsHeader->starts_offset);
+       NSLog(@"startsInfo seg_count=%d", startsInfo->seg_count);
+       
+       int startsInfoNewSize = sizeof(dyld_chained_starts_in_image) + sizeof(startsInfo->seg_info_offset)*(startsInfo->seg_count - 1 + 2);
+       
+       NSMutableData* append = [NSMutableData dataWithLength:startsInfoNewSize];
+       dyld_chained_starts_in_image* startsInfoNew = (dyld_chained_starts_in_image*)append.mutableBytes;
+       bzero(startsInfoNew, startsInfoNewSize);
+       *startsInfoNew = *startsInfo;
+       startsInfoNew->seg_count += 2;
+       
+       for (uint32_t i=0; i < startsInfo->seg_count; ++i) {
+           uint32_t segInfoOffset = startsInfo->seg_info_offset[i];
+           NSLog(@"segInfoOffset[%d] %x", i, segInfoOffset);
+           // 0 offset means this segment has no fixups
+           if ( segInfoOffset == 0 )
+               continue;
+           
+           startsInfoNew->seg_info_offset[i] = append.length;
+           
+           const dyld_chained_starts_in_segment* segInfo = (dyld_chained_starts_in_segment*)((uint8_t*)startsInfo + segInfoOffset);
+           NSLog(@"segInfo[%d] page_count=%d segment_offset=%p max_valid_pointer=%p",i, segInfo->page_count, segInfo->segment_offset, segInfo->max_valid_pointer);
+           
+           int segInfoSize = sizeof(dyld_chained_starts_in_segment);
+           if(segInfo->page_count) segInfoSize += sizeof(segInfo->page_start)*(segInfo->page_count - 1);
+           
+           [append appendBytes:segInfo length:segInfoSize];
+       }
+       NSLog(@"startsInfo new size=%x", append.length);
+       [macho appendData:append];
+       linkedit_seg->filesize += append.length;
+       linkedit_seg->vmsize += PAGE_SIZE;
+   }
     
     NSLog(@"macho file size=%x", macho.length);
     
@@ -418,10 +466,10 @@ NSString* StaticInlineHookPatch(char* machoPath, uint64_t vaddr, char* patch)
 
     if(newPath) {
         macho = load_macho_data(newPath);
-        if(!macho) return [NSString stringWithFormat:@"找不到文件(can't find file):\n Documents/static-inline-hook/%s", machoPath];
+        if(!macho) return [NSString stringWithFormat:@"找不到文件(can't find file):\n%@", newPath];
     } else {
         macho = load_macho_data(path);
-        if(!macho) return [NSString stringWithFormat:@"无法读取文件(can't read file):\n.app/%s", machoPath];
+        if(!macho) return [NSString stringWithFormat:@"无法读取文件(can't read file):\n%@", path];
     }
     
     uint32_t cryptid = 0;
@@ -578,6 +626,10 @@ NSString* StaticInlineHookPatch(char* machoPath, uint64_t vaddr, char* patch)
     
     if(![macho writeToFile:savePath atomically:NO])
         return @"无法写入文件!\ncan not write to file!";
+    
+    int ldid_main(int argc, char *argv[]);
+    const char* ldidargs[] = {"ldid", "-S", savePath.UTF8String};
+    ldid_main(sizeof(ldidargs)/sizeof(ldidargs[0]), (char**)ldidargs);
     
     gStaticInlineHookMachO[path] = savePath;
     return @"未签名该地址, 修补文件将生成在APP的Documents/static-inline-hook目录中, 请将该目录中所有文件替换到ipa中的.app目录并重新签名安装!\nThe offset has not been patched, the patched file will be generated in the Documents/static-inline-hook directory of the APP, please replace all the files in this directory to the .app directory in the ipa and re-sign and reinstall!";

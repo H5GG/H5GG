@@ -13,7 +13,7 @@ include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME = h5frida
 
-h5frida_FILES = h5frida.mm fishhook.c static-inline.mm
+h5frida_FILES = h5frida.mm fishhook.c static-inline.mm ldid-master/ldid.cpp ldid-master/lookup2.c
 h5frida_CFLAGS = -fobjc-arc -fvisibility=hidden 
 h5frida_CCFLAGS = -fobjc-arc -fvisibility=hidden -std=c++11
 h5frida_LDFLAGS += -L./ #指定静态库目录
