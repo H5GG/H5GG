@@ -354,7 +354,7 @@ NSMutableData* add_hook_section(NSMutableData* macho)
           case LC_DYLD_CHAINED_FIXUPS:
           {
             struct linkedit_data_command *tmp = (struct linkedit_data_command *)load_cmd;
-              if(load_cmd->cmd==LC_DYLD_CHAINED_FIXUPS) chainedFixups=tmp;//save for fixup;
+              if(load_cmd->cmd==LC_DYLD_CHAINED_FIXUPS) chainedFixups=tmp;//save for fixup
             if (tmp->dataoff) tmp->dataoff += fixoffset;
             NSLog(@"[-] fix linkedit_data_command done\n");
           } break;
