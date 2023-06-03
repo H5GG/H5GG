@@ -16,7 +16,7 @@ and you can customize UI by using [HTML+CSS](/examples-HTML5/) without computer.
 
 and you can make your own tweak(dylib) by click one button, so easy!
 
-**For fuzzy search it is recommended to use: https://igg-server.herokuapp.com/ **
+**For fuzzy search it is recommended to use: https://igg-server.herokuapp.com/**
 
 ## H5GG supported 4 modes to run:
 
