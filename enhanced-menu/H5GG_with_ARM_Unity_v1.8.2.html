@@ -1560,6 +1560,7 @@
                 datavalue = h5gg.getValue(address, h5ggType(datatype));
 
             var popup = document.getElementById("popup_search_edit");
+            
             popup.style.zIndex = 15000
 
             showPopView("&nbsp;&nbsp;Edit&nbsp;&nbsp;", function (type, value) {
@@ -1669,7 +1670,10 @@
             if (datatype == "string") return;
 
             var popup = document.getElementById("popup_search_edit");
-            popup.style.zIndex = "100";//move pop up edit to front
+            
+            popup.style.zIndex = 15000
+            
+            //popup.style.zIndex = "100";//move pop up edit to front
 
             showPopView("&nbsp;&nbsp;Edit&nbsp;&nbsp;", function (type, value) {
 
@@ -2880,6 +2884,22 @@
                 return true;
             }
 
+            //Invoke Klass Method on Object, params is an array of param
+            function invoke_instance_method(obj, klassFullName, methodName, returnType, params) {
+                const method = this._methods.get(methodName);
+                if (!method) {
+                    debugInfo("Cannot found Class or Method: " + klassFullName + "\t[" + methodName + "]", [obj]);
+                    return method;
+                }
+
+                return unbox(il2cpp_runtime_invoke(method, obj, params), returnType);
+
+                function unbox(resultPtr, returnType) {
+                    //TODO: Extract return value based on type
+                    return resultPtr;
+                }
+            }
+
             rpc.exports.listUnityImages = function (filter) {
 
                 global.assembly = [];
@@ -3106,21 +3126,15 @@
                                             let ParameterInfo = il2cpp_method_get_param(method, i)
 
                                             let Il2CppType = ParameterInfo.add(p_size * i * 4)
-                                            //if (logcount<20){console.log("ParamIl2CppType: "+Il2CppType);logcount+=1}
                                             let typeClass = il2cpp_class_from_type(getParameterType(Il2CppType))
                                             let typeClass2 = il2cpp_class_from_type(Il2CppType)
-                                            //if (logcount<20){console.log("ParamtypeClass: "+typeClass+":"+typeClass2);logcount+=1}
                                             let TypeName = getClassName(typeClass2)
-                                            //if (logcount<20){console.log("ParamTypeName: "+TypeName);logcount+=1}
 
                                             let paramName = il2cpp_method_get_param_name(method, i).readCString()
-                                            //arr_args.push(TypeName + " " + getParameterName(ParameterInfo))
                                             arr_args.push(TypeName + " " + paramName)
-                                            //if (logcount<20){console.log(TypeName + " " + paramName)}
-                                            //if (logcount<20){console.log("ParameterInfo: "+ParameterInfo);logcount+=1}
+
                                             // 这里的TypeName 和 typeClass 之间之所以不用 /t 是因为多参数
                                             arr_args_type_addr.push(TypeName + " " + typeClass2)
-                                            //if (logcount<20){console.log(JSON.stringify(global.klass[name][methodName]));logcount+=1}
                                             global.klass[nameSpace + "$" + name][methodName][TypeName] = {
                                                 "typeClass": typeClass,
                                             };
@@ -3128,7 +3142,6 @@
                                     } //end for loop parameter
                                     if (parameters_count > 0) {
                                         global.klass[nameSpace + "$" + name][methodName]["parameterList"] = arr_args.join(', ')
-                                        //console.log(JSON.stringify(arr_args))
                                     }
                                     count_methods++
                                 }
@@ -3153,7 +3166,6 @@
                 const keys = Object.keys(global.klass);
                 for (var j = 0; j < keys.length; j++) {
                     var item = keys[j];
-                    //debugInfo("2735: "+item,[global.klass]);
                     const klassInfo = global.klass[item];
                     let fullTypeName = item;
                     if (klassInfo) {
@@ -3170,7 +3182,6 @@
 
                     for (let i = 0; i < UnityObjectCount; i++) {
                         let object = UnityObjectArray.add(0x20 + i * 8).readPointer();
-                        //debugInfo("2880: "+fullTypeName+":"+Number(object),[object]);
                         global.unityobjects.push(Number(object));
                     }
                 }
@@ -3197,9 +3208,7 @@
                 //If we said it is Confirm Object Address, then even not in global.klass, we will try use il2cpp api to do extraction
                 //LIMITATION: Parent Class info still rely on global.klass
                 if (!isConfirmedObjAddr) {
-                    //pObj = ptr(findClosestNumber(global.unityobjects, Number(Addr)));
                     pObj = ptr(findClosestObject(Addr));
-                    //console.log("3196: "+ pObj)
                     if (pObj == 0x0) {
                         objectDetails = [];
                         return objectDetails;
@@ -3229,7 +3238,6 @@
                             /******** Start Parent Detail **********/
                             var parentClasses = [];
                             let tmpParent = klass;
-                            //let tmpParentName;
                             let tmpParentNameSpace;
                             let tmpKlassInfo;
 
@@ -3247,12 +3255,6 @@
                                     else break;
                                 }
                             } catch (e) { console.log("Preparing Parent Info: " + klassNameSpace + "$" + klassName + ": " + JSON.stringify(e, Object.getOwnPropertyNames(e))) }
-
-                            /*if (parentClasses.length > 1) {//No.1 is the first parent
-                                global.klass[klassNameSpace + "$" + klassName]["parentClass"] = parentClasses[1][0];
-                                global.klass[klassNameSpace + "$" + klassName]["parentName"] = parentClasses[1][1];
-                                global.klass[klassNameSpace + "$" + klassName]["parentNameSpace"] = parentClasses[1][2];
-                            }*/
 
                             /******** End Parent Detail **********/
 
@@ -3380,12 +3382,11 @@
                             case "boolean":
                                 return pointer.readShort();
                                 break;
+                            case "text":
                             case "string":
                                 let len = il2cpp_string_length(pointer.readPointer())
                                 let chars = il2cpp_string_chars(pointer.readPointer())
                                 let str = chars.readUtf16String(len)
-                                //debugInfo("string value: "+len,[pointer.readPointer()])
-                                //debugInfo("string value: "+str,[pointer.readPointer()])
                                 return str;
 
                                 break;
@@ -3467,15 +3468,12 @@
                 } else {
                     var matchedKeys = [type]
                 }
-                //console.log("Found Keys: "+ JSON.stringify(matchedKeys))
 
                 var CSharpAssembly = global.assembly["Assembly-CSharp"];//assemblyLoad("Assembly-CSharp"); 
 
                 for (var i = 0; i < matchedKeys.length; i++) {
 
                     var curType = matchedKeys[i];
-                    //console.log("Loop Keys ("+i+"/"+matchedKeys.length+"): "+ curType)
-
 
                     const klassInfo = global.klass[curType];
                     fullTypeName = curType.replace(/\$/g, '.');
@@ -3609,7 +3607,6 @@
                 document.ontouchend = closeDragElement;
                 // call a function whenever the cursor moves:
                 document.ontouchmove = elementDrag;
-                //alert(pos3+":"+pos4);
             }
 
             function elementDrag(e) {
@@ -3634,7 +3631,6 @@
 
         function dragTableElement(mytable) {
             var lastOffset = -1;
-            //var mytable = document.getElementById(TableID);
             mytable.ontouchstart = dragTouchStart;
 
             function dragTouchStart(event) {
@@ -3648,14 +3644,12 @@
                     event.target.classList.add("selected");
                     lastOffset = parseInt(event.target.getAttribute('offset'), 16);
                     $("label#memoffset").text(lastOffset.toString(16).toUpperCase());
-                    //alert(lastOffset);
                     mytable.ontouchmove = dragTouchMove;
                     mytable.ontouchend = dragTouchEnd;
                     dispaySelectedValue();
                 }
             }
             function dragTouchMove(event) {
-                //event.preventDefault(); //comment it as it block scrolling
                 var currentCell = document.elementFromPoint(
                     event.touches[0].clientX,
                     event.touches[0].clientY
@@ -3666,14 +3660,11 @@
                     if (Math.abs(currentOffset - lastOffset) <= 1) {
                         currentCell.classList.add("selected");
                         lastOffset = currentOffset;
-                    } //else alert(Math.abs(currentOffset-lastOffset)+','+currentOffset+','+lastOffset);
+                    }
                     dispaySelectedValue();
                 }
             }
             function dragTouchEnd(event) {
-                //event.preventDefault(); //comment it as it block scrolling
-
-
                 mytable.ontouchmove = null;
                 mytable.ontouchend = null;
             }
@@ -3688,7 +3679,6 @@
                     }
                 }
                 var int = parseInt(hex, 16);
-                //alert("int:"+ int+", hex"+hex);
 
                 var float = HexToFloat32(hex);
                 float = Math.round((float + Number.EPSILON) * 100) / 100;
@@ -3732,7 +3722,6 @@
             // Start the timer when the user touches the screen
             timer = setTimeout(function () {
                 // If the timer completes, the user has performed a long press
-                //alert("Long press detected: "+address);
                 var result = onShowUnityObjInfo(true, address);
             }, 1500); // Set the duration of the long press here (in milliseconds)
         }
@@ -3822,6 +3811,32 @@
             return zIndex;
         }
 
+        function debugInfo(message, obj) {
+            gDebug.push({
+                text: message,
+                address: obj
+            }); //data format {text:textmessage, address:[0x1234, 0x5678], objData:[00 01 02, 03 04 05]} 
+        }
+
+    </script>
+    <script>
+        //START: Define Unity List Object for easy List access
+        function UnityList(address) {
+            this._address = address;
+            this._size = readInt(Number(address) + 0x18);
+            this._items = readPtr(Number(address) + 0x10);
+        }
+
+        UnityList.prototype.size = function () {
+            return this._size;
+        }
+
+        UnityList.prototype.get_Item = function (index) {
+            //NOT SURE IF IT HAS TO BE POINTER, WHAT HAPPENS TO PRIMITIVE TYPES
+            //Normally what we really want is object of certain type of interest, say Player, Skill, etc
+            return readPtr(Number(this._items) + 0x20 + (index * 8));
+        }
+        //END: Define Unity List Object for easy List access
     </script>
 </head>
 
@@ -4086,10 +4101,6 @@
             <input type="text" id="addressvalue" style="width:50%; border:none"
                 placeholder="Number" /><label>(Prev)&nbsp;</label><label id="previousaddress" style="color:blue;"
                 onclick="readInstruction(this.innerText)"> </label>
-            <!--
-                <button id="cancel">Cancel</button>
-                &nbsp;&nbsp;&nbsp;
-                -->
             <hr />
             <div id="instructionread" class="menuview current scrollbar" style="height:190px">
                 <table id="instructionList" class="tblHover" style="width:100%;" border="1" cellspacing=0 cellpadding=0>
@@ -4224,7 +4235,6 @@
             <div style="float:left; font-size:16px; font-family: Arial, sans-serif;"
                 onclick="onShowUnityObjInfo(true, -1)">
                 &nbsp;&#8592;&nbsp;</div>
-            <!--&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-->
             <button id="search" onclick="onShowLocateUnityObj(true)">&nbsp;&#128269;&nbsp;</button>
             <button id="action">&nbsp;&#128260;&nbsp;</button>
             <button id="btnObjEdit" onclick="onShowEditMemoryInfo()" style="  font-size:16px;"
