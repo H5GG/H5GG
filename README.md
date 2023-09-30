@@ -76,9 +76,9 @@ the host app need get-task-allow entitlement (jailbroken or sign by Developer Ce
 
 the GlobalView module of Floating APP requires these tweaks and may need to update for new ios version.
 
-+ BackgrounderAction : libH5GG.B12.dylib (jp.akusio.backgrounderaction12) for ios11~ios12 
++ [BackgrounderAction](https://github.com/akusio) : libH5GG.B12.dylib (jp.akusio.backgrounderaction12) for ios11~ios12 
 
-+ BackgrounderAction2 : libH5GG.B.dylib (jp.akusio.backgrounderaction13) for ios13+
++ [BackgrounderAction2](https://github.com/akusio) : libH5GG.B.dylib (jp.akusio.backgrounderaction13) for ios13+
 
 + [libAPAppView](https://github.com/Baw-Appie/libAPAppView) : libH5GG.A.dylib (com.rpgfarm.libapappview) for ios13+
 
