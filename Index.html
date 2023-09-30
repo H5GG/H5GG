@@ -1,0 +1,947 @@
+<html>
+<head>
+<title>H5GG</title>
+<!--设置手机显示模式, 填满宽度,原尺寸显示,禁止双指缩放-->
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<!--CSS外观样式表-->
+<style>
+html {
+    zoom:1.2; /*在手机上显示整体放大1.2倍*/
+}
+
+body {
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255,255,255,0.8);
+}
+* {
+    /*默认文字颜色*/
+    color: #000;
+    font-size: 12px;
+    font-family: Arial, sans-serif;
+    
+   -webkit-tap-highlight-color: transparent;
+   outline: none;
+    
+    /*默认布局边框:灰色虚线, 开启这个方便查看布局*/
+    /*/
+     border: 1px dashed gray;/**/
+    
+}
+
+*:not(input,checkbox,textarea) {
+    /*禁止文本选择*/
+   -webkit-touch-callout: none;
+   -webkit-user-select: none;
+   user-select: none; /* Non-prefixed version, currently */
+}
+
+input {
+    background-color: rgba(0,0,0,0);
+    height: 25px;
+}
+
+button {
+    height: 30px;
+    color: #3393EF;
+    background-color: #84848450;
+    display: inline-block;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    outline: none;
+    border: none;
+    border-radius: 5px;
+    padding: 0 6px;
+    margin: 2px;
+}
+
+button:active {
+    background-color: #fff;
+    transform: translateY(2px);
+}
+
+input[type=radio]  {
+    width:16px;
+    height:16px;
+    margin-right:6px;
+    border:none;
+    outline-style:none;
+    -webkit-appearance:none;
+    vertical-align:middle;
+    border:1px solid #686868F0;
+    border-radius:50%;
+    margin:6px 4px;
+}
+input[type=radio]:checked {
+    border:5px solid #2F7DCDF0;
+    background:#E8E8E8;
+}
+    
+input[type=checkbox]{
+ visibility: hidden;
+ vertical-align:middle; margin-bottom:2px;
+ cursor: pointer;
+ position: relative;
+ width: 24px;
+ height: 24px;
+}
+input[type=checkbox]::after{
+ position: absolute;
+ top: 0;
+ margin-top:2px;
+ width: 14px; height: 14px;
+ border: 1px solid #686868;
+ border-radius: 3px;
+ background-color: rgba(0,0,0,0);
+ display: inline-block;
+ visibility: visible;
+ text-align: center;
+ content: ' ';
+}
+input[type=checkbox]:checked::after{
+ content: "✓";
+ color: #FFF;
+ border-color: #B8B8B8;
+ background-color: #4498F7;
+ font-size: 12px;
+ font-weight: bold;
+}
+
+input[type=range] {
+  -webkit-appearance: none;
+}
+input[type=range]:focus {
+  outline: none;
+}
+input[type=range]::-webkit-slider-runnable-track {
+  height: 15px;
+  cursor: pointer;
+  animate: 0.2s;
+  background: #68686830;
+  border-radius: 1.3px;
+  border: 0.2px solid #010101;
+}
+input[type=range]::-webkit-slider-thumb {
+  border: 1px solid #000000;
+  height: 18px;
+  width: 16px;
+  border-radius: 3px;
+  background: #EEEEEEE0;
+  cursor: pointer;
+  -webkit-appearance: none;
+  margin-top: -2px;
+}
+input[type=range]:focus::-webkit-slider-runnable-track {
+  background: #367ebd;
+}
+
+.menubox {
+    display: inline;
+    padding: 5px;
+    width: 300px;
+    height: 20px;
+    line-height: 20px; /*height和line-height设置一样即可文字垂直居中*/
+    text-align:center;
+    background-color: #E8E8E890;
+    border-radius: 5px;
+}
+.menubox.current {
+    color: #E8E8E8;
+    background-color: #848484;
+}
+
+.menuview {
+    display:none;
+}
+
+.menuview.current {
+    display:block;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+    
+/* 滚动条整体部分 */
+.scrollbar {
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.scrollbar::-webkit-scrollbar {
+    width: 5px; /* 纵向滚动条宽度 */
+    height: 5px;/* 横向滚动条高度 */
+    background-color: #F5F5F5; /* 滚动条整体背景，一般被覆盖着 */
+}
+/* 滚动条的轨道（里面装有Thumb） */
+.scrollbar::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3); /* 滚动条轨道阴影 */
+    /*border-radius: 10px; /* 滚动条轨道圆角 */
+    background-color: #F5F5F5; /* 滚动条轨道背景 */
+}
+/* 滚动条里面的滑块 */
+.scrollbar::-webkit-scrollbar-thumb {
+    border-radius: 15px; /* 滚动条滑块圆角 */
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,.3); /* 滚动条滑块阴影 */
+    background-color: #B8B8B8; /* 滚动条滑块颜色 */
+}
+
+.popup_container {
+    position:absolute;
+    z-index: 1000;
+    left:50%;
+    top:0;
+}
+    
+#popup_search_edit {
+    display:none;
+    text-align: center;
+    background-color: #FDFDFD;
+    width:200px;
+    height:150px;
+    position:absolute;
+    left:-100px; top:50px;
+    border:1px solid #B8B8B880;
+    border-radius: 5px;
+    padding: 10px;
+}
+    
+#popup_progress {
+    display:none;
+    text-align: center;
+    background-color: #FDFDFD;
+    width:200px;
+    height:20px;
+    position:absolute;
+    left:-100px; top:100px;
+    border:1px solid #B8B8B880;
+    border-radius: 5px;
+    padding: 10px;
+    z-index: 2000;
+}
+    
+#popup_loadscripts {
+    display:none;
+    text-align: center;
+    background-color: #FDFDFD;
+    width:250px;
+    height:220px;
+    position:absolute;
+    left:-125px; top:20px;
+    border:1px solid #B8B8B880;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+#popup_proclist {
+    display:none;
+    text-align: center;
+    background-color: #FDFDFD;
+    width:180px;
+    max-height:200px;
+    position:absolute;
+    left:-90px; top:50px;
+    border:1px solid #B8B8B880;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+#popup_proclist button {
+    display: block;
+    width: 100%;
+    height: 26px;
+    border-radius: 2px;
+    font-weight:bold;
+    color: black;
+    text-align: left;
+    background-color: #00000005;
+}
+
+table.datatype {
+    border: 1px solid red;
+    border-radius: 2px;
+    border-collapse: collapse;
+    border-style:hidden;
+    box-shadow: 0 0 0 1px #3393EF;
+}
+
+.datatype td {
+    cursor: hand;
+    padding: 5px;
+    color: #3393EF;
+    border: 1px solid #3393EF;
+    width: 22px;
+    height: 15px;
+    text-align: center;
+}
+
+.datatype td.selected {
+    color: white;
+    background-color: #3393EF;
+}
+
+.maskview {
+    display: none;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+    filter: alpha(opacity=60);
+    background-color: #777;
+    z-index: 1;
+    opacity:0.5;
+}
+
+#listdiv {
+    display:block;
+    overflow-x:hidden;
+    overflow-y:scroll;
+    height:100%;
+}
+
+#resultList tr.hilight td{
+    color: #3393EF;
+}
+
+#resultList td {
+    border-bottom:solid 1px #D1D1D1;
+}
+#resultList td font {
+    font-size:12px;color:#848484
+}
+
+</style>
+
+<script>
+
+var h5gg_jquery_stub;
+
+if(typeof $ == 'undefined')
+    document.write("<script src=\"https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js\"><\/script>");
+
+//根据选择的有符号/无符号数确定搜索类型
+function h5ggType(type)
+{
+    if($("input:radio[name=numtype]:checked").val()=="unsigned") {
+        switch(type) {
+            case "I8":
+                return "U8";
+            case "I16":
+                return "U16";
+            case "I32":
+                return "U32";
+            case "I64":
+                return "U64";
+        }
+    }
+    
+    return type;
+}
+
+    
+//页面显示完毕事件
+document.addEventListener("DOMContentLoaded", function(){
+
+    if(typeof $ == 'undefined') {
+        alert("jquery load failed!");
+        return;
+    }
+
+    /*禁止文本选择和拖动*/
+    document.body.onselectstart = document.body.ondrag = function(){
+        return false;
+    }
+    //文本框等输入完毕后页面自动滚动到顶部
+    $("input").blur(function(){
+        window.scroll(0,0);
+    });
+    
+    //激活webkit的button:active
+    document.body.addEventListener('touchstart', function () {});
+    
+    //绑定菜单点击切换子页面
+    $("div.menubox").unbind('click').click(function(){
+        $("div.menubox").removeClass("current");
+        $("div.menuview").removeClass("current");
+        $(this).addClass("current");
+        
+        var menuid = $(this).attr("menu");
+        $("div#"+menuid).addClass("current");
+    });
+    
+    $("#datavalue").focus(function(){
+        var input = $(this);
+        input.attr("type","number");
+        setTimeout(function(){
+            input.attr("type","text");
+        }, 500);
+    });
+    
+    
+    $("#crossproc").click(function() {
+        $("#popup_proclist").show();
+        $("#maskview").show();
+    });
+        
+    if(typeof h5gg!='undefined')
+    {
+        
+        $("#version").text(h5gg_internel_version);
+        
+        //清除设计演示的结果列表
+        onClickClearResults();
+    
+        //设置标题栏区域可拖动悬浮窗
+        setWindowDrag(0, 0, 400, 80);
+        
+        //布局调整函数
+        setLayoutAction(function(w,h) {
+            var width = 370; var height = 370; //默认尺寸
+            if(w<h) {
+                height = 600; //竖屏模式加大显示高度
+            }
+            width = Math.min(width, w); //适配iPad浮窗, 最大宽度不超出
+            height = Math.min(height, h); //适配老设备, 最大高度不超出
+            var x = (w-width)/2;
+            var y = (h-height)/2;
+            if(w<h) {
+                y = Math.max(20, y);
+                height = Math.min(height, h-y);
+            }
+            setWindowRect(x,y,width,height);
+        });
+
+        var checkprocs = function()
+        {
+            var procs = h5gg.getProcList();
+            if(procs)  //不为空(null)说明是具有跨进程权限
+            {
+                refreshProcList(procs);
+                $("#crossproc").show();
+                $("#closeMenu").hide();
+                
+                if(!$("#procname").attr('pid')) {
+                    $("#popup_proclist").show();
+                    $("#maskview").show();
+                    $("#procname").text('');
+                }
+                
+                setInterval(function(){
+                    if($("#popup_proclist").is(":visible"))
+                        refreshProcList(h5gg.getProcList());
+
+                    if($("#procname").attr('pid'))
+                    {
+                        var procs = h5gg.getProcList();
+                        var alive = false;
+                        for(var i=0; i<procs.length; i++) {
+                            if(procs[i].pid == $("#procname").attr('pid')) {
+                                alive=true;
+                                break;
+                            }
+                        }
+                        
+                        if(!alive) {
+                            alert("目标进程已结束\n\n请点击标题栏选择新的目标");
+                            $("#procname").removeAttr('pid');
+                            $("#procname").text('');
+                        }
+                    }
+                    
+                }, 1500);
+                
+            } else  {
+                $("#crossproc").hide();
+            }
+            
+        }; //end of checkprocs
+        
+        checkprocs();
+        //setInterval(checkprocs, 1500);
+    
+    } //end of h5gg check
+    
+    //点击结果列表里面的地址时弹出修改窗口, 要在listdiv刷新html之后绑定
+    $("table#resultList").on('click','tr', function()
+    {
+        $("table#resultList tr").removeClass("hilight");
+        $(this).addClass("hilight");
+        
+        var address = $(this).attr("address");
+        var datatype = $(this).attr("datatype");
+        var datavalue = $(this).attr("datavalue");
+        
+        //读取该地址最新数据
+        if(typeof h5gg!='undefined')
+            datavalue = h5gg.getValue(address, h5ggType(datatype));
+        
+        showPopView("修改", function(type, value){
+            
+            if(!h5gg.setValue(address, value, h5ggType(type))) {
+                alert("修改失败,可能地址已失效!");
+            }
+            
+            onClickRefreshResults();
+            
+        }, datatype, datavalue);
+    });
+});
+
+function refreshProcList(procs)
+{
+    $("#proctable button").remove();
+    
+    for(var i=0; i<procs.length; i++) {
+        var proc = procs[i];
+        var btn = $("<button>"+proc.name+"</button>");
+        btn.attr("pid", proc.pid);
+        btn.click(function()
+        {
+            if(!h5gg.setTargetProc($(this).attr('pid'))) {
+                alert("无法选定该目标");
+                return;
+            }
+            
+            onClickClearResults();
+            
+            $("#procname").attr('pid', $(this).attr('pid'));
+            $("#procname").text($(this).text());
+            $("#popup_proclist").hide();
+            $("#maskview").hide();
+        });
+        
+        $("#proctable").append(btn);
+    }
+}
+
+function refreshLocalSrcipts()
+{
+    $("table#localjslist tr").remove();
+    
+    var jsfiles = h5gg.getLocalScripts();
+
+    setTimeout(function(){
+        
+        if(jsfiles.length==0) {
+            $("table#localjslist tbody").append("<tr><td colspan=2>正在搜索App的Documents数据目录...<br/>正在搜索App的.app程序目录...<br/>没有找到任何(*.js)或(*.html)文件!</td></td>");
+        }
+        
+        $("table#localjslist tbody").append('<tr><td style="border-right-style:none; color:blue">从文件管理器中选择</td><td style="border-left-style:none;width:45px"><button onclick="h5gg.pickScriptFile(onClickLoadScript)">浏览</button></td></tr>');
+        
+        for(var i=0; i<jsfiles.length; i++) {
+            var row = '<tr><td style="border-right-style:none;font-weight:bold;color:green">'+jsfiles[i].name+'</td><td style="border-left-style:none;width:45px"><button onclick="onClickLoadScript(\''+jsfiles[i].path+'\')">加载</button></td></tr>';
+            $("table#localjslist tbody").append(row);
+        }
+    }, 300);
+}
+
+function onShowLoadScript(show)
+{
+    if(show) {
+        $("#maskview").show();
+        $("#popup_loadscripts").show();
+        
+        if(typeof h5gg!='undefined') refreshLocalSrcipts();
+    } else {
+        $("#maskview").hide();
+        $("#popup_loadscripts").hide();
+    }
+}
+
+function onClickLoadScript(url, type)
+{
+    if(!url) return;
+    
+    if(/^\w+\:/.test(url)==false) url = "file://"+url;
+    
+    try{
+        url = new URL(url);
+        url.searchParams.append("_", Math.random());
+    }catch(e){
+        alert("无效的脚本URL");
+        return;
+    }
+    
+    $("#popup_progress").show();
+    $("#maskview_script").show();
+    
+    if(type=='h5' || (!type&&!/\.js$/.test(url.pathname))) {
+        window.location = url.href;
+        return;
+    }
+    
+    var script = document.createElement("script");
+
+    script.type = "text/javascript";
+    
+    script.onload = function () {
+      alert("JS脚本执行完毕");
+        $("#popup_progress").hide();
+        $("#maskview_script").hide();
+    };
+    
+    script.onerror = function () {
+        alert("加载失败! 文件不存在或网络异常");
+        $("#popup_progress").hide();
+        $("#maskview_script").hide();
+    };
+
+    script.src = url.href;
+    document.body.appendChild(script);
+}
+
+
+//弹出搜索或修改窗口
+function showPopView(name, action, type, value)
+{
+    $("#maskview").show();
+    $("#popup_search_edit").show();
+    $("#popup_search_edit").find("B#titleBar").html(name);
+    $("#popup_search_edit").find("button#action").html(name);
+    
+    if(type) {
+        $("table#datatype td").each(function(){
+            if($(this).text()==type)
+                $(this).addClass("selected");
+            else
+                $(this).removeClass("selected");
+        });
+    }
+    
+    if(value) {
+        $("input#datavalue").val(value);
+    }
+    
+    $("input#datavalue").focus();
+    
+    $("#popup_search_edit").find("button#action").unbind("click").click(function(){
+        var type = $("table#datatype td.selected").text();
+        var value = $("input#datavalue").val();
+        
+        $("#popup_search_edit").hide();
+        $("#popup_progress").show();
+        
+        setTimeout(function() {
+            
+            action(type, value);
+            
+            $("#popup_progress").hide();
+            $("#maskview").hide();
+        }, 200);
+        
+    });
+    
+    $("#popup_search_edit").find("button#cancel").unbind("click").click(function(){
+        $("#maskview").hide();
+        $("#popup_search_edit").hide();
+    });
+    
+    $("table#datatype td").unbind("click").click(function(){
+        $("table#datatype td").removeClass("selected");
+        $(this).addClass("selected");
+        $("input#datavalue").focus();
+    });
+}
+
+function onClickClearResults()
+{
+    $("input#datavalue").val("");
+    $("#results_count").hide();
+    $("table#resultList tr").remove();
+    $("table#resultList").attr("currentCount", 0);
+    if(typeof h5gg!='undefined') h5gg.clearResults();
+}
+
+function loadResults(from, count)
+{
+    var maxCount = count;
+    var skipCount = from;
+    
+    var results = h5gg.getResults(maxCount, skipCount);
+    
+    //alert("count"+count+":"+results.length+":"+results[0].address);
+    
+    for(var i=0; i<results.length; i++)
+    {
+        if(results[i].type=='F32' || results[i].type=='F64')
+            results[i].value = '('+results[i].value+')';
+        var row = '<tr address="'+results[i].address+'" datatype="'+results[i].type+'" datavalue="'+results[i].value+'"><td>'+(from+i+1)+'. '+results[i].address+'<br/><font>'+results[i].value+'</font></td></tr>';
+        
+        $("table#resultList tbody").append(row);
+    }
+}
+
+function onClickRefreshResults(clean)
+{
+   $("table#resultList tr").remove();
+   
+   if(clean) {
+       $("#listdiv").get(0).scroll(0,0);
+       $("table#resultList").attr("currentCount", 0);
+   }
+
+    var count = h5gg.getResultsCount();
+    $("#results_count").text("共找到"+count+"条结果");
+    $("#results_count").show();
+    
+    var currentCount = Number($("table#resultList").attr("currentCount"));
+    if(isNaN(currentCount) || currentCount==0) {
+        currentCount = 100;
+        $("table#resultList").attr("currentCount", 100);
+    }
+    
+    loadResults(0, currentCount);
+}
+
+function loadMoreResults() {
+    console.log("load more data!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"+Math.random());
+    
+    //当前显示数量
+    var currentCount = Number($("table#resultList").attr("currentCount"));
+    
+    //每次增加显示100条
+    $("table#resultList").attr("currentCount", currentCount+100);
+    
+    loadResults(currentCount, 100);
+}
+
+function showMoreResults(div)
+{
+    var lh = div.scrollHeight - div.scrollTop;
+    console.log(div.clientHeight+","+div.offsetHeight +" : " +div.scrollTop+","+div.scrollHeight + " : " + lh);
+    
+    if(lh <= div.clientHeight) {
+        console.log("trigger bottom!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        loadMoreResults();
+    }
+}
+
+function onClickEditAll()
+{
+    /*
+    if($("table#resultList tr").length==0) {
+        alert("没有可修改的数据");
+        return;
+    }*/
+    
+    showPopView("修改全部", function(type, value){
+
+        var count = h5gg.editAll(value, h5ggType(type));
+        
+        onClickRefreshResults();
+        
+        alert("成功修改"+count+"个数据");
+    });
+}
+
+function onClickSearchNumber()
+{
+    showPopView("搜索数值", function(type, value) {
+        
+        h5gg.setFloatTolerance($("#float_tolerance").val());
+        
+        var memoryFrom = $("input#range_min").val();
+        var memoryTo = $("input#range_max").val();
+        h5gg.searchNumber(value, h5ggType(type), memoryFrom, memoryTo);
+        
+        onClickRefreshResults(true);
+    });
+}
+
+function onClickSearchNearby()
+{
+    /*
+    if($("table#resultList tr").length==0) {
+        alert("没有可继续搜索的数据");
+        return;
+    }*/
+    
+    showPopView("搜索附近数值", function(type, value){
+        
+        h5gg.setFloatTolerance($("#float_tolerance").val());
+        
+        var nearbyRange = $("input#nearby_range").val();
+        h5gg.searchNearby(value, h5ggType(type), nearbyRange);
+        
+        onClickRefreshResults(true);
+    });
+}
+    
+function onClickMakeTweak()
+{
+    alert("制作自己专属的dylib\n\n第一步: 选择悬浮按钮图标文件");
+    h5gg.pickScriptFile(function(icon){
+        
+        alert("第二步: 选择需要自动加载的html文件");
+        
+        h5gg.pickScriptFile(function(html) {
+            
+            alert(h5gg.makeTweak(icon, html));
+            
+        }, ["public.html"]);
+        
+    }, ["public.image"]);
+}
+
+</script>
+
+</head>
+<body bgcolor="#E8E8E8" style="margin:0;">
+<!--标题栏-->
+<div id="titleBar" style="background-color:#D1D1D1; padding:5px; margin:0px; height:12px">
+&nbsp;<font style="color:green">H5</font> <font style="color:red">GG</font>&nbsp;v<span id="version"></span>
+<span id="crossproc" style="display:none">
+<font style="color:blue">&nbsp;跨进程&nbsp;</font><font id="procname">procname</font>
+</span>
+    
+<div id="closeMenu" style="float:right; font-size:16px; line-height:14px; font-family: Arial, sans-serif;" onclick="setWindowVisible(false)">&nbsp;X&nbsp;</div>
+</div>
+<!--用一个表格来布局左右两栏-->
+<table id="bodyView" width="100%" style="table-layout:fixed;height: calc(100% - 22px) ;">
+<tr>
+<td style="vertical-align:top;width:130px;border-right:solid 2px #D1D1D1;">
+<div>
+搜索下限:<input id="range_min" style="width:80px;padding-left:0" value="0x00000000" />
+<br/>
+搜索上限:<input id="range_max" style="width:80px;padding-left:0"  value="0x200000000" />
+<br/>
+<label><input type=radio name="numtype" value="signed" checked />有符号</label>
+<label><input type=radio name="numtype" value="unsigned" />无符号</label>
+<br/>
+<button onclick="onClickSearchNumber()">搜索数值</button>
+<button onclick="onClickSearchNearby()">邻近搜索</button>
+<br/>
+<button onclick="onClickClearResults()">清除</button>
+<button onclick="onClickEditAll()">全改</button>
+<button onclick="onClickRefreshResults()">刷新</button>
+<br/>
+<button onclick="onShowLoadScript(true)">加载脚本</button>
+<button onclick="onClickMakeTweak()">制作插件</button>
+<br/>
+邻近范围:<input id="nearby_range" style="width:78px"  value="0x100"/>
+<br/>
+浮点误差:<input id="float_tolerance" style="width:78px" value="0.0"/>
+<br/>
+<p id="results_count" style="display:none">共找到<span>0</span>条结果</p>
+</div>
+</td>
+<td style="vertical-align:top;">
+<div id="listdiv" class="scrollbar" ontouchend="showMoreResults(this);">
+<table id="resultList" style="width:100%;cursor:hand;">
+<tr address="0x012345678" datatype="F64" datavalue="123"><td>1.0x102345678<br/><font>112233</td></tr>
+<tr address="0x012345678" datatype="F64" datavalue="123"><td>2.0x102345678<br/><font>112233</td></tr>
+<tr address="0x012345678" datatype="F64" datavalue="123"><td>3.0x102345678<br/><font>112233</td></tr>
+<tr address="0x012345678" datatype="F64" datavalue="123"><td>4.0x102345678<br/><font>112233</td></tr>
+<tr address="0x012345678" datatype="F64" datavalue="123"><td>5.0x102345678<br/><font>112233</td></tr>
+<tr address="0x012345678" datatype="F64" datavalue="123"><td>6.0x102345678<br/><font>112233</td></tr>
+<tr address="0x012345678" datatype="F64" datavalue="123"><td>7.0x102345678<br/><font>112233</td></tr>
+<tr address="0x012345678" datatype="F64" datavalue="123"><td>8.0x102345678<br/><font>112233</td></tr>
+<tr address="0x012345678" datatype="F64" datavalue="123"><td>9.0x102345678<br/><font>112233</td></tr>
+<tr address="0x012345678" datatype="F64" datavalue="123"><td>10.0x102345678<br/><font>112233</td></tr>
+<tr address="0x012345678" datatype="F64" datavalue="123"><td>11.0x102345678<br/><font>112233</td></tr>
+<tr address="0x012345678" datatype="F64" datavalue="123"><td>12.0x102345678<br/><font>112233</td></tr>
+<tr address="0x012345678" datatype="F64" datavalue="123"><td>13.0x102345678<br/><font>112233</td></tr>
+<tr address="0x012345678" datatype="F64" datavalue="123"><td>14.0x102345678<br/><font>112233</td></tr>
+<tr address="0x012345678" datatype="F64" datavalue="123"><td>15.0x102345678<br/><font>112233</td></tr>
+<tr address="0x012345678" datatype="F64" datavalue="123"><td>16.0x102345678<br/><font>0.112233112233112233112233112233112233</td></tr>
+</table>
+</div>
+
+</td>
+</tr>
+</table>
+
+<!--全局灰色遮罩层(弹出搜索框的时候用)-->
+<div id="maskview" class="maskview"></div>
+
+<!--全屏居中布局层-->
+<div class="popup_container">
+    
+<div id="popup_search_edit">
+<B id="titleBar">搜索数值</B>
+<br/><br/>
+<center>
+<table id="datatype" class="datatype">
+<tr>
+<td>F32</td><td>F64</td><td>I8</td><td>I16</td><td class="selected">I32</td><td>I64</td>
+</tr>
+</table>
+</center>
+<br/>
+<input type="text" id="datavalue" style="width:100%; border:none" placeholder="数值" />
+<hr/>
+<button id="cancel">取消</button>
+&nbsp;&nbsp;&nbsp;
+<button id="action">搜索数值</button>
+</div>
+
+
+<!--居中的加载脚本窗口,默认隐藏-->
+<div id="popup_loadscripts" class="popup_view3">
+<center>
+<div class="menubox current" menu="localjs" onclick="refreshLocalSrcipts()">本地加载 ⟳</div>
+<div class="menubox" menu="netjs">网络加载</div>
+<div style="float:right; font-size:16px; font-family: Arial, sans-serif;" onclick="onShowLoadScript(false)">&nbsp;X&nbsp;</div>
+</center>
+<hr/>
+<div id="localjs" class="menuview current scrollbar" style="height:190px">
+<table id="localjslist" style="width:100%;" border="1" cellspacing=0 cellpadding=0>
+<tr><td style="border-right-style:none; color:blue">选择其他位置</td><td style="border-left-style:none;width:45px"><button>浏览</button></td></tr>
+<tr><td style="border-right-style:none;">测试脚本1.js</td><td style="border-left-style:none;width:45px"><button>加载</button></td></tr>
+<tr><td style="border-right-style:none;">测试脚本1.js</td><td style="border-left-style:none;width:45px"><button>加载</button></td></tr>
+<tr><td style="border-right-style:none;">测试脚本1.js</td><td style="border-left-style:none;width:45px"><button>加载</button></td></tr>
+<tr><td style="border-right-style:none;">测试脚本1.js</td><td style="border-left-style:none;width:45px"><button>加载</button></td></tr>
+<tr><td style="border-right-style:none;">测试脚本1.js</td><td style="border-left-style:none;width:45px"><button>加载</button></td></tr>
+<tr><td style="border-right-style:none;">测试脚本1.js</td><td style="border-left-style:none;width:45px"><button>加载</button></td></tr>
+<tr><td style="border-right-style:none;">测试脚本1.js</td><td style="border-left-style:none;width:45px"><button>加载</button></td></tr>
+<tr><td style="border-right-style:none;">测试脚本1.js</td><td style="border-left-style:none;width:45px"><button>加载</button></td></tr>
+<tr><td style="border-right-style:none;">测试脚本1.js</td><td style="border-left-style:none;width:45px"><button>加载</button></td></tr>
+<tr><td style="border-right-style:none;">测试脚本1.js</td><td style="border-left-style:none;width:45px"><button>加载</button></td></tr>
+</table>
+</div>
+<div id="netjs" class="menuview">
+<br/><br/>
+<input id="netjsurl" style="width:100%" placeholder="请输入http/https开头的js/html文件网址链接" />
+<br/><br/><br/>
+<hr/>
+<button onclick="onClickLoadScript($('#netjsurl').val(), 'js')">加载JS脚本</button>
+<button onclick="onClickLoadScript($('#netjsurl').val(), 'h5');">加载H5页面</button>
+</div>
+
+<!--运行脚本灰色遮罩层(执行脚本时用)-->
+<div id="maskview_script" class="maskview"></div>
+
+</div>
+
+<!--居中的提示框, 默认隐藏-->
+<div id="popup_progress">
+<center>
+    执行中...
+</center>
+</div>
+
+<div id="popup_proclist">
+<center>
+选择目标
+<hr/>
+<div id="proctable" class="scrollbar" style="min-height:50px; max-height:170px">
+<button>Process1</button>
+<button>Process2</button>
+<button>Process3</button>
+<button>Process4</button>
+<button>Process5</button>
+<button>Process6</button>
+<button>Process7</button>
+<button>Process8</button>
+</div>
+</center>
+</div>
+
+
+<!--全屏居中布局层结束-->
+</div>
+
+</body>
+</html>
+

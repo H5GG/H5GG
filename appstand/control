@@ -1,0 +1,9 @@
+Package: com.shadow.h5ggapp
+Name: H5GG
+Depends: 
+Architecture: iphoneos-arm
+Description: standalone APP for jailbroken devices(compatible with iPad SlideOver/SplitView) Discord https://discord.gg/FAs4MH7HMc
+Maintainer: Shadow-
+Author: Shadow-
+Section: System
+Version: 0
