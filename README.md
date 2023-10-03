@@ -41,7 +41,7 @@ and you can make your own tweak(dylib) by click one button, so easy!
 
 4: support hook any module's C/C++ internal function/instruction (jailbroken only)
 
-5: **support inline-hook app-module's C/C++ function/instruction (without jailbroken)**
+5: **support MSHookFunction for app's C/C++ function/instruction (without jailbroken)**
 
 6: **support code-patch (patch-offset) with bytes dynamically (without jailbroken)**
 
