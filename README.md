@@ -1,8 +1,8 @@
 # H5GG
 
-**Discuss in [Discord](https://discord.gg/FAs4MH7HMc) or [iOSGods](https://iosgods.com/forum/595-h5gg-igamegod/)**
+**Discuss in [Discord](https://discord.gg/FAs4MH7HMc) or [iosgods.com](https://iosgods.com/forum/595-h5gg-igamegod/)**
 
-an iOS Cheat Engine for JavaScript APIs & Html5 UI.
+an iOS Mod Engine with JavaScript APIs & Html5 UI.
 
 provide memory [APIs](/examples-JavaScript/) likely Android-GG's Lua APIs.
 
