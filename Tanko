@@ -1,0 +1,652 @@
+<html lang="ja"><head>
+<meta charset="utf-8">
+<style>
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+    /* 全体のスタイル */
+   html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+    body { background: #222; color: white; font-family: sans-serif; text-align: center; }
+    .header { display: flex; justify-content: space-around; background: #333; padding: 10px; cursor: pointer; }
+    .tab { padding: 10px; width: 50%; border-bottom: 2px solid transparent; }
+    .active-tab { border-bottom: 2px solid #ffcc00; color: #ffcc00; font-weight: bold; }
+    
+    /* ボタンエリア */
+    .content {
+    display: none;
+    padding: 20px;
+    flex-direction: column;
+    gap: 10px;
+
+    height: calc(100vh - 60px); /* header分引く */
+    overflow-y: scroll;
+
+    -webkit-overflow-scrolling: touch;
+}
+
+    .active-content { display: flex; }
+    
+    button { 
+        padding: 15px; font-size: 16px; border-radius: 8px; border: none; 
+        background: #444; color: white; cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+    }
+    button:active { background: #444; }
+</style>
+</head>
+<body>
+
+<!-- ヘッダー（タブ） -->
+<div class="header">
+    <div id="tab1" class="tab active-tab" onclick="showTab('base')">基本</div>
+    <div id="tab2" class="tab" onclick="showTab('matatabi')">マタタビ</div>
+    <div id="tab3" class="tab" onclick="showTab('other')">その他</div>
+</div>
+
+<!-- 基本メニュー -->
+<div id="base" class="content active-content">
+    <button onclick="changeValue('猫缶', nekokan)">猫缶</button>
+    <button onclick="changeValue('xp', xp)">XP</button>
+    <button onclick="changeValue('np', np)">NP</button>
+    <button onclick="changeBasicAll()">全て変える</button>
+        <button onclick="changeValue('レアチケ', gold)">レアチケ</button>
+            <button onclick="changeValue('にゃんチケ', silber)">にゃんチケ</button>
+            <button onclick="changeValue('プラチケ', tike4)">プラチケ</button>
+            <button onclick="changeValue('レジェチケ', tike3)">レジェチケ</button>
+<button onclick="unlockKyara1()">全キャラ解放</button>
+<button onclick="unlockKyara2()">レベル解放</button>
+<button onclick="unlockKyaraAll()">形態と白キャラ削除</button>
+<button onclick="changeValue('ネコビタンA', bitamin1)">ネコビタンA</button>
+<button onclick="changeValue('ネコビタンB', bitamin2)">ネコビタンB</button>
+<button onclick="changeValue('ネコビタンC', bitamin3)">ネコビタンC</button>
+<button onclick="changeValue('スピードアップ', speed)">スピードアップ</button>
+<button onclick="changeValue('トレジャーレーダー', treasure)">トレジャーレーダー</button>
+<button onclick="changeValue('ネコボン', nekobon)">ネコボン</button>
+<button onclick="changeValue('オカメハチモク', okamehatimoku)">オカメハチモク</button>
+<button onclick="changeValue('スニャイパー', sniper)">スニャイパー</button>
+<button onclick="changeAllNyanko()">
+施設系全て変える</button>
+<span>このボタンはきにしないでください</span>
+</div>
+
+<!-- マタタビメニュー -->
+<div id="matatabi" class="content">
+                    <button onclick="psmatt()">紫種</button>
+                                        <button onclick="bsmatt()">青種</button>
+                     <button onclick="rsmatt()">赤種</button>
+                                    <button onclick="ysmatt()">黄種</button>
+                    <button onclick="gsmatt()">緑種</button>
+                                   <button onclick="rasmatt()">虹種</button>                                                                                     
+    <button onclick="pmatt()">紫のマタタビ</button>
+    <button onclick="bmatt()">青のマタタビ</button>
+        <button onclick="rmatt()">赤のマタタビ</button>
+            <button onclick="ymatt()">黄のマタタビ</button>
+            
+                      <button onclick="gmatt()">緑のマタタビ</button>
+                <button onclick="ramatt()">虹のマタタビ</button>
+                <button onclick="allmatt()">全て変える</button>
+                <span>このボタンは気にしないでください</span>
+</div>
+<!-- その他　-->
+<div id="other" class="content">
+<button onclick="unlockStageOnly()">全ステ解放</button>
+<button onclick="unlockTakaraOnly()">全部金</button>
+<button onclick="changeValue('敵城', enemyBase)">敵城</button>
+<button onclick="changeValue('紫キャッツアイ', catsEye1)">紫キャッツアイ</button>
+<button onclick="changeValue('オレンジキャッツアイ', catsEye2)">オレンジキャッツアイ</button>
+<button onclick="changeValue('白キャッツアイ', catsEye3)">白キャッツアイ</button>
+<button onclick="changeValue('黄キャッツアイ', catsEye4)">黄キャッツアイ</button>
+<button onclick="changeValue('虹キャッツアイ', catsEye5)">虹キャッツアイ</button>
+<button onclick="changeValue('闇キャッツアイ', catsEye6)">闇キャッツアイ</button>
+<button onclick="changeAllC()">全てのキャッツアイ変更</button>
+<span>このボタンは気にしないでください</span>
+</div>
+
+<h2>Users Data:</h2>
+<pre id="users_output">Loading...</pre>
+
+
+<script>
+const matatabi = ["紫マタタビの種", "赤マタタビの種", "青マタタビの種", "緑マタタビの種", "黄マタタビの種", "紫マタタビ",
+            "赤マタタビ", "青マタタビ", "緑マタタビ", "黄マタタビ", "虹マタタビ", "古代マタタビの種",
+            "古代マタタビ", "虹マタタビの種", "金マタタビ", "悪マタタビの種", "悪マタタビ", "金マタタビの種",
+            "紫獣石", "紅獣石", "蒼獣石", "翠獣石", "黄獣石", "紫獣結晶",
+            "紅獣結晶", "蒼獣結晶", "翠獣結晶", "黄獣結晶", "虹獣石"];
+            
+            let intervals = {};
+            
+
+  // 全部非表示
+  
+ function showTab(tabName) {
+
+    document.getElementById("base").classList.remove("active-content");
+    document.getElementById("matatabi").classList.remove("active-content");
+    document.getElementById("other").classList.remove("active-content");
+
+    document.getElementById("tab1").classList.remove("active-tab");
+    document.getElementById("tab2").classList.remove("active-tab");
+    document.getElementById("tab3").classList.remove("active-tab");
+
+    document.getElementById(tabName).classList.add("active-content");
+
+    if (tabName === "base") {
+        document.getElementById("tab1").classList.add("active-tab");
+    } else if (tabName === "matatabi") {
+        document.getElementById("tab2").classList.add("active-tab");
+    } else if (tabName === "other") {
+        document.getElementById("tab3").classList.add("active-tab");
+    }
+}
+
+
+
+
+
+
+
+// ボタンを押した時のメモリ書き換え
+function changeValue(name, addr, type = "I32") {
+  let value = Number(prompt(name + "の数値を入力してください"));
+  if (!isNaN(value)) {
+    h5gg.setValue(addr, value, type);
+    if (type === "I32") {
+      h5gg.setValue(addr + 4, 0, "I32");
+    } else if (type === "I16") {
+      h5gg.setValue(addr + 2, 0, "I16");
+    }
+    alert(name + "を変更しました");
+  } else {
+    alert("有効な数値を入力してください");
+  }
+}
+const modules = h5gg.getRangesList("battlecats");
+const debase = Number(modules[0].start);
+function pmatt() {
+	    let input = prompt("数値または詳細の名前を入力してください");
+    if (!input) return 
+    const ptrAddr = debase + mbase; 
+    const mattAddr = Number(h5gg.getValue(ptrAddr, "I64"));
+    if (!isNaN(Number(input))) {
+        const value = Number(input);
+            h5gg.setValue(mattAddr + pm, value, "I32");        
+        alert("マタタビの数を " + value + " に変更しました");
+    } else {
+        let index = matatabi.indexOf(input);
+        if (index === -1) return alert("ちゃんとした名前を入力してください");
+        let valueStr = prompt(input + " の値を入力してください");
+        if (!valueStr) return
+        let value = Number(valueStr);
+        if (isNaN(value)) return alert("数字を入力してください");
+        let targetAddr = mattAddr + pm;
+        h5gg.setValue(targetAddr, value, "I32");
+        alert(input + " の値を " + value + " に変更しました");
+    }
+}
+    
+function bmatt() {
+	    let input = prompt("数値または詳細の名前を入力してください");
+    if (!input) return 
+    const ptrAddr = debase + mbase; 
+    const mattAddr = Number(h5gg.getValue(ptrAddr, "I64"));
+    if (!isNaN(Number(input))) {
+        const value = Number(input);
+            h5gg.setValue(mattAddr + bluem, value, "I32");        
+        alert("マタタビの数を " + value + " に変更しました");
+    } else {
+        let index = matatabi.indexOf(input);
+        if (index === -1) return alert("ちゃんとした名前を入力してください");
+        let valueStr = prompt(input + " の値を入力してください");
+        if (!valueStr) return
+        let value = Number(valueStr);
+        if (isNaN(value)) return alert("数字を入力してください");
+        let targetAddr = mattAddr + bluem;
+        h5gg.setValue(targetAddr, value, "I32");
+        alert(input + " の値を " + value + " に変更しました");
+    }
+}    
+function rmatt() {
+	    let input = prompt("数値または詳細の名前を入力してください");
+    if (!input) return 
+    const ptrAddr = debase + mbase; 
+    const mattAddr = Number(h5gg.getValue(ptrAddr, "I64"));
+    if (!isNaN(Number(input))) {
+        const value = Number(input);
+            h5gg.setValue(mattAddr + redm, value, "I32");        
+        alert("マタタビの数を " + value + " に変更しました");
+    } else {
+        let index = matatabi.indexOf(input);
+        if (index === -1) return alert("ちゃんとした名前を入力してください");
+        let valueStr = prompt(input + " の値を入力してください");
+        if (!valueStr) return
+        let value = Number(valueStr);
+        if (isNaN(value)) return alert("数字を入力してください");
+        let targetAddr = mattAddr + redm;
+        h5gg.setValue(targetAddr, value, "I32");
+        alert(input + " の値を " + value + " に変更しました");
+    }
+} 
+function ymatt() {
+	    let input = prompt("数値または詳細の名前を入力してください");
+    if (!input) return 
+    const ptrAddr = debase + mbase; 
+    const mattAddr = Number(h5gg.getValue(ptrAddr, "I64"));
+    if (!isNaN(Number(input))) {
+        const value = Number(input);
+            h5gg.setValue(mattAddr + yellowm, value, "I32");        
+        alert("マタタビの数を " + value + " に変更しました");
+    } else {
+        let index = matatabi.indexOf(input);
+        if (index === -1) return alert("ちゃんとした名前を入力してください");
+        let valueStr = prompt(input + " の値を入力してください");
+        if (!valueStr) return
+        let value = Number(valueStr);
+        if (isNaN(value)) return alert("数字を入力してください");
+        let targetAddr = mattAddr + yellowm;
+        h5gg.setValue(targetAddr, value, "I32");
+        alert(input + " の値を " + value + " に変更しました");
+    }
+} 
+
+function gmatt() {
+	    let input = prompt("数値または詳細の名前を入力してください");
+    if (!input) return 
+    const ptrAddr = debase + mbase; 
+    const mattAddr = Number(h5gg.getValue(ptrAddr, "I64"));
+    if (!isNaN(Number(input))) {
+        const value = Number(input);
+            h5gg.setValue(mattAddr + greenm, value, "I32");        
+        alert("マタタビの数を " + value + " に変更しました");
+    } else {
+        let index = matatabi.indexOf(input);
+        if (index === -1) return alert("ちゃんとした名前を入力してください");
+        let valueStr = prompt(input + " の値を入力してください");
+        if (!valueStr) return
+        let value = Number(valueStr);
+        if (isNaN(value)) return alert("数字を入力してください");
+        let targetAddr = mattAddr + greenm;
+        h5gg.setValue(targetAddr, value, "I32");
+        alert(input + " の値を " + value + " に変更しました");
+    }
+}
+function ramatt() {
+	    let input = prompt("数値または詳細の名前を入力してください");
+    if (!input) return 
+    const ptrAddr = debase + mbase; 
+    const mattAddr = Number(h5gg.getValue(ptrAddr, "I64"));
+    if (!isNaN(Number(input))) {
+        const value = Number(input);
+            h5gg.setValue(mattAddr + rainbowm, value, "I32");        
+        alert("マタタビの数を " + value + " に変更しました");
+    } else {
+        let index = matatabi.indexOf(input);
+        if (index === -1) return alert("ちゃんとした名前を入力してください");
+        let valueStr = prompt(input + " の値を入力してください");
+        if (!valueStr) return
+        let value = Number(valueStr);
+        if (isNaN(value)) return alert("数字を入力してください");
+        let targetAddr = mattAddr + rainbowm;
+        h5gg.setValue(targetAddr, value, "I32");
+        alert(input + " の値を " + value + " に変更しました");
+    }
+}
+
+function gsmatt() {
+	    let input = prompt("数値または詳細の名前を入力してください");
+    if (!input) return 
+    const ptrAddr = debase + mbase; 
+    const mattAddr = Number(h5gg.getValue(ptrAddr, "I64"));
+    if (!isNaN(Number(input))) {
+        const value = Number(input);
+            h5gg.setValue(mattAddr + green, value, "I32");        
+        alert("マタタビの数を " + value + " に変更しました");
+    } else {
+        let index = matatabi.indexOf(input);
+        if (index === -1) return alert("ちゃんとした名前を入力してください");
+        let valueStr = prompt(input + " の値を入力してください");
+        if (!valueStr) return
+        let value = Number(valueStr);
+        if (isNaN(value)) return alert("数字を入力してください");
+        let targetAddr = mattAddr + 0x1c;
+        h5gg.setValue(targetAddr, value, "I32");
+        alert(input + " の値を " + value + " に変更しました");
+    }
+}
+function rasmatt() {
+	    let input = prompt("数値または詳細の名前を入力してください");
+    if (!input) return 
+    const ptrAddr = debase + mbase; 
+    const mattAddr = Number(h5gg.getValue(ptrAddr, "I64"));
+    if (!isNaN(Number(input))) {
+        const value = Number(input);
+            h5gg.setValue(mattAddr + 0x2c, value, "I32");        
+        alert("マタタビの数を " + value + " に変更しました");
+    } else {
+        let index = matatabi.indexOf(input);
+        if (index === -1) return alert("ちゃんとした名前を入力してください");
+        let valueStr = prompt(input + " の値を入力してください");
+        if (!valueStr) return
+        let value = Number(valueStr);
+        if (isNaN(value)) return alert("数字を入力してください");
+        let targetAddr = mattAddr + 0x2c;
+        h5gg.setValue(targetAddr, value, "I32");
+        alert(input + " の値を " + value + " に変更しました");
+    }
+}
+function ysmatt() {
+	    let input = prompt("数値または詳細の名前を入力してください");
+    if (!input) return 
+    const ptrAddr = debase + mbase; 
+    const mattAddr = Number(h5gg.getValue(ptrAddr, "I64"));
+    if (!isNaN(Number(input))) {
+        const value = Number(input);
+            h5gg.setValue(mattAddr + yellow, value, "I32");        
+        alert("マタタビの数を " + value + " に変更しました");
+    } else {
+        let index = matatabi.indexOf(input);
+        if (index === -1) return alert("ちゃんとした名前を入力してください");
+        let valueStr = prompt(input + " の値を入力してください");
+        if (!valueStr) return
+        let value = Number(valueStr);
+        if (isNaN(value)) return alert("数字を入力してください");
+        let targetAddr = mattAddr + yellow;
+        h5gg.setValue(targetAddr, value, "I32");
+        alert(input + " の値を " + value + " に変更しました");
+    }
+}
+function rsmatt() {
+	    let input = prompt("数値または詳細の名前を入力してください");
+    if (!input) return 
+    const ptrAddr = debase + mbase; 
+    const mattAddr = Number(h5gg.getValue(ptrAddr, "I64"));
+    if (!isNaN(Number(input))) {
+        const value = Number(input);
+            h5gg.setValue(mattAddr + red, value, "I32");        
+        alert("マタタビの数を " + value + " に変更しました");
+    } else {
+        let index = matatabi.indexOf(input);
+        if (index === -1) return alert("ちゃんとした名前を入力してください");
+        let valueStr = prompt(input + " の値を入力してください");
+        if (!valueStr) return
+        let value = Number(valueStr);
+        if (isNaN(value)) return alert("数字を入力してください");
+        let targetAddr = mattAddr + red;
+        h5gg.setValue(targetAddr, value, "I32");
+        alert(input + " の値を " + value + " に変更しました");
+    }
+}
+function psmatt() {
+	    let input = prompt("数値または詳細の名前を入力してください");
+    if (!input) return 
+    const ptrAddr = debase + mbase; 
+    const mattAddr = Number(h5gg.getValue(ptrAddr, "I64"));
+    if (!isNaN(Number(input))) {
+        const value = Number(input);
+            h5gg.setValue(mattAddr + p, value, "I32");        
+        alert("マタタビの数を " + value + " に変更しました");
+    } else {
+        let index = matatabi.indexOf(input);
+        if (index === -1) return alert("ちゃんとした名前を入力してください");
+        let valueStr = prompt(input + " の値を入力してください");
+        if (!valueStr) return
+        let value = Number(valueStr);
+        if (isNaN(value)) return alert("数字を入力してください");
+        let targetAddr = mattAddr + p;
+        h5gg.setValue(targetAddr, value, "I32");
+        alert(input + " の値を " + value + " に変更しました");
+    }
+}
+function bsmatt() {
+	    let input = prompt("数値または詳細の名前を入力してください");
+    if (!input) return 
+    const ptrAddr = debase + mbase; 
+    const mattAddr = Number(h5gg.getValue(ptrAddr, "I64"));
+    if (!isNaN(Number(input))) {
+        const value = Number(input);
+            h5gg.setValue(mattAddr + blue, value, "I32");        
+        alert("マタタビの数を " + value + " に変更しました");
+    } else {
+        let index = matatabi.indexOf(input);
+        if (index === -1) return alert("ちゃんとした名前を入力してください");
+        let valueStr = prompt(input + " の値を入力してください");
+        if (!valueStr) return
+        let value = Number(valueStr);
+        if (isNaN(value)) return alert("数字を入力してください");
+        let targetAddr = mattAddr + blue;
+        h5gg.setValue(targetAddr, value, "I32");
+        alert(input + " の値を " + value + " に変更しました");
+    }
+}
+function allmatt() {
+	    let input = prompt("数値または詳細の名前を入力してください");
+    if (!input) return 
+    const ptrAddr = debase + mbase; 
+    const mattAddr = Number(h5gg.getValue(ptrAddr, "I64"));
+    if (!isNaN(Number(input))) {
+        const value = Number(input);
+        for (let j = 0; j < 29; j++) {
+            h5gg.setValue(mattAddr + 4 + (j * 8), value, "I32");        
+        }
+        alert("マタタビの数を " + value + " に変更しました");
+    } else {
+        let index = matatabi.indexOf(input);
+        if (index === -1) return alert("ちゃんとした名前を入力してください");
+        let valueStr = prompt(input + " の値を入力してください");
+        if (!valueStr) return
+        let value = Number(valueStr);
+        if (isNaN(value)) return alert("数字を入力してください");
+        let targetAddr = mattAddr + 4 + (index * 8); 
+        h5gg.setValue(targetAddr, value, "I32");
+        alert(input + " の値を " + value + " に変更しました");
+    }
+}
+function changeBasicAll() {
+  h5gg.setValue(nekokan, 58999, "I32");
+  h5gg.setValue(xp, 999999999, "I32");
+  h5gg.setValue(np, 99999, "I32");
+  let list = [nekokan, xp, np];
+  for (let addr of list) {
+    h5gg.setValue(addr + 4, 0, "I32");
+    h5gg.setValue(addr - 4, 0, "I32");
+  }
+  alert("基本リソースをまとめて変更しました！");
+}
+function unlockKyara1() {
+  let baseAddr = kyara1;
+  let nekoValue = Number(h5gg.getValue(baseAddr, "I32"));
+  const skipList = [
+    0x26c, 0x2d8, 0x474, 0x500, 0x54c, 0x584,
+    0x6c0, 0x6c4, 0x744, 0x7c4, 0x7c8, 0x7cc,
+    0x7d0, 0x7b0, 0xa84,
+    0xb90, 0xb94, 0xb98, 0xb9c, 0xba0, 0xba4,
+    0xc50, 0xca8
+  ];
+  for (let i = 0; i < 860; i++) {
+    let offset = i * 4;
+    if (skipList.includes(offset)) continue; 
+    let addr = baseAddr + offset;
+    h5gg.setValue(addr, nekoValue, "I32");
+  }
+  alert("全キャラを解放しました");
+}
+
+function unlockKyara2() {
+  let baseAddr = kyara2;
+  let hexAddr = baseAddr.toString(16).toLowerCase();
+  let targetGroup = [];
+  if (hexAddr.endsWith("0") || hexAddr.endsWith("8")) targetGroup = ["0","8"];
+  else if (hexAddr.endsWith("4") || hexAddr.endsWith("c")) targetGroup = ["4","c"];
+  else { alert("対象外です"); return; }
+  let count=0;
+  for (let offset=0; count<860; offset++) {
+    let addr = baseAddr+(offset*4);
+    let hex = addr.toString(16).toLowerCase();
+    if (targetGroup.some(s=>hex.endsWith(s))) {
+      h5gg.setValue(addr,150,"I32");
+      count++;
+    }
+  }
+  alert("レベル解放完了しました");
+}
+
+const siroDeleteOffsets = [28 * 4, 29 * 4, 30 * 4, 46 * 4, 54 * 4, 55 * 4, 63 * 4, 65 * 4, 66 * 4, 83 * 4, 90 * 4, 91 * 4, 102 * 4, 103 * 4, 109 * 4, 111 * 4, 113 * 4, 114 * 4, 115 * 4, 116 * 4, 117 * 4, 118 * 4, 119 * 4, 132 * 4, 141 * 4, 142 * 4, 143 * 4, 156 * 4, 157 * 4, 158 * 4, 163 * 4, 164 * 4, 165 * 4, 166 * 4, 167 * 4, 168 * 4, 176 * 4, 177 * 4, 179 * 4, 182 * 4, 183 * 4, 185 * 4, 187 * 4, 190 * 4, 191 * 4, 193 * 4, 194 * 4, 201 * 4, 203 * 4, 205 * 4, 206 * 4, 207 * 4, 208 * 4, 209 * 4, 215 * 4, 216 * 4, 217 * 4, 218 * 4, 219 * 4, 220 * 4, 221 * 4, 222 * 4, 230 * 4, 231 * 4, 232 * 4, 233 * 4, 234 * 4, 235 * 4, 236 * 4, 237 * 4, 243 * 4, 244 * 4, 245 * 4, 263 * 4, 264 * 4, 265 * 4, 266 * 4, 267 * 4, 270 * 4, 275 * 4, 276 * 4, 278 * 4, 279 * 4, 280 * 4, 281 * 4, 282 * 4, 286 * 4, 291 * 4, 292 * 4, 293 * 4, 294 * 4, 295 * 4, 296 * 4, 297 * 4, 298 * 4, 299 * 4, 302 * 4, 310 * 4, 316 * 4, 318 * 4, 319 * 4, 321 * 4, 322 * 4, 327 * 4, 328 * 4, 329 * 4, 334 * 4, 340 * 4, 343 * 4, 344 * 4, 347 * 4, 349 * 4, 350 * 4, 351 * 4, 354 * 4, 355 * 4, 357 * 4, 364 * 4, 365 * 4, 366 * 4, 367 * 4, 368 * 4, 369 * 4, 372 * 4, 373 * 4, 374 * 4, 375 * 4, 376 * 4, 379 * 4, 381 * 4, 382 * 4, 385 * 4, 387 * 4, 388 * 4, 389 * 4, 390 * 4, 399 * 4, 400 * 4, 401 * 4, 404 * 4, 405 * 4, 407 * 4, 408 * 4, 409 * 4, 412 * 4, 413 * 4, 416 * 4, 417 * 4, 419 * 4, 420 * 4, 421 * 4, 422 * 4, 423 * 4, 424 * 4, 425 * 4, 426 * 4, 429 * 4, 430 * 4, 431 * 4, 433 * 4, 434 * 4, 435 * 4, 436 * 4, 439 * 4, 442 * 4, 450 * 4, 452 * 4, 454 * 4, 455 * 4, 456 * 4, 458 * 4, 459 * 4, 460 * 4, 461 * 4, 462 * 4, 464 * 4, 466 * 4, 467 * 4, 471 * 4, 476 * 4, 477 * 4, 478 * 4, 479 * 4, 481 * 4, 482 * 4, 484 * 4, 485 * 4, 486 * 4, 487 * 4, 488 * 4, 490 * 4, 491 * 4, 492 * 4, 493 * 4, 494 * 4, 495 * 4, 498 * 4, 499 * 4, 500 * 4, 501 * 4, 502 * 4, 504 * 4, 505 * 4, 508 * 4, 509 * 4, 510 * 4, 511 * 4, 513 * 4, 514 * 4, 515 * 4, 516 * 4, 517 * 4, 518 * 4, 519 * 4, 521 * 4, 525 * 4, 527 * 4, 530 * 4, 531 * 4, 536 * 4, 537 * 4, 538 * 4, 539 * 4, 541 * 4, 542 * 4, 543 * 4, 544 * 4, 545 * 4, 548 * 4, 549 * 4, 550 * 4, 551 * 4, 552 * 4, 553 * 4, 556 * 4, 558 * 4, 559 * 4, 561 * 4, 562 * 4, 563 * 4, 572 * 4, 573 * 4, 574 * 4, 575 * 4, 576 * 4, 577 * 4, 578 * 4, 579 * 4, 580 * 4, 581 * 4, 582 * 4, 583 * 4, 584 * 4, 586 * 4, 587 * 4, 588 * 4, 589 * 4, 591 * 4, 592 * 4, 593 * 4, 594 * 4, 597 * 4, 598 * 4, 599 * 4, 600 * 4, 601 * 4, 602 * 4, 603 * 4, 604 * 4, 605 * 4, 606 * 4, 607 * 4, 609 * 4, 610 * 4, 612 * 4, 613 * 4, 616 * 4, 617 * 4, 623 * 4, 624 * 4, 625 * 4, 627 * 4, 628 * 4, 629 * 4, 631 * 4, 636 * 4, 638 * 4, 639 * 4, 640 * 4, 641 * 4, 642 * 4, 647 * 4, 649 * 4, 651 * 4, 652 * 4, 653 * 4, 658 * 4, 662 * 4, 667 * 4, 672 * 4, 673 * 4, 674 * 4, 678 * 4, 679 * 4, 680 * 4, 681 * 4, 682 * 4, 683 * 4, 687 * 4, 688 * 4, 690 * 4, 691 * 4, 694 * 4, 696 * 4, 697 * 4, 699 * 4, 700 * 4, 702 * 4, 703 * 4, 704 * 4, 705 * 4, 706 * 4, 709 * 4, 710 * 4, 711 * 4, 712 * 4, 713 * 4, 715 * 4, 716 * 4, 719 * 4, 720 * 4, 722 * 4, 723 * 4, 724 * 4, 726 * 4, 727 * 4, 728 * 4, 729 * 4, 730 * 4, 732 * 4, 733 * 4, 734 * 4, 735 * 4, 736 * 4, 737 * 4, 738 * 4, 739 * 4, 740 * 4, 741 * 4, 742 * 4, 743 * 4, 744 * 4, 745 * 4, 746 * 4, 747 * 4, 748 * 4, 749 * 4, 750 * 4, 751 * 4, 752 * 4, 753 * 4, 754 * 4, 755 * 4, 756 * 4, 757 * 4, 759 * 4, 760 * 4, 761 * 4, 762 * 4, 763 * 4, 764 * 4, 765 * 4, 767 * 4, 768 * 4, 769 * 4, 770 * 4, 771 * 4, 772 * 4, 773 * 4, 774 * 4, 775 * 4, 776 * 4, 777 * 4, 778 * 4, 779 * 4, 780 * 4, 781 * 4, 782 * 4, 783 * 4, 784 * 4, 785 * 4, 786 * 4, 787 * 4, 788 * 4, 789 * 4, 790 * 4, 791 * 4, 792 * 4, 793 * 4, 794 * 4, 795 * 4, 796 * 4, 797 * 4, 798 * 4, 799 * 4, 800 * 4, 801 * 4, 802 * 4, 803 * 4, 804 * 4, 805 * 4, 806 * 4, 807 * 4, 808 * 4, 809 * 4, 810 * 4, 811 * 4, 812 * 4, 813 * 4, 814 * 4, 815 * 4, 816 * 4, 817 * 4, 818 * 4, 819 * 4, 820 * 4, 821 * 4, 822 * 4, 823 * 4];
+
+function unlockKyaraAll() {
+  for (let i = 0; i < 860; i++) {
+    let addr = kyara3 + (i * 4);
+    h5gg.setValue(addr, 2, "I32");
+  }
+  for (let i = 0; i < siroDeleteOffsets.length; i++) {
+    let targetAddress = charOffset - 4 + siroDeleteOffsets[i];
+    h5gg.setValue(targetAddress, 1, "I32");
+  }
+  alert("第3形態解放");
+}
+
+  
+  function unlockStageOnly() {
+        h5gg.setValue(startOffset, 0, "I32");
+        h5gg.setValue(startOffset + 0x4, 0, "I32" );
+              h5gg.setValue(startOffset + 0x8, 0, "I32" );
+                    h5gg.setValue(startOffset + 0xc, 0, "I32" );
+                    
+                          h5gg.setValue(startOffset + 0x10, 0, "I32" );
+                        h5gg.setValue(startOffset + 0x14, 0, "I32" );  
+                        h5gg.setValue(startOffset + 0x18, 0, "I32" );
+                        h5gg.setValue(startOffset + 0x1c, 0, "I32" );
+                        h5gg.setValue(startOffset + 0x20, 0, "I32" );
+                        h5gg.setValue(startOffset + 0x24, 0, "I32" );
+                          
+    h5gg.setValue(startOffset + 0x28, 48, "I32"); 
+alert("ステージ解放完了")
+}
+
+function unlockTakaraOnly() {
+    let takaAddr = takaraOffset;
+    for (let block = 0; block < 10; block++) {
+        for (let i = 0; i < 48; i++) {
+            h5gg.setValue(takaAddr + (i * 4), 3, "I32");  
+        }
+        let zeroOffset1 = takaAddr + (48 * 4); 
+        let zeroOffset2 = zeroOffset1 + 4;                    
+        h5gg.setValue(zeroOffset1, 0, "I32");
+        h5gg.setValue(zeroOffset2, 0, "I32");              
+        takaAddr = zeroOffset2 + 4;
+    }
+    alert("全お宝を金にしました！");
+}
+
+
+  
+  function changeAllC() {
+  h5gg.setValue(catsEye1, 200, "I32");
+  h5gg.setValue(catsEye2, 200, "I32");
+  h5gg.setValue(catsEye3, 200, "I32");
+  h5gg.setValue(catsEye4, 200, "I32");
+  h5gg.setValue(catsEye5, 200, "I32");
+  h5gg.setValue(catsEye6, 200, "I32");
+  let list = [catsEye1, catsEye2, catsEye3, catsEye4, catsEye5, catsEye6];
+  for (let addr of list) {
+    h5gg.setValue(addr + 4, 0, "I32");
+    h5gg.setValue(addr - 4, 0, "I32");
+  }
+  alert("キャッツアイをまとめて変更しました！");
+  }
+  
+  
+  function changeAllNyanko() {
+  let value = Number(prompt("nyanko1～nyanko10 に設定する数値を入力してください"));
+  if (!isNaN(value)) {
+    let list = [nyanko1,nyanko2,nyanko3,nyanko4,nyanko5,nyanko6,nyanko7,nyanko8,nyanko9,nyanko10];
+    for (let addr of list) {
+      h5gg.setValue(addr, value, "I32");
+      h5gg.setValue(addr + 4, 0, "I32");
+    }
+    alert("にゃんこ砲をまとめて " + value + " に変更しました！");
+  }
+}
+
+fetch("UDID/users.json")
+.then(response => response.json())
+.then(data => {
+    document.getElementById("users_output").textContent =
+        JSON.stringify(data, null, 2);
+})
+.catch(error => {
+    document.getElementById("users_output").textContent =
+        "Error: " + error;
+});
+
+        
+ 
+
+
+
+
+//ベース定義
+  setWindowDrag(0, 0, 350, 60);
+  h5gg.searchNumber('32400','I32','0x100000000','0x110000000');  
+  const base = Number(h5gg.getResults('1')[0].address);
+    //オフセット定義・基本
+    let nekokan= base - 0x130;
+    let xp= base + 0x40;
+    let np= base + 0x48; 
+ 　　//チケット類
+    let silber = base + 0x30cf2c;
+    let gold = base + 0x30cf34; 
+    let tike3 = base - 0x9800;
+    let tike4 = base - 0x9808;
+    //マタタビ
+    let green = 0x1c;
+    let yellow = 0x24;
+    let red = 0xc;
+    let p = 0x4;
+    let blue = 0x14;
+    let pm =0x2c;
+    let bluem = 0x3c;
+    let redm = 0x34;
+    let yellowm = 0x4c;
+    let greenm = 0x44;
+    let rainbowm = 0x54;
+    let mbase = 0x1d66728;
+    //キャラ類
+     let kyara1 = base + 0x3AA38, kyara2 = base + 0x3B718, kyara3 = base + 0x3D0D0;  
+   let charOffset = base + 0x3d0d0;  
+     //ステージ類
+     let startOffset = base + 0x6c4, clearCountOffset = base + 0x6C8, takaraOffset = base + 0xf10;
+     //その他
+     let enemyBase = base + 0x82288;
+  let catsEye1 = base + 0x41cc1c;
+  let catsEye2= base + 0x41cc24;
+  let catsEye3= base + 0x41cc2c;
+  let catsEye4= catsEye1 + 0x18;
+  let catsEye5= catsEye1 + 0x20;
+  let catsEye6= catsEye1 + 0x28;
+  let bitamin1= base + 0x41cc4c;
+  let bitamin2= base + 0x41CC54;
+  let bitamin3= base + 0x41CC5C;
+  let nyanko1= base + 0x3b330;
+  let nyanko2= nyanko1 - 0x20;
+  let nyanko3= nyanko2 + 0x10;
+  let nyanko4= nyanko2 + 0x28;
+  let nyanko5= nyanko2 + 0x30;
+  let nyanko6= nyanko2 + 0x38;
+  let nyanko7= nyanko2 + 0x40;
+  let nyanko8= nyanko2 + 0x48;
+  let nyanko9= nyanko2 + 0x50;
+  let nyanko10= nyanko2 + 0x18;
+  
+  //アイテム類
+  let speed= base + 0x3e078;
+  let treasure= base + 0x3e080;
+  let nekobon= base + 0x3e088;
+  let nyanp= speed + 0x12;
+  let okamehatimoku= nekobon + 0x10;
+  let sniper= base + 0x3e0a0
+ 
+  
+</script></body></html>
